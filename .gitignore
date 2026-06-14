@@ -1,0 +1,51 @@
+# === PHP / Composer ===
+/vendor/
+.phpunit.result.cache
+.php-cs-fixer.cache
+phpdoc/
+
+# === Environment & Secrets ===
+.env
+.env.local
+.env.*.local
+*.env.bak
+config.local.php
+
+# === IDEs & Editors ===
+# JetBrains / PhpStorm
+.idea/
+*.iml
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/launch.json
+
+# Sublime Text / Eclipse
+*.sublime-project
+*.sublime-workspace
+.buildpath
+.project
+.settings/
+
+# === OS Files ===
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# === Logs & Databases ===
+*.log
+/logs/
+*.sqlite
+
+# === Build / Frontend Assets ===
+/node_modules/
+/public/build/
+/public/storage
+/storage/*.key
+.npm/
+*.yarn-error.log
+
+
+secret_santa_create_database.sql

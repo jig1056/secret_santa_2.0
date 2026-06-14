@@ -1,0 +1,119 @@
+/* ============================================================
+   Secret Santa -- Main Stylesheet
+   Mobile-first, responsive
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --red:       #c0392b;
+    --red-dark:  #922b21;
+    --green:     #1e8449;
+    --green-dark:#145a32;
+    --gold:      #d4ac0d;
+    --white:     #ffffff;
+    --light:     #f4f6f8;
+    --gray:      #6c757d;
+    --dark:      #212529;
+    --radius:    8px;
+    --shadow:    0 2px 8px rgba(0,0,0,0.1);
+}
+
+body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: var(--light);
+    color: var(--dark);
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* -- Navbar -- */
+.navbar {
+    background: var(--red);
+    color: var(--white);
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+}
+.nav-brand { font-size: 1.2rem; font-weight: 700; flex: 1; }
+.nav-toggle {
+    display: none;
+    background: none;
+    border: 2px solid var(--white);
+    color: var(--white);
+    font-size: 1.2rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+.nav-links { list-style: none; display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap; }
+.nav-links a {
+    color: var(--white);
+    text-decoration: none;
+    padding: 0.4rem 0.75rem;
+    border-radius: var(--radius);
+    font-size: 0.95rem;
+    transition: background 0.2s;
+}
+.nav-links a:hover { background: var(--red-dark); }
+.nav-divider { width: 1px; height: 1.2rem; background: rgba(255,255,255,0.35); margin: 0 0.25rem; }
+
+@media (max-width: 768px) {
+    .nav-toggle { display: block; }
+    .nav-links { display: none; flex-direction: column; align-items: flex-start; width: 100%; padding-top: 0.5rem; }
+    .nav-links.open { display: flex; }
+    .nav-links a { width: 100%; }
+    .nav-divider { width: 100%; height: 1px; margin: 0.25rem 0; }
+}
+
+/* -- Layout -- */
+.container { width: 100%; max-width: 960px; margin: 1.5rem auto; padding: 0 1.25rem; flex: 1; }
+
+/* -- Cards -- */
+.card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.5rem; margin-bottom: 1.25rem; }
+.card-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; color: var(--red-dark); }
+
+/* -- Buttons -- */
+.btn { display: inline-block; padding: 0.5rem 1.2rem; border: none; border-radius: var(--radius); font-size: 0.95rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: opacity 0.2s; }
+.btn:hover { opacity: 0.85; }
+.btn-primary   { background: var(--red);   color: var(--white); }
+.btn-success   { background: var(--green); color: var(--white); }
+.btn-secondary { background: var(--gray);  color: var(--white); }
+.btn-sm        { padding: 0.3rem 0.75rem; font-size: 0.85rem; }
+
+/* -- Forms -- */
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-weight: 600; margin-bottom: 0.3rem; }
+.form-group input, .form-group textarea, .form-group select {
+    width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ccc;
+    border-radius: var(--radius); font-size: 1rem; font-family: inherit;
+}
+.form-group textarea { resize: vertical; min-height: 80px; }
+
+/* -- Tables -- */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 0.65rem 0.9rem; border-bottom: 1px solid #e0e0e0; }
+th { background: var(--light); font-weight: 600; }
+tr:last-child td { border-bottom: none; }
+
+/* -- Alerts -- */
+.alert { padding: 0.75rem 1rem; border-radius: var(--radius); margin-bottom: 1rem; }
+.alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.alert-error   { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+.alert-info    { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+
+/* -- Headings -- */
+.page-title { font-size: 1.6rem; font-weight: 700; color: var(--red-dark); margin-bottom: 1.25rem; }
+
+/* -- Footer -- */
+.site-footer { text-align: center; padding: 1rem; font-size: 0.85rem; color: var(--gray); border-top: 1px solid #ddd; }
+.debug-badge { display: inline-block; background: var(--gold); color: var(--dark); font-size: 0.75rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; margin-top: 0.25rem; }
