@@ -76,19 +76,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 </div>
 
-<!-- Admin quick links -->
-<?php if (isAdmin()): ?>
-<div class="card">
-    <div class="card-title">⚙️ Admin Quick Links</div>
-    <div class="admin-links">
-        <a href="<?= APP_URL ?>/admin/dashboard.php"  class="btn btn-secondary">📊 Dashboard</a>
-        <a href="<?= APP_URL ?>/admin/users.php"       class="btn btn-secondary">👥 Users</a>
-        <a href="<?= APP_URL ?>/admin/generate.php"    class="btn btn-secondary">🎲 Generate Matches</a>
-        <a href="<?= APP_URL ?>/admin/messages.php"    class="btn btn-secondary">✉️ Messages</a>
-        <a href="<?= APP_URL ?>/admin/config.php"      class="btn btn-secondary">🔧 Config</a>
-    </div>
-</div>
-<?php endif; ?>
+
 
 <style>
 .banner-card { background: linear-gradient(135deg, #c0392b, #922b21); color: #fff; }

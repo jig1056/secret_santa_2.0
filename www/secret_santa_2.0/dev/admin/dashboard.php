@@ -95,26 +95,11 @@ require_once __DIR__ . '/../includes/header.php';
                     <th class="sortable" onclick="sortDash(1)">Type <span class="sort-icon">↕</span></th>
                     <th class="sortable" onclick="sortDash(2)">Gifts Added <span class="sort-icon">↕</span></th>
                     <th>Progress</th>
-                    <?php if ($matchesDone): ?>
-                    <th>Gifting</th>
-                    <?php endif; ?>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($userGifts as $user):
-                    // Get their match if matches are done
-                    $matchName = '';
-                    if ($matchesDone) {
-                        $mStmt = $pdo->prepare("
-                            SELECT u.FIRST_NAME, u.LAST_NAME
-                            FROM SS_MATCHES m
-                            JOIN SS_USERS u ON u.USER_ID = m.RECEIVER_USER_ID
-                            WHERE m.GIVER_USER_ID = ? AND m.YEAR = ?
-                        ");
-                        $mStmt->execute([$user['USER_ID'], $xmasYear]);
-                        $match = $mStmt->fetch();
-                        $matchName = $match ? h($match['FIRST_NAME'] . ' ' . $match['LAST_NAME']) : '—';
-                    }
+
                     $pct = min(100, round($user['GIFT_COUNT'] / 5 * 100)); // 5 gifts = 100%
                     $barColor = $user['GIFT_COUNT'] == 0 ? '#e74c3c' : ($user['GIFT_COUNT'] < 3 ? '#e67e22' : '#1e8449');
                 ?>
@@ -137,9 +122,7 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
                         <div class="progress-label"><?= $user['GIFT_COUNT'] ?> gift<?= $user['GIFT_COUNT'] !== 1 ? 's' : '' ?></div>
                     </td>
-                    <?php if ($matchesDone): ?>
-                    <td><?= $matchName ?></td>
-                    <?php endif; ?>
+
                 </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -147,16 +130,7 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<!-- Quick links -->
-<div class="card">
-    <div class="card-title">⚡ Quick Actions</div>
-    <div class="quick-links">
-        <a href="<?= APP_URL ?>/admin/users.php"    class="btn btn-secondary">👥 Manage Users</a>
-        <a href="<?= APP_URL ?>/admin/generate.php" class="btn btn-secondary">🎲 Generate Matches</a>
-        <a href="<?= APP_URL ?>/admin/messages.php" class="btn btn-secondary">✉️ Send Messages</a>
-        <a href="<?= APP_URL ?>/admin/config.php"   class="btn btn-secondary">🔧 Config</a>
-    </div>
-</div>
+
 
 <style>
 /* Stat cards */
