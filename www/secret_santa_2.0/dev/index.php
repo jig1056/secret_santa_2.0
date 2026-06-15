@@ -83,7 +83,7 @@ $timeout = isset($_GET['reason']) && $_GET['reason'] === 'timeout';
     </form>
 
     <p style="text-align:center;margin-top:1rem;font-size:0.85rem;">
-        <a href="<?= APP_URL ?>/pages/forgot_password.php" style="color:#c0392b;">Forgot your password?</a>
+        <a href="<?= APP_URL ?>/forgot_password.php" style="color:#c0392b;">Forgot your password?</a>
     </p>
 </div>
 <script src="<?= APP_URL ?>/assets/js/app.js"></script>

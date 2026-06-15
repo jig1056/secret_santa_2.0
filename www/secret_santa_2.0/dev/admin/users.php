@@ -6,6 +6,7 @@
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/helpers.php';
+require_once __DIR__ . '/../includes/mailer.php';
 requireAdmin();
 
 $pdo     = getDB();
@@ -96,17 +97,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     } elseif ($action === 'reset_password') {
         $userId = $_POST['user_id'] ?? '';
-        $stmt   = $pdo->prepare("SELECT EMAIL, FIRST_NAME FROM SS_USERS WHERE USER_ID = ?");
+        $stmt   = $pdo->prepare("SELECT * FROM SS_USERS WHERE USER_ID = ? AND STATUS = 'ACTIVE'");
         $stmt->execute([$userId]);
         $user = $stmt->fetch();
         if ($user) {
-            $token   = bin2hex(random_bytes(32));
-            $expires = date('Y-m-d H:i:s', time() + PASSWORD_RESET_EXPIRY);
-            $pdo->prepare("DELETE FROM SS_PASSWORD_RESETS WHERE USER_ID = ?")->execute([$userId]);
-            $pdo->prepare("INSERT INTO SS_PASSWORD_RESETS (USER_ID, TOKEN, EXPIRES_AT) VALUES (?,?,?)")->execute([$userId, $token, $expires]);
-            $resetLink = APP_URL . '/reset_password.php?token=' . $token;
-            $msg = 'Password reset link for ' . h($user['FIRST_NAME']) . ': <a href="' . h($resetLink) . '" target="_blank" style="color:#155724;font-weight:600;">Copy Link ↗</a>';
-            $msgType = 'success';
+            $result = sendPasswordReset($user, $pdo);
+            if ($result === true) {
+                $msg     = "Password reset email sent to {$user['FIRST_NAME']} {$user['LAST_NAME']} ({$user['EMAIL']}).";
+                $msgType = 'success';
+            } else {
+                $msg     = "Failed to send reset email to {$user['EMAIL']}: {$result}";
+                $msgType = 'error';
+            }
         }
     }
 }

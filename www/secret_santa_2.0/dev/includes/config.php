@@ -47,10 +47,10 @@ $dbConfigs = [
         'pass'   => 'p9tX5vT3gZ6u2yH7QwXe',
     ],
     'prd' => [
-        'host'   => 'localhost',
-        'dbname' => 'HLPRD',
-        'user'   => 'ss_prd_user',
-        'pass'   => 'your_prd_password_here',
+        'host'   => 'prod2.home',
+        'dbname' => 'HLDEV',
+        'user'   => 'zoe',
+        'pass'   => 'p9tX5vT3gZ6u2yH7QwXe',
     ],
 ];
 
@@ -90,7 +90,9 @@ define('SESSION_NAME',    'ss_session');
 define('SESSION_TIMEOUT', 1800); // 30 minutes in seconds
 
 // -- Security --
-define('PASSWORD_RESET_EXPIRY', 3600); // 1 hour in seconds
+// Note: actual expiry is read from SS_CONFIG key RESET_TOKEN_EXPIRY_MINS at runtime
+// This constant is a fallback only used before the DB is available
+define('PASSWORD_RESET_EXPIRY_FALLBACK', 60); // minutes
 
 // -- Error display: on in dev, off in prod --
 if (IS_DEV) {

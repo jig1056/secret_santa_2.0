@@ -193,7 +193,7 @@ require_once __DIR__ . '/../includes/header.php';
             <label for="message_body">Message Body <span class="required">*</span></label>
             <textarea id="message_body" name="message_body" required rows="5"
                       placeholder="Use {FIRST_NAME}, {LAST_NAME}, {YEAR} as placeholders."><?= h($_POST['message_body'] ?? '') ?></textarea>
-            <div class="field-hint">Available placeholders: <code>{FIRST_NAME}</code> <code>{LAST_NAME}</code> <code>{YEAR}</code> <code>{GIFT_DEADLINE}</code> <code>{SANTA_MATCH_DATE}</code></div>
+            <div class="field-hint">Available placeholders: <code>{FIRST_NAME}</code> <code>{LAST_NAME}</code> <code>{YEAR}</code> <code>{GIFT_DEADLINE}</code> <code>{SANTA_MATCH_DATE}</code> <code>{PASSWORD_RESET_LINK}</code> <code>{RESET_EXPIRY_MINS}</code></div>
         </div>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save Template</button>
@@ -218,7 +218,7 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="form-group">
             <label for="message_body">Message Body <span class="required">*</span></label>
             <textarea id="message_body" name="message_body" required rows="5"><?= h($editing['MESSAGE_BODY']) ?></textarea>
-            <div class="field-hint">Available placeholders: <code>{FIRST_NAME}</code> <code>{LAST_NAME}</code> <code>{YEAR}</code> <code>{GIFT_DEADLINE}</code> <code>{SANTA_MATCH_DATE}</code></div>
+            <div class="field-hint">Available placeholders: <code>{FIRST_NAME}</code> <code>{LAST_NAME}</code> <code>{YEAR}</code> <code>{GIFT_DEADLINE}</code> <code>{SANTA_MATCH_DATE}</code> <code>{PASSWORD_RESET_LINK}</code> <code>{RESET_EXPIRY_MINS}</code></div>
         </div>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -396,4 +396,4 @@ function toggleUserSelect(sel) {
 }
 </script>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?> 
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
