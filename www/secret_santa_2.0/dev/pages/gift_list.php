@@ -8,80 +8,73 @@ require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/helpers.php';
 requireLogin();
 
-$pdo    = getDB();
-$userId = currentUserId();
-$msg    = '';
-$msgType= '';
+$pdo     = getDB();
+$userId  = currentUserId();
+$msg     = '';
+$msgType = '';
 $editing = null;
+$addMode = isset($_GET['add']);
 
-// ------------------------------------------------------------
-// Handle POST actions: add, update, delete
-// ------------------------------------------------------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     // -- DELETE --
     if ($action === 'delete') {
         $giftId = (int)($_POST['gift_id'] ?? 0);
-        $stmt = $pdo->prepare("DELETE FROM SS_GIFTS WHERE GIFT_ID = ? AND USER_ID = ?");
-        $stmt->execute([$giftId, $userId]);
+        $pdo->prepare("DELETE FROM SS_GIFTS WHERE GIFT_ID = ? AND USER_ID = ?")->execute([$giftId, $userId]);
         $msg = 'Gift removed from your list.';
         $msgType = 'success';
 
     // -- ADD --
     } elseif ($action === 'add') {
-        $name = trim($_POST['name'] ?? '');
+        $name = trim($_POST['name']        ?? '');
         $desc = trim($_POST['description'] ?? '');
-        $url  = trim($_POST['url'] ?? '');
+        $url  = trim($_POST['url']         ?? '');
 
         if ($name === '') {
             $msg = 'Gift name is required.';
             $msgType = 'error';
+            $addMode = true;
         } else {
-            $stmt = $pdo->prepare("
-                INSERT INTO SS_GIFTS (USER_ID, NAME, DESCRIPTION, URL)
-                VALUES (?, ?, ?, ?)
-            ");
-            $stmt->execute([$userId, $name, $desc ?: null, $url ?: null]);
+            $pdo->prepare("INSERT INTO SS_GIFTS (USER_ID, NAME, DESCRIPTION, URL) VALUES (?, ?, ?, ?)")
+                ->execute([$userId, $name, $desc ?: null, $url ?: null]);
             $msg = 'Gift added to your list!';
             $msgType = 'success';
+            $addMode = false; // close form on success
         }
 
     // -- UPDATE --
     } elseif ($action === 'update') {
         $giftId = (int)($_POST['gift_id'] ?? 0);
-        $name   = trim($_POST['name'] ?? '');
+        $name   = trim($_POST['name']        ?? '');
         $desc   = trim($_POST['description'] ?? '');
-        $url    = trim($_POST['url'] ?? '');
+        $url    = trim($_POST['url']         ?? '');
 
         if ($name === '') {
             $msg = 'Gift name is required.';
             $msgType = 'error';
-            // Re-load the gift for the edit form
+            // Keep edit form open on error
             $stmt = $pdo->prepare("SELECT * FROM SS_GIFTS WHERE GIFT_ID = ? AND USER_ID = ?");
             $stmt->execute([$giftId, $userId]);
-            $editing = $stmt->fetch();
+            $editing = $stmt->fetch() ?: null;
         } else {
-            $stmt = $pdo->prepare("
-                UPDATE SS_GIFTS SET NAME = ?, DESCRIPTION = ?, URL = ?, UPDATED_AT = NOW()
-                WHERE GIFT_ID = ? AND USER_ID = ?
-            ");
-            $stmt->execute([$name, $desc ?: null, $url ?: null, $giftId, $userId]);
+            $pdo->prepare("UPDATE SS_GIFTS SET NAME = ?, DESCRIPTION = ?, URL = ?, UPDATED_AT = NOW() WHERE GIFT_ID = ? AND USER_ID = ?")
+                ->execute([$name, $desc ?: null, $url ?: null, $giftId, $userId]);
             $msg = 'Gift updated!';
             $msgType = 'success';
+            // Form closes on success (editing stays null)
         }
     }
 }
 
-// -- Load edit target from GET --
-if (!$editing && isset($_GET['edit'])) {
-    $editId = (int)$_GET['edit'];
-    $stmt   = $pdo->prepare("SELECT * FROM SS_GIFTS WHERE GIFT_ID = ? AND USER_ID = ?");
-    $stmt->execute([$editId, $userId]);
+// Load edit target from GET — but not after a successful POST
+if (!$editing && isset($_GET['edit']) && $msgType !== 'success') {
+    $stmt = $pdo->prepare("SELECT * FROM SS_GIFTS WHERE GIFT_ID = ? AND USER_ID = ?");
+    $stmt->execute([(int)$_GET['edit'], $userId]);
     $editing = $stmt->fetch() ?: null;
 }
 
-// -- Fetch all gifts for this user --
+// Fetch all gifts
 $stmt = $pdo->prepare("SELECT * FROM SS_GIFTS WHERE USER_ID = ? ORDER BY CREATED_AT ASC");
 $stmt->execute([$userId]);
 $gifts = $stmt->fetchAll();
@@ -89,51 +82,82 @@ $gifts = $stmt->fetchAll();
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<h1 class="page-title">🎁 My Gift List</h1>
+<div class="page-header">
+    <h1 class="page-title">🎁 My Gift List</h1>
+    <a href="?add=1" class="btn btn-primary">➕ Add Gift</a>
+</div>
 
 <?php if ($msg): ?>
 <div class="alert alert-<?= $msgType === 'success' ? 'success' : 'error' ?>"><?= h($msg) ?></div>
 <?php endif; ?>
 
-<!-- Add / Edit Form -->
+<!-- ADD Form -->
+<?php if ($addMode && !$editing): ?>
 <div class="card">
-    <div class="card-title"><?= $editing ? '✏️ Edit Gift' : '➕ Add a Gift' ?></div>
+    <div class="card-title">➕ Add a Gift</div>
     <form method="POST" action="">
-        <input type="hidden" name="action"  value="<?= $editing ? 'update' : 'add' ?>">
-        <?php if ($editing): ?>
-        <input type="hidden" name="gift_id" value="<?= $editing['GIFT_ID'] ?>">
-        <?php endif; ?>
-
+        <input type="hidden" name="action" value="add">
         <div class="form-group">
             <label for="name">Gift Name <span class="required">*</span></label>
             <input type="text" id="name" name="name" required maxlength="200"
                    placeholder="e.g. Yeti Tumbler 30oz"
-                   value="<?= h($editing['NAME'] ?? $_POST['name'] ?? '') ?>">
+                   value="<?= h($_POST['name'] ?? '') ?>">
         </div>
-
         <div class="form-group">
             <label for="description">Description <span class="optional">(optional)</span></label>
             <textarea id="description" name="description" maxlength="1000"
-                      placeholder="Size, color, any other details..."><?= h($editing['DESCRIPTION'] ?? $_POST['description'] ?? '') ?></textarea>
+                      placeholder="Size, color, any other details..."><?= h($_POST['description'] ?? '') ?></textarea>
         </div>
-
         <div class="form-group">
             <label for="url">Link / URL <span class="optional">(optional)</span></label>
             <input type="url" id="url" name="url" maxlength="500"
                    placeholder="https://www.amazon.com/..."
-                   value="<?= h($editing['URL'] ?? $_POST['url'] ?? '') ?>">
+                   value="<?= h($_POST['url'] ?? '') ?>">
         </div>
-
         <div class="form-actions">
-            <button type="submit" class="btn btn-primary">
-                <?= $editing ? 'Save Changes' : 'Add Gift' ?>
-            </button>
-            <?php if ($editing): ?>
+            <button type="submit" class="btn btn-primary">Add Gift</button>
             <a href="<?= APP_URL ?>/pages/gift_list.php" class="btn btn-secondary">Cancel</a>
-            <?php endif; ?>
         </div>
     </form>
 </div>
+<?php endif; ?>
+
+<!-- EDIT Form -->
+<?php if ($editing): ?>
+<div class="card">
+    <div class="card-title">✏️ Edit Gift</div>
+    <form method="POST" action="">
+        <input type="hidden" name="action"  value="update">
+        <input type="hidden" name="gift_id" value="<?= $editing['GIFT_ID'] ?>">
+        <div class="form-group">
+            <label for="name">Gift Name <span class="required">*</span></label>
+            <input type="text" id="name" name="name" required maxlength="200"
+                   value="<?= h($editing['NAME']) ?>">
+        </div>
+        <div class="form-group">
+            <label for="description">Description <span class="optional">(optional)</span></label>
+            <textarea id="description" name="description" maxlength="1000"><?= h($editing['DESCRIPTION'] ?? '') ?></textarea>
+        </div>
+        <div class="form-group">
+            <label for="url">Link / URL <span class="optional">(optional)</span></label>
+            <input type="url" id="url" name="url" maxlength="500"
+                   value="<?= h($editing['URL'] ?? '') ?>">
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="<?= APP_URL ?>/pages/gift_list.php" class="btn btn-secondary">Cancel</a>
+            <button type="button" class="btn btn-danger"
+                    onclick="if(confirm('Remove this gift from your list?')) document.getElementById('delGift<?= $editing['GIFT_ID'] ?>').submit()">
+                Delete
+            </button>
+        </div>
+    </form>
+    <form id="delGift<?= $editing['GIFT_ID'] ?>" method="POST" action="" style="display:none;">
+        <input type="hidden" name="action"  value="delete">
+        <input type="hidden" name="gift_id" value="<?= $editing['GIFT_ID'] ?>">
+    </form>
+</div>
+<?php endif; ?>
 
 <!-- Gift List Table -->
 <div class="card">
@@ -142,10 +166,9 @@ require_once __DIR__ . '/../includes/header.php';
     <?php if (empty($gifts)): ?>
     <div class="empty-state">
         <div class="empty-icon">🎁</div>
-        <p>Your list is empty! Add some gifts above so your Secret Santa knows what to get you.</p>
+        <p>Your list is empty! Click <strong>➕ Add Gift</strong> to get started.</p>
     </div>
     <?php else: ?>
-
     <div class="table-wrap">
         <table>
             <thead>
@@ -153,13 +176,16 @@ require_once __DIR__ . '/../includes/header.php';
                     <th>Gift</th>
                     <th>Description</th>
                     <th>Link</th>
-                    <th style="width:120px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($gifts as $gift): ?>
-                <tr>
-                    <td><strong><?= h($gift['NAME']) ?></strong></td>
+                <tr class="<?= $editing && $editing['GIFT_ID'] == $gift['GIFT_ID'] ? 'row-active' : '' ?>">
+                    <td>
+                        <a href="?edit=<?= $gift['GIFT_ID'] ?>" class="gift-link">
+                            <?= h($gift['NAME']) ?>
+                        </a>
+                    </td>
                     <td><?= $gift['DESCRIPTION'] ? h($gift['DESCRIPTION']) : '<span class="muted">—</span>' ?></td>
                     <td>
                         <?php if ($gift['URL']): ?>
@@ -167,15 +193,6 @@ require_once __DIR__ . '/../includes/header.php';
                         <?php else: ?>
                         <span class="muted">—</span>
                         <?php endif; ?>
-                    </td>
-                    <td>
-                        <a href="?edit=<?= $gift['GIFT_ID'] ?>" class="btn btn-secondary btn-sm">Edit</a>
-                        <form method="POST" action="" style="display:inline;"
-                              onsubmit="return confirm('Remove this gift from your list?')">
-                            <input type="hidden" name="action"  value="delete">
-                            <input type="hidden" name="gift_id" value="<?= $gift['GIFT_ID'] ?>">
-                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                        </form>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -186,29 +203,34 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <style>
+.page-header  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+.page-header .page-title { margin-bottom: 0; }
+
 .required { color: #c0392b; }
 .optional { color: #999; font-weight: 400; font-size: 0.85rem; }
 .muted    { color: #aaa; }
 
-.form-actions { display: flex; gap: 0.75rem; align-items: center; margin-top: 0.5rem; }
+.form-actions { display: flex; gap: 0.75rem; align-items: center; margin-top: 0.5rem; flex-wrap: wrap; }
 
 .empty-state { text-align: center; padding: 2rem 1rem; color: #777; }
 .empty-icon  { font-size: 3rem; margin-bottom: 0.75rem; }
 
-.view-link { color: #1e8449; font-weight: 600; text-decoration: none; }
+.gift-link  { font-weight: 600; color: #c0392b; text-decoration: none; }
+.gift-link:hover { text-decoration: underline; }
+
+.view-link  { color: #1e8449; font-weight: 600; text-decoration: none; }
 .view-link:hover { text-decoration: underline; }
+
+.row-active td { background: #fff8f0; }
 
 .btn-danger { background: #c0392b; color: #fff; }
 .btn-danger:hover { opacity: 0.85; }
 
-/* Mobile: stack table rows */
 @media (max-width: 600px) {
     table, thead, tbody, th, td, tr { display: block; }
     thead { display: none; }
     tr { border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 0.75rem; padding: 0.75rem; }
     td { border: none; padding: 0.25rem 0; }
-    td:first-child { font-size: 1rem; margin-bottom: 0.25rem; }
-    td:last-child { margin-top: 0.5rem; }
 }
 </style>
 

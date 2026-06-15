@@ -7,6 +7,7 @@
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/helpers.php';
+require_once __DIR__ . '/../includes/mailer.php';
 requireAdmin();
 
 $pdo     = getDB();
@@ -34,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ->execute([$name, $body]);
             $msg = "Message template \"{$name}\" created.";
             $msgType = 'success';
+            $addMode = false; // close form on success
         }
 
     // -- UPDATE message template --
@@ -44,15 +46,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$name || !$body) {
             $msg = 'Message name and body are required.';
             $msgType = 'error';
+            // keep form open on error
+            $stmt = $pdo->prepare("SELECT * FROM SS_MESSAGES WHERE MESSAGE_ID = ?");
+            $stmt->execute([$messageId]);
+            $editing = $stmt->fetch() ?: null;
         } else {
             $pdo->prepare("UPDATE SS_MESSAGES SET MESSAGE_NAME = ?, MESSAGE_BODY = ?, UPDATED_AT = NOW() WHERE MESSAGE_ID = ?")
                 ->execute([$name, $body, $messageId]);
             $msg = 'Message template updated.';
             $msgType = 'success';
+            // form closes on success ($editing stays null)
         }
-        $stmt = $pdo->prepare("SELECT * FROM SS_MESSAGES WHERE MESSAGE_ID = ?");
-        $stmt->execute([$messageId]);
-        $editing = $stmt->fetch() ?: null;
 
     // -- DELETE message template --
     } elseif ($action === 'delete') {
@@ -90,25 +94,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $sent = 0;
-            $logStmt = $pdo->prepare("INSERT INTO SS_MESSAGE_LOG (MESSAGE_ID, USER_ID, CHANNEL, STATUS, SENT_AT) VALUES (?, ?, ?, 'SENT', NOW())");
 
             foreach ($recipients as $recipient) {
                 // Substitute placeholders
                 $body = str_replace(
-                    ['{FIRST_NAME}', '{LAST_NAME}', '{YEAR}'],
-                    [$recipient['FIRST_NAME'], $recipient['LAST_NAME'], getConfig('XMAS_YEAR', date('Y'))],
+                    ['{FIRST_NAME}', '{LAST_NAME}', '{YEAR}', '{GIFT_DEADLINE}', '{SANTA_MATCH_DATE}'],
+                    [$recipient['FIRST_NAME'], $recipient['LAST_NAME'], getConfig('XMAS_YEAR', date('Y')), getConfig('GIFT_DEADLINE', 'TBD'), getConfig('SANTA_MATCH_DATE', 'TBD')],
                     $template['MESSAGE_BODY']
                 );
 
-                // In a real app: send email/SMS here
-                // mail($recipient['EMAIL'], $template['MESSAGE_NAME'], $body);
+                // Send the email
+                $xmasYear  = getConfig('XMAS_YEAR', date('Y'));
+                $toName    = $recipient['FIRST_NAME'] . ' ' . $recipient['LAST_NAME'];
+                $subject   = getConfig('MAIL_FROM_NAME', 'Secret Santa') . ' ' . $xmasYear;
+                $sendResult = sendMail($recipient['EMAIL'], $toName, $subject, $body);
+
+                $status = ($sendResult === true) ? 'SENT' : 'FAILED';
+                if ($sendResult !== true) {
+                    error_log("Mail failed to {$recipient['EMAIL']}: {$sendResult}");
+                }
 
                 // Log the send
-                $logStmt->execute([$messageId, $recipient['USER_ID'], $channel]);
+                $pdo->prepare("INSERT INTO SS_MESSAGE_LOG (MESSAGE_ID, USER_ID, CHANNEL, STATUS, SENT_AT) VALUES (?, ?, ?, ?, NOW())")
+                    ->execute([$messageId, $recipient['USER_ID'], $channel, $status]);
                 $sent++;
             }
 
-            $msg = "✅ Message sent to {$sent} recipient" . ($sent !== 1 ? 's' : '') . " via {$channel}.";
+            $failed = 0;
+            $chkFail = $pdo->prepare("SELECT COUNT(*) FROM SS_MESSAGE_LOG WHERE MESSAGE_ID = ? AND STATUS = 'FAILED' AND SENT_AT >= NOW() - INTERVAL 10 SECOND");
+            $chkFail->execute([$messageId]);
+            $failed = (int)$chkFail->fetchColumn();
+            $succeeded = $sent - $failed;
+
+            if ($failed > 0) {
+                $msg = "⚠️ Sent to {$succeeded} of {$sent} recipients. {$failed} failed — check the send log and your mail config.";
+                $msgType = 'error';
+            } else {
+                $msg = "✅ Message sent to {$sent} recipient" . ($sent !== 1 ? 's' : '') . " via {$channel}.";
+            }
             $msgType = 'success';
 
             // Keep send panel open on the same message
@@ -119,8 +142,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Load edit target from GET
-if (!$editing && isset($_GET['edit'])) {
+// Load edit target from GET — but not after a successful POST
+if (!$editing && isset($_GET['edit']) && $msgType !== 'success') {
     $stmt = $pdo->prepare("SELECT * FROM SS_MESSAGES WHERE MESSAGE_ID = ?");
     $stmt->execute([(int)$_GET['edit']]);
     $editing = $stmt->fetch() ?: null;
@@ -170,7 +193,7 @@ require_once __DIR__ . '/../includes/header.php';
             <label for="message_body">Message Body <span class="required">*</span></label>
             <textarea id="message_body" name="message_body" required rows="5"
                       placeholder="Use {FIRST_NAME}, {LAST_NAME}, {YEAR} as placeholders."><?= h($_POST['message_body'] ?? '') ?></textarea>
-            <div class="field-hint">Available placeholders: <code>{FIRST_NAME}</code> <code>{LAST_NAME}</code> <code>{YEAR}</code></div>
+            <div class="field-hint">Available placeholders: <code>{FIRST_NAME}</code> <code>{LAST_NAME}</code> <code>{YEAR}</code> <code>{GIFT_DEADLINE}</code> <code>{SANTA_MATCH_DATE}</code></div>
         </div>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save Template</button>
@@ -195,7 +218,7 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="form-group">
             <label for="message_body">Message Body <span class="required">*</span></label>
             <textarea id="message_body" name="message_body" required rows="5"><?= h($editing['MESSAGE_BODY']) ?></textarea>
-            <div class="field-hint">Available placeholders: <code>{FIRST_NAME}</code> <code>{LAST_NAME}</code> <code>{YEAR}</code></div>
+            <div class="field-hint">Available placeholders: <code>{FIRST_NAME}</code> <code>{LAST_NAME}</code> <code>{YEAR}</code> <code>{GIFT_DEADLINE}</code> <code>{SANTA_MATCH_DATE}</code></div>
         </div>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -249,8 +272,8 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="preview-box">
             <div class="preview-label">Preview <span class="preview-note">(shown with placeholder values)</span></div>
             <div class="preview-body"><?= nl2br(h(str_replace(
-                ['{FIRST_NAME}', '{LAST_NAME}', '{YEAR}'],
-                ['Chanda', 'Williams', getConfig('XMAS_YEAR', date('Y'))],
+                ['{FIRST_NAME}', '{LAST_NAME}', '{YEAR}', '{GIFT_DEADLINE}', '{SANTA_MATCH_DATE}'],
+                ['Chanda', 'Williams', getConfig('XMAS_YEAR', date('Y')), getConfig('GIFT_DEADLINE', 'TBD'), getConfig('SANTA_MATCH_DATE', 'TBD')],
                 $editing['MESSAGE_BODY']
             ))) ?></div>
         </div>
@@ -373,4 +396,4 @@ function toggleUserSelect(sel) {
 }
 </script>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?> 

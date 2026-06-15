@@ -12,6 +12,7 @@ $pdo     = getDB();
 $msg     = '';
 $msgType = '';
 $editing = null;
+$addMode = isset($_GET['add']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -43,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$userId, $firstName, $lastName, $email, $hash, $phone ?: null, $userType]);
                 $msg = "User {$firstName} {$lastName} added successfully (ID: {$userId}).";
                 $msgType = 'success';
+                $addMode = false; // close form on success
             }
         }
 
@@ -81,6 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 $msg = 'User updated successfully.';
                 $msgType = 'success';
+                // form closes on success ($editing stays null)
             }
         }
 
@@ -108,8 +111,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Load edit target
-if (!$editing && isset($_GET['edit'])) {
+// Load edit target from GET — but not after a successful POST (that would re-open the form)
+if (!$editing && isset($_GET['edit']) && $msgType !== 'success') {
     $stmt = $pdo->prepare("SELECT * FROM SS_USERS WHERE USER_ID = ?");
     $stmt->execute([$_GET['edit']]);
     $editing = $stmt->fetch() ?: null;
@@ -124,29 +127,29 @@ foreach ($pdo->query("SELECT USER_ID, COUNT(*) as CNT FROM SS_GIFTS GROUP BY USE
     $giftCounts[$row['USER_ID']] = $row['CNT'];
 }
 
-// Form should be open if editing or there was a form error
-$formOpen = $editing || ($msgType === 'error') ? 'true' : 'false';
+// Form should be open if editing, add mode, or there was a form error
+$formOpen     = $editing ? 'true' : 'false';
+$formOpenAdd  = ($addMode && !$editing) ? 'true' : 'false';
 
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="page-header">
     <h1 class="page-title">👥 User Management</h1>
-    <button class="btn btn-primary" id="toggleFormBtn" onclick="toggleForm()">➕ Add New User</button>
+    <a href="?add=1" class="btn btn-primary">➕ Add New User</a>
 </div>
 
 <?php if ($msg): ?>
 <div class="alert alert-<?= $msgType === 'success' ? 'success' : 'error' ?>"><?= $msg ?></div>
 <?php endif; ?>
 
-<!-- Add / Edit Form (hidden by default) -->
-<div class="card form-card" id="userForm" style="display:none;">
-    <div class="card-title"><?= $editing ? '✏️ Edit User' : '➕ Add New User' ?></div>
+<!-- EDIT Form -->
+<?php if ($editing): ?>
+<div class="card form-card" id="userForm">
+    <div class="card-title">✏️ Edit User</div>
     <form method="POST" action="">
-        <input type="hidden" name="action"  value="<?= $editing ? 'update' : 'add' ?>">
-        <?php if ($editing): ?>
+        <input type="hidden" name="action"  value="update">
         <input type="hidden" name="user_id" value="<?= h($editing['USER_ID']) ?>">
-        <?php endif; ?>
 
         <div class="form-row">
             <div class="form-group">
@@ -203,7 +206,7 @@ require_once __DIR__ . '/../includes/header.php';
 
         <div class="form-actions">
             <button type="submit" class="btn btn-primary"><?= $editing ? 'Save Changes' : 'Add User' ?></button>
-            <button type="button" class="btn btn-secondary" onclick="toggleForm()">Cancel</button>
+            <a href="<?= APP_URL ?>/admin/users.php" class="btn btn-secondary">Cancel</a>
             <?php if ($editing): ?>
             <a href="<?= APP_URL ?>/admin/users.php" class="btn btn-secondary">Clear Form</a>
             <button type="button"
@@ -220,7 +223,6 @@ require_once __DIR__ . '/../includes/header.php';
     </form>
 </div><!-- end .card form-card #userForm -->
 
-<?php if ($editing): ?>
 <!-- Hidden forms for toggle status and reset password -->
 <form id="frmToggle" method="POST" action="" style="display:none;">
     <input type="hidden" name="action"     value="toggle_status">
@@ -231,6 +233,63 @@ require_once __DIR__ . '/../includes/header.php';
     <input type="hidden" name="action"  value="reset_password">
     <input type="hidden" name="user_id" value="<?= h($editing['USER_ID']) ?>">
 </form>
+<?php endif; ?>
+
+<!-- ADD Form -->
+<?php if ($addMode && !$editing): ?>
+<div class="card">
+    <div class="card-title">➕ Add New User</div>
+    <form method="POST" action="">
+        <input type="hidden" name="action" value="add">
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="first_name">First Name <span class="required">*</span></label>
+                <input type="text" id="first_name" name="first_name" required maxlength="50"
+                       value="<?= h($_POST['first_name'] ?? '') ?>">
+            </div>
+            <div class="form-group">
+                <label for="last_name">Last Name <span class="required">*</span></label>
+                <input type="text" id="last_name" name="last_name" required maxlength="50"
+                       value="<?= h($_POST['last_name'] ?? '') ?>">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="email">Email Address <span class="required">*</span></label>
+                <input type="email" id="email" name="email" required maxlength="150"
+                       value="<?= h($_POST['email'] ?? '') ?>">
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone <span class="optional">(optional)</span></label>
+                <input type="tel" id="phone" name="phone" maxlength="20"
+                       placeholder="813-555-0100"
+                       value="<?= h($_POST['phone'] ?? '') ?>">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="user_type">User Type <span class="required">*</span></label>
+                <select id="user_type" name="user_type">
+                    <option value="STANDARD">Standard</option>
+                    <option value="ADMIN">Admin</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="password">Password <span class="required">*</span></label>
+                <input type="password" id="password" name="password" required minlength="8"
+                       placeholder="Min 8 characters">
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Add User</button>
+            <a href="<?= APP_URL ?>/admin/users.php" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
 <?php endif; ?>
 
 <!-- Users Table -->
@@ -342,24 +401,6 @@ th.sort-asc .sort-icon, th.sort-desc .sort-icon { color: #c0392b; }
 </style>
 
 <script>
-const formOpen = <?= $formOpen ?>;
-
-function toggleForm() {
-    const form = document.getElementById('userForm');
-    const btn  = document.getElementById('toggleFormBtn');
-    const open = form.style.display !== 'none';
-    form.style.display = open ? 'none' : 'block';
-    btn.textContent    = open ? '➕ Add New User' : '✖ Close Form';
-}
-
-if (formOpen) {
-    document.addEventListener('DOMContentLoaded', function () {
-        const form = document.getElementById('userForm');
-        const btn  = document.getElementById('toggleFormBtn');
-        form.style.display = 'block';
-        btn.textContent    = '✖ Close Form';
-    });
-}
 
 // ── Sorting ──────────────────────────────────────────────
 let sortCol = -1, sortAsc = true;

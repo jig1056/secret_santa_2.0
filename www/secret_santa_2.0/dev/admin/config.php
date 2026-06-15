@@ -29,10 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$value, $desc ?: null, $configId]);
         $msg     = 'Configuration updated successfully.';
         $msgType = 'success';
-        // Keep editing open after save
-        $stmt = $pdo->prepare("SELECT * FROM SS_CONFIG WHERE CONFIG_ID = ?");
-        $stmt->execute([$configId]);
-        $editing = $stmt->fetch() ?: null;
+        // form closes on success ($editing stays null)
 
     // -- ADD new key --
     } elseif ($action === 'add') {
@@ -56,6 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ->execute([$key, $value, $desc ?: null]);
                 $msg     = "Config key \"{$key}\" added.";
                 $msgType = 'success';
+                $addMode = false; // close the form on success
             }
         }
 
@@ -87,8 +85,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Load edit target from GET
-if (!$editing && isset($_GET['edit'])) {
+// Load edit target from GET — but not after a successful POST
+if (!$editing && isset($_GET['edit']) && $msgType !== 'success') {
     $stmt = $pdo->prepare("SELECT * FROM SS_CONFIG WHERE CONFIG_ID = ?");
     $stmt->execute([(int)$_GET['edit']]);
     $editing = $stmt->fetch() ?: null;

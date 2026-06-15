@@ -44,6 +44,8 @@ body {
     box-shadow: var(--shadow);
 }
 .nav-brand { font-size: 1.2rem; font-weight: 700; flex: 1; }
+.nav-brand-link { color: #fff; text-decoration: none; }
+.nav-brand-link:hover { opacity: 0.85; }
 .nav-toggle {
     display: none;
     background: none;

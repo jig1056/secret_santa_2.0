@@ -24,7 +24,7 @@ $userMatch    = $matchesDone ? getMatchForUser($currentUser) : null;
 
 <nav class="navbar">
     <div class="nav-brand">
-        🎅 <?= h(APP_NAME) ?> <?= h($xmasYear) ?>
+        🎅🏾 <?= h(APP_NAME) ?> <?= h($xmasYear) ?>
     </div>
 
     <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">&#9776;</button>
@@ -51,6 +51,7 @@ $userMatch    = $matchesDone ? getMatchForUser($currentUser) : null;
         <?php endif; ?>
 
         <li class="nav-divider"></li>
+        <li><a href="<?= APP_URL ?>/pages/profile.php">👤 <?= h($_SESSION['FIRST_NAME']) ?></a></li>
         <li><a href="<?= APP_URL ?>/logout.php">Logout</a></li>
     </ul>
 </nav>
