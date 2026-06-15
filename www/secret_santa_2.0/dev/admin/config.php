@@ -228,8 +228,11 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- Config table -->
 <div class="card">
-    <div class="card-title">⚙️ All Config Keys (<?= count($configs) ?>)</div>
-    <div class="table-wrap">
+    <div class="card-header-row">
+        <div class="card-title" style="margin-bottom:0;">⚙️ All Config Keys (<?= count($configs) ?>)</div>
+        <input type="text" id="configSearch" placeholder="🔍 Search keys..." oninput="filterConfig()" class="dash-search">
+    </div>
+    <div class="table-wrap" style="margin-top:1rem;">
         <table>
             <thead>
                 <tr>
@@ -241,7 +244,8 @@ require_once __DIR__ . '/../includes/header.php';
             </thead>
             <tbody>
                 <?php foreach ($configs as $cfg): ?>
-                <tr class="<?= $editing && $editing['CONFIG_ID'] == $cfg['CONFIG_ID'] ? 'row-active' : '' ?>">
+                <tr class="config-row <?= $editing && $editing['CONFIG_ID'] == $cfg['CONFIG_ID'] ? 'row-active' : '' ?>"
+                    data-search="<?= strtolower(h($cfg['CONFIG_KEY'] . ' ' . $cfg['CONFIG_VALUE'] . ' ' . ($cfg['CONFIG_DESCRIPTION'] ?? ''))) ?>">
                     <td>
                         <a href="?edit=<?= $cfg['CONFIG_ID'] ?>" class="key-link">
                             <code class="key-code"><?= h($cfg['CONFIG_KEY']) ?></code>
@@ -284,6 +288,8 @@ require_once __DIR__ . '/../includes/header.php';
 
 .btn-danger { background: #c0392b; color: #fff; }
 .btn-danger:hover { opacity: 0.85; }
+.card-header-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; }
+.dash-search { padding: 0.4rem 0.75rem; border: 1px solid #ccc; border-radius: 8px; font-size: 0.9rem; min-width: 200px; }
 
 /* Initialize card */
 .init-card      { border-left: 4px solid #c0392b; }
@@ -311,6 +317,16 @@ function hideInitForm() {
 function checkConfirm(input) {
     const btn = document.getElementById('initSubmitBtn');
     btn.disabled = input.value.trim().toLowerCase() !== 'yes';
+}
+</script>
+
+<script>
+function filterConfig() {
+    const q    = document.getElementById('configSearch').value.toLowerCase();
+    const rows = document.querySelectorAll('.config-row');
+    rows.forEach(row => {
+        row.style.display = !q || row.dataset.search.includes(q) ? '' : 'none';
+    });
 }
 </script>
 
