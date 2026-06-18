@@ -18,6 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email    = trim($_POST['email']    ?? '');
     $password = trim($_POST['password'] ?? '');
 
+    $rememberMe = !empty($_POST['remember_me']);
+
     if ($email && $password) {
         $pdo  = getDB();
         $stmt = $pdo->prepare("SELECT * FROM SS_USERS WHERE EMAIL = ? AND STATUS = 'ACTIVE'");
@@ -25,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['PASSWORD_HASH'])) {
-            loginUser($user);
+            loginUser($user, $rememberMe);
             redirect('/pages/home.php');
         } else {
             $error = 'Invalid email or password.';
@@ -54,6 +56,9 @@ $timeout = isset($_GET['reason']) && $_GET['reason'] === 'timeout';
         .login-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.25); padding: 2rem; width: 100%; max-width: 400px; margin: 2rem auto; }
         .login-title { text-align: center; font-size: 1.5rem; font-weight: 700; color: #922b21; margin-bottom: 0.25rem; }
         .login-sub   { text-align: center; color: #6c757d; margin-bottom: 1.5rem; font-size: 0.95rem; }
+        .remember-row   { margin: 0.75rem 0 0.25rem; }
+        .remember-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #555; cursor: pointer; }
+        .remember-label input { width: auto; margin: 0; }
     </style>
 </head>
 <body>
@@ -78,6 +83,12 @@ $timeout = isset($_GET['reason']) && $_GET['reason'] === 'timeout';
         <div class="form-group">
             <label for="password">Password</label>
             <input type="password" id="password" name="password" required autocomplete="current-password">
+        </div>
+        <div class="remember-row">
+            <label class="remember-label">
+                <input type="checkbox" id="remember_me" name="remember_me" value="1">
+                Remember me for 60 days
+            </label>
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;margin-top:0.5rem;">Sign In</button>
     </form>

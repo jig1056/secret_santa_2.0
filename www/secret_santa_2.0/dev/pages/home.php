@@ -15,8 +15,8 @@ $match       = $matchesDone ? getMatchForUser(currentUserId()) : null;
 
 // Get current user's gift count
 $pdo      = getDB();
-$stmt     = $pdo->prepare("SELECT COUNT(*) FROM SS_GIFTS WHERE USER_ID = ?");
-$stmt->execute([currentUserId()]);
+$stmt     = $pdo->prepare("SELECT COUNT(*) FROM SS_GIFTS WHERE USER_ID = ? AND YEAR = ?");
+$stmt->execute([currentUserId(), $xmasYear]);
 $giftCount = (int) $stmt->fetchColumn();
 
 require_once __DIR__ . '/../includes/header.php';
@@ -44,14 +44,14 @@ require_once __DIR__ . '/../includes/header.php';
             <?= $giftCount > 0 ? '🎁' : '📋' ?>
         </div>
         <div class="status-body">
-            <div class="status-title">Your Gift List</div>
+            <div class="status-title">Your Wish List</div>
             <?php if ($giftCount > 0): ?>
                 <p>You have <strong><?= $giftCount ?></strong> gift<?= $giftCount !== 1 ? 's' : '' ?> on your list.</p>
             <?php else: ?>
                 <p>You haven't added any gifts yet. Let your Secret Santa know what you want!</p>
             <?php endif; ?>
             <a href="<?= APP_URL ?>/pages/gift_list.php" class="btn btn-primary btn-sm" style="margin-top:0.75rem;">
-                <?= $giftCount > 0 ? 'Manage My List' : 'Add Gifts' ?>
+                <?= $giftCount > 0 ? 'Manage My Wish List' : 'Add Gifts' ?>
             </a>
         </div>
     </div>
@@ -66,7 +66,7 @@ require_once __DIR__ . '/../includes/header.php';
             <?php if ($match): ?>
                 <p>You are gifting <strong><?= h($match['FIRST_NAME']) ?> <?= h($match['LAST_NAME']) ?></strong> this year!</p>
                 <a href="<?= APP_URL ?>/pages/giftee_list.php" class="btn btn-success btn-sm" style="margin-top:0.75rem;">
-                    View Their Wish List
+                    View <?= ucfirst(pronoun($match['SEX'] ?? null, 'possessive')) ?> Wish List
                 </a>
             <?php else: ?>
                 <p>Matches haven't been generated yet. Check back soon!</p>

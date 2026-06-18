@@ -23,13 +23,14 @@ if (!$match) {
     redirect('/pages/home.php');
 }
 
-// Fetch the giftee's wish list
+// Fetch the giftee's wish list for the current year
+$xmasYear = getConfig('XMAS_YEAR', date('Y'));
 $stmt = $pdo->prepare("
     SELECT * FROM SS_GIFTS
-    WHERE USER_ID = ?
+    WHERE USER_ID = ? AND YEAR = ?
     ORDER BY CREATED_AT ASC
 ");
-$stmt->execute([$match['USER_ID']]);
+$stmt->execute([$match['USER_ID'], $xmasYear]);
 $gifts = $stmt->fetchAll();
 
 require_once __DIR__ . '/../includes/header.php';
@@ -51,8 +52,8 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="card">
     <div class="empty-state">
         <div class="empty-icon">🎀</div>
-        <p><strong><?= h($match['FIRST_NAME']) ?></strong> hasn't added any gifts to their list yet.</p>
-        <p style="margin-top:0.5rem;">Check back later, or surprise them with something thoughtful!</p>
+        <p><strong><?= h($match['FIRST_NAME']) ?></strong> hasn't added any gifts to <?= pronoun($match['SEX'] ?? null, 'possessive') ?> list yet.</p>
+        <p style="margin-top:0.5rem;">Check back later, or surprise <?= pronoun($match['SEX'] ?? null, 'object') ?> with something thoughtful!</p>
     </div>
 </div>
 
@@ -60,7 +61,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- Gift count summary -->
 <div class="gift-summary">
-    <?= h($match['FIRST_NAME']) ?> has <strong><?= count($gifts) ?></strong> gift<?= count($gifts) !== 1 ? 's' : '' ?> on their list.
+    <?= h($match['FIRST_NAME']) ?> has <strong><?= count($gifts) ?></strong> gift<?= count($gifts) !== 1 ? 's' : '' ?> on <?= pronoun($match['SEX'] ?? null, 'possessive') ?> list.
 </div>
 
 <!-- Gift cards -->
@@ -86,10 +87,6 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <?php endif; ?>
-
-<div style="margin-top:1rem;">
-    <a href="<?= APP_URL ?>/pages/home.php" class="btn btn-secondary">← Back to Home</a>
-</div>
 
 <style>
 .match-banner { background: linear-gradient(135deg, #1e8449, #145a32); color: #fff; margin-bottom: 1.25rem; }
@@ -131,4 +128,4 @@ require_once __DIR__ . '/../includes/header.php';
 }
 </style>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?> 
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>

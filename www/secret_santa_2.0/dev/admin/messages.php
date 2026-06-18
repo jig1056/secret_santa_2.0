@@ -68,6 +68,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $msg = "Message template \"{$name}\" deleted.";
         $msgType = 'success';
 
+    // -- CLEAR send log --
+    } elseif ($action === 'clear_log') {
+        $pdo->exec("DELETE FROM SS_MESSAGE_LOG");
+        $msg = 'Send log cleared.';
+        $msgType = 'success';
+
     // -- SEND message --
     } elseif ($action === 'send') {
         $messageId  = (int)($_POST['message_id']  ?? 0);
@@ -103,15 +109,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $template['MESSAGE_BODY']
                 );
 
-                // Send the email
                 $xmasYear  = getConfig('XMAS_YEAR', date('Y'));
                 $toName    = $recipient['FIRST_NAME'] . ' ' . $recipient['LAST_NAME'];
-                $subject   = getConfig('MAIL_FROM_NAME', 'Secret Santa') . ' ' . $xmasYear;
-                $sendResult = sendMail($recipient['EMAIL'], $toName, $subject, $body);
+                $status    = 'SENT';
 
-                $status = ($sendResult === true) ? 'SENT' : 'FAILED';
-                if ($sendResult !== true) {
-                    error_log("Mail failed to {$recipient['EMAIL']}: {$sendResult}");
+                // Send EMAIL
+                if ($channel === 'EMAIL' || $channel === 'BOTH') {
+                    $subject    = getConfig('MAIL_SUBJECT', 'Secret Santa') . ' ' . $xmasYear;
+                    $mailResult = sendMail($recipient['EMAIL'], $toName, $subject, $body);
+                    if ($mailResult !== true) {
+                        error_log("Mail failed to {$recipient['EMAIL']}: {$mailResult}");
+                        $status = 'FAILED';
+                    }
+                }
+
+                // Send SMS
+                if ($channel === 'SMS' || $channel === 'BOTH') {
+                    if (!empty($recipient['PHONE'])) {
+                        $smsResult = sendSMS($recipient['PHONE'], $body);
+                        if ($smsResult !== true) {
+                            error_log("SMS failed to {$recipient['PHONE']}: {$smsResult}");
+                            $status = 'FAILED';
+                        }
+                    } else {
+                        error_log("SMS skipped for {$toName} — no phone number on file.");
+                    }
                 }
 
                 // Log the send
@@ -155,15 +177,18 @@ $templates = $pdo->query("SELECT * FROM SS_MESSAGES ORDER BY MESSAGE_NAME ASC")-
 // Fetch active users for the send-to dropdown
 $users = $pdo->query("SELECT USER_ID, FIRST_NAME, LAST_NAME FROM SS_USERS WHERE STATUS = 'ACTIVE' ORDER BY FIRST_NAME ASC")->fetchAll();
 
-// Send log (last 20)
-$logs = $pdo->query("
+// Send log (count from config, default 20)
+$logCount = (int) getConfig('MESSAGE_LOG_DISPLAY_COUNT', '20');
+$logStmt = $pdo->prepare("
     SELECT l.*, m.MESSAGE_NAME, u.FIRST_NAME, u.LAST_NAME
     FROM SS_MESSAGE_LOG l
     JOIN SS_MESSAGES m ON m.MESSAGE_ID = l.MESSAGE_ID
     JOIN SS_USERS u ON u.USER_ID = l.USER_ID
     ORDER BY l.SENT_AT DESC
-    LIMIT 20
-")->fetchAll();
+    LIMIT " . max(1, $logCount) . "
+");
+$logStmt->execute();
+$logs = $logStmt->fetchAll();
 
 require_once __DIR__ . '/../includes/header.php';
 ?>
@@ -324,8 +349,17 @@ require_once __DIR__ . '/../includes/header.php';
 <!-- Send Log -->
 <?php if (!empty($logs)): ?>
 <div class="card">
-    <div class="card-title">📜 Recent Send Log (last 20)</div>
-    <div class="table-wrap">
+    <div class="card-header-row">
+        <div class="card-title" style="margin-bottom:0;">📜 Recent Send Log (last <?= $logCount ?>)</div>
+        <button type="button" class="btn btn-danger btn-sm"
+                onclick="if(confirm('Clear the entire send log? This cannot be undone.')) document.getElementById('frmClearLog').submit()">
+            🗑️ Clear Log
+        </button>
+    </div>
+    <form id="frmClearLog" method="POST" action="" style="display:none;">
+        <input type="hidden" name="action" value="clear_log">
+    </form>
+    <div class="table-wrap" style="margin-top:1rem;">
         <table>
             <thead>
                 <tr>
@@ -355,6 +389,7 @@ require_once __DIR__ . '/../includes/header.php';
 <style>
 .page-header  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
 .page-header .page-title { margin-bottom: 0; }
+.card-header-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.5rem; }
 
 .form-row     { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
 @media (max-width: 700px) { .form-row { grid-template-columns: 1fr; } }

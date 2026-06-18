@@ -7,10 +7,67 @@
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
+use Twilio\Rest\Client as TwilioClient;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/helpers.php';
+
+// ------------------------------------------------------------
+// formatE164()
+// Strips non-digits from a phone number and prepends +1
+// e.g. "813-555-0101" -> "+18135550101"
+// ------------------------------------------------------------
+function formatE164(string $phone): string {
+    $digits = preg_replace('/\D/', '', $phone);
+    // If already has country code (11 digits starting with 1), just prepend +
+    if (strlen($digits) === 11 && $digits[0] === '1') {
+        return '+' . $digits;
+    }
+    // Otherwise assume US number, prepend +1
+    return '+1' . $digits;
+}
+
+// ------------------------------------------------------------
+// sendSMS()
+// Sends an SMS via Twilio. Credentials pulled from Infisical
+// via the session cache (same as email credentials).
+//
+// $to   - recipient phone number (any format, auto-converted)
+// $body - message text
+//
+// Returns true on success, error string on failure.
+// ------------------------------------------------------------
+function sendSMS(string $to, string $body): bool|string {
+    // Pull Twilio credentials from session (loaded via Infisical)
+    $accountSid = $_SESSION['_infisical']['SS_TWILIO_ACCOUNT_SID'] ?? null;
+    $authToken  = $_SESSION['_infisical']['SS_TWILIO_AUTH_TOKEN']  ?? null;
+    $fromNumber = $_SESSION['_infisical']['SS_TWILIO_FROM_NUMBER'] ?? null;
+
+    if (!$accountSid || !$authToken || !$fromNumber) {
+        error_log('Twilio credentials missing from Infisical session cache.');
+        return 'Twilio credentials not configured.';
+    }
+
+    $toFormatted = formatE164($to);
+    if (strlen(preg_replace('/\D/', '', $toFormatted)) < 10) {
+        return 'Invalid phone number: ' . $to;
+    }
+
+    try {
+        $twilio  = new TwilioClient($accountSid, $authToken);
+        $message = $twilio->messages->create($toFormatted, [
+            'from' => $fromNumber,
+            'body' => $body,
+        ]);
+
+        return $message->status === 'failed' ? 'Twilio error: ' . $message->errorMessage : true;
+
+    } catch (\Exception $e) {
+        error_log('Twilio SMS error to ' . $toFormatted . ': ' . $e->getMessage());
+        return $e->getMessage();
+    }
+}
 
 // ------------------------------------------------------------
 // sendPasswordReset()
@@ -45,7 +102,7 @@ function sendPasswordReset(array $user, PDO $pdo): bool|string {
             [$user['FIRST_NAME'], $user['LAST_NAME'], getConfig('XMAS_YEAR', date('Y')), $resetLink, $expiryMins, getConfig('GIFT_DEADLINE', 'TBD'), getConfig('SANTA_MATCH_DATE', 'TBD')],
             $template['MESSAGE_BODY']
         );
-        $subject = $template['MESSAGE_NAME'] . ' — ' . getConfig('MAIL_FROM_NAME', 'Secret Santa');
+        $subject = $template['MESSAGE_NAME'] . ' — ' . getConfig('MAIL_SUBJECT', 'Secret Santa');
     } else {
         // Fallback body if template not found
         $body    = "Hi {$user['FIRST_NAME']},
@@ -55,7 +112,7 @@ Click the link below to reset your password (expires in {$expiryMins} minutes):
 {$resetLink}
 
 — Secret Santa Admin";
-        $subject = 'Password Reset — ' . getConfig('MAIL_FROM_NAME', 'Secret Santa');
+        $subject = 'Password Reset — ' . getConfig('MAIL_SUBJECT', 'Secret Santa');
     }
 
     return sendMail($user['EMAIL'], $user['FIRST_NAME'] . ' ' . $user['LAST_NAME'], $subject, $body);
@@ -83,7 +140,7 @@ function sendMail(string $to, string $toName, string $subject, string $body): bo
         $mail->Host       = getConfig('MAIL_HOST',       'smtp.gmail.com');
         $mail->SMTPAuth   = true;
         $mail->Username   = getConfig('MAIL_USERNAME',   '');
-        $mail->Password   = getConfig('MAIL_PASSWORD',   '');
+        $mail->Password   = defined('MAIL_PASSWORD_SECRET') && MAIL_PASSWORD_SECRET ? MAIL_PASSWORD_SECRET : getConfig('MAIL_PASSWORD', '');
         $mail->SMTPSecure = getConfig('MAIL_ENCRYPTION', 'tls');
         $mail->Port       = (int) getConfig('MAIL_PORT', '587');
         $mail->Encoding   = '7bit';

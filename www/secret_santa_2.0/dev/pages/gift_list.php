@@ -8,12 +8,13 @@ require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/helpers.php';
 requireLogin();
 
-$pdo     = getDB();
-$userId  = currentUserId();
-$msg     = '';
-$msgType = '';
-$editing = null;
-$addMode = isset($_GET['add']);
+$pdo      = getDB();
+$userId   = currentUserId();
+$xmasYear = getConfig('XMAS_YEAR', date('Y'));
+$msg      = '';
+$msgType  = '';
+$editing  = null;
+$addMode  = isset($_GET['add']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -21,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // -- DELETE --
     if ($action === 'delete') {
         $giftId = (int)($_POST['gift_id'] ?? 0);
-        $pdo->prepare("DELETE FROM SS_GIFTS WHERE GIFT_ID = ? AND USER_ID = ?")->execute([$giftId, $userId]);
+        $pdo->prepare("DELETE FROM SS_GIFTS WHERE GIFT_ID = ? AND USER_ID = ? AND YEAR = ?")->execute([$giftId, $userId, $xmasYear]);
         $msg = 'Gift removed from your list.';
         $msgType = 'success';
 
@@ -36,8 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msgType = 'error';
             $addMode = true;
         } else {
-            $pdo->prepare("INSERT INTO SS_GIFTS (USER_ID, NAME, DESCRIPTION, URL) VALUES (?, ?, ?, ?)")
-                ->execute([$userId, $name, $desc ?: null, $url ?: null]);
+            $pdo->prepare("INSERT INTO SS_GIFTS (USER_ID, YEAR, NAME, DESCRIPTION, URL) VALUES (?, ?, ?, ?, ?)")
+                ->execute([$userId, $xmasYear, $name, $desc ?: null, $url ?: null]);
             $msg = 'Gift added to your list!';
             $msgType = 'success';
             $addMode = false; // close form on success
@@ -54,12 +55,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msg = 'Gift name is required.';
             $msgType = 'error';
             // Keep edit form open on error
-            $stmt = $pdo->prepare("SELECT * FROM SS_GIFTS WHERE GIFT_ID = ? AND USER_ID = ?");
-            $stmt->execute([$giftId, $userId]);
+            $stmt = $pdo->prepare("SELECT * FROM SS_GIFTS WHERE GIFT_ID = ? AND USER_ID = ? AND YEAR = ?");
+            $stmt->execute([$giftId, $userId, $xmasYear]);
             $editing = $stmt->fetch() ?: null;
         } else {
-            $pdo->prepare("UPDATE SS_GIFTS SET NAME = ?, DESCRIPTION = ?, URL = ?, UPDATED_AT = NOW() WHERE GIFT_ID = ? AND USER_ID = ?")
-                ->execute([$name, $desc ?: null, $url ?: null, $giftId, $userId]);
+            $pdo->prepare("UPDATE SS_GIFTS SET NAME = ?, DESCRIPTION = ?, URL = ?, UPDATED_AT = NOW() WHERE GIFT_ID = ? AND USER_ID = ? AND YEAR = ?")
+                ->execute([$name, $desc ?: null, $url ?: null, $giftId, $userId, $xmasYear]);
             $msg = 'Gift updated!';
             $msgType = 'success';
             // Form closes on success (editing stays null)
@@ -69,21 +70,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Load edit target from GET — but not after a successful POST
 if (!$editing && isset($_GET['edit']) && $msgType !== 'success') {
-    $stmt = $pdo->prepare("SELECT * FROM SS_GIFTS WHERE GIFT_ID = ? AND USER_ID = ?");
-    $stmt->execute([(int)$_GET['edit'], $userId]);
+    $stmt = $pdo->prepare("SELECT * FROM SS_GIFTS WHERE GIFT_ID = ? AND USER_ID = ? AND YEAR = ?");
+    $stmt->execute([(int)$_GET['edit'], $userId, $xmasYear]);
     $editing = $stmt->fetch() ?: null;
 }
 
 // Fetch all gifts
-$stmt = $pdo->prepare("SELECT * FROM SS_GIFTS WHERE USER_ID = ? ORDER BY CREATED_AT ASC");
-$stmt->execute([$userId]);
+$stmt = $pdo->prepare("SELECT * FROM SS_GIFTS WHERE USER_ID = ? AND YEAR = ? ORDER BY CREATED_AT ASC");
+$stmt->execute([$userId, $xmasYear]);
 $gifts = $stmt->fetchAll();
 
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="page-header">
-    <h1 class="page-title">🎁 My Gift List</h1>
+    <h1 class="page-title">🎁 My Wish List</h1>
     <a href="?add=1" class="btn btn-primary">➕ Add Gift</a>
 </div>
 
@@ -100,7 +101,7 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="form-group">
             <label for="name">Gift Name <span class="required">*</span></label>
             <input type="text" id="name" name="name" required maxlength="200"
-                   placeholder="e.g. Yeti Tumbler 30oz"
+                   placeholder="e.g. Philadelphia Eagles Merch"
                    value="<?= h($_POST['name'] ?? '') ?>">
         </div>
         <div class="form-group">

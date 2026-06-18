@@ -63,11 +63,28 @@ function getMatchForUser(string $userId): ?array {
     $pdo  = getDB();
     $year = getConfig('XMAS_YEAR', date('Y'));
     $stmt = $pdo->prepare("
-        SELECT u.USER_ID, u.FIRST_NAME, u.LAST_NAME
+        SELECT u.USER_ID, u.FIRST_NAME, u.LAST_NAME, u.SEX
         FROM SS_MATCHES m
         JOIN SS_USERS u ON u.USER_ID = m.RECEIVER_USER_ID
         WHERE m.GIVER_USER_ID = ? AND m.YEAR = ?
     ");
     $stmt->execute([$userId, $year]);
     return $stmt->fetch() ?: null;
+}
+
+// ------------------------------------------------------------
+// Return a pronoun for a given SEX value and grammatical case.
+// $case: 'subject' (he/she/they), 'object' (him/her/them),
+//        'possessive' (his/her/their)
+// Falls back to "their/them/they" if SEX is null/unset.
+// ------------------------------------------------------------
+function pronoun(?string $sex, string $case = 'possessive'): string {
+    $sex = strtoupper((string) $sex);
+
+    $map = [
+        'MALE'   => ['subject' => 'he',   'object' => 'him',  'possessive' => 'his'],
+        'FEMALE' => ['subject' => 'she',  'object' => 'her',  'possessive' => 'her'],
+    ];
+
+    return $map[$sex][$case] ?? ['subject' => 'they', 'object' => 'them', 'possessive' => 'their'][$case];
 }

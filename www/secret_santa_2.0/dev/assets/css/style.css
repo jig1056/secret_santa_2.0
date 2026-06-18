@@ -44,6 +44,8 @@ body {
     box-shadow: var(--shadow);
 }
 .nav-brand { font-size: 1.2rem; font-weight: 700; flex: 1; }
+.santa-emoji { font-size: 3.06em; vertical-align: middle; display: inline-block; line-height: 1; }
+.return-home-wrap { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e0e0e0; }
 .nav-brand-link { color: #fff; text-decoration: none; }
 .nav-brand-link:hover { opacity: 0.85; }
 .nav-toggle {

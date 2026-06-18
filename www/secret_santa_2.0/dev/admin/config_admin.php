@@ -1,6 +1,6 @@
 <?php
 // ============================================================
-// admin/config.php
+// admin/config_admin.php
 // View and edit SS_CONFIG key/value pairs. Admin only.
 // ============================================================
 require_once __DIR__ . '/../includes/auth.php';
@@ -78,8 +78,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->prepare("UPDATE SS_CONFIG SET CONFIG_VALUE = ?, UPDATED_AT = NOW() WHERE CONFIG_KEY = 'XMAS_YEAR'")
                 ->execute([$newYear]);
             $pdo->prepare("DELETE FROM SS_MATCHES WHERE YEAR = ?")->execute([$newYear]);
-            $pdo->exec("DELETE FROM SS_GIFTS");
-            $msg     = "✅ Season initialized! XMAS_YEAR set to {$newYear}, all gifts cleared, and {$newYear} matches removed.";
+            $pdo->prepare("DELETE FROM SS_GIFTS WHERE YEAR = ?")->execute([$newYear]);
+            $msg     = "✅ Season initialized! XMAS_YEAR set to {$newYear}. Any existing {$newYear} gifts and matches were cleared — prior years are untouched.";
             $msgType = 'success';
         }
     }
@@ -140,7 +140,7 @@ require_once __DIR__ . '/../includes/header.php';
 
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save Changes</button>
-            <a href="<?= APP_URL ?>/admin/config.php" class="btn btn-secondary">Cancel</a>
+            <a href="<?= APP_URL ?>/admin/config_admin.php" class="btn btn-secondary">Cancel</a>
             <button type="button" class="btn btn-danger"
                     onclick="if(confirm('Delete config key &quot;<?= h($editing['CONFIG_KEY']) ?>&quot;? This cannot be undone.')) document.getElementById('delCfg<?= $editing['CONFIG_ID'] ?>').submit()">
                 Delete
@@ -185,19 +185,29 @@ require_once __DIR__ . '/../includes/header.php';
 
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Add Key</button>
-            <a href="<?= APP_URL ?>/admin/config.php" class="btn btn-secondary">Cancel</a>
+            <a href="<?= APP_URL ?>/admin/config_admin.php" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
 </div>
 <?php endif; ?>
 
 <!-- Initialize Season Card -->
-<div class="card init-card">
-    <div class="card-title">🎄 Initialize New Season</div>
+<div id="initSectionToggle" style="margin-bottom:1.25rem;">
+    <button type="button" class="btn btn-secondary" onclick="showInitSection()">
+        🎄 Show Initialize New Season
+    </button>
+</div>
+
+<div class="card init-card" id="initCard" style="display:none;">
+    <div class="card-header-row">
+        <div class="card-title" style="margin-bottom:0;">🎄 Initialize New Season</div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="hideInitSection()">✖ Hide</button>
+    </div>
     <p class="init-desc">
         This will set <code class="key-code">XMAS_YEAR</code> to the current calendar year
-        (<strong><?= date('Y') ?></strong>), clear all gift lists, and remove any existing
-        matches for that year. <strong>This cannot be undone.</strong>
+        (<strong><?= date('Y') ?></strong>) and clear any gifts or matches already entered
+        for that year — gifts and matches from prior years are left untouched.
+        <strong>This cannot be undone.</strong>
     </p>
 
     <div id="initToggleArea">
@@ -301,6 +311,17 @@ require_once __DIR__ . '/../includes/header.php';
 </style>
 
 <script>
+function showInitSection() {
+    document.getElementById('initSectionToggle').style.display = 'none';
+    document.getElementById('initCard').style.display = 'block';
+}
+
+function hideInitSection() {
+    document.getElementById('initSectionToggle').style.display = 'block';
+    document.getElementById('initCard').style.display = 'none';
+    hideInitForm(); // also collapse the confirm form if it was open
+}
+
 function showInitForm() {
     document.getElementById('initToggleArea').style.display = 'none';
     document.getElementById('initForm').style.display = 'block';

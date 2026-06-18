@@ -6,7 +6,7 @@
 // ------------------------------------------------------------
 // 1. LOCATE AND READ env file
 // ------------------------------------------------------------
-$envFilePath = '/config/manconfig/secret_santa_env.conf';
+$envFilePath = __DIR__ . '/../secret_santa_env.conf';
 
 if (!file_exists($envFilePath)) {
     die('Configuration error: env file not found at ' . $envFilePath);
@@ -37,20 +37,46 @@ $appEnv = strtolower($envSettings['APP_ENV']);
 
 
 // ------------------------------------------------------------
-// 2. DATABASE CREDENTIALS PER ENVIRONMENT
+// 2. PULL SECRETS FROM INFISICAL
 // ------------------------------------------------------------
+require_once '/config/manconfig/infisical.php';
+
+// Ensure session is started so infisical can use it as cache
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+$secrets = infisical_get_many([
+    'HLDEV_MYSQL_DB_USER',
+    'HLDEV_MYSQL_DB_PWD',
+    'HLPRD_MYSQL_DB_USER',
+    'HLPRD_MYSQL_DB_PWD',
+    'SS_GMAIL_MAILER_PASSWORD',
+    'SS_TWILIO_ACCOUNT_SID',
+    'SS_TWILIO_AUTH_TOKEN',
+    'SS_TWILIO_FROM_NUMBER',
+]);
+
+// ------------------------------------------------------------
+// 3. DATABASE CREDENTIALS PER ENVIRONMENT
+// ------------------------------------------------------------
+// DB credentials key prefix matches APP_ENV (dev -> HLDEV_, prd -> HLPRD_)
+$secretPrefix = strtoupper($appEnv === 'prd' ? 'HLPRD' : 'HLDEV');
+
 $dbConfigs = [
     'dev' => [
-        'host'   => 'prod2.home',
-        'dbname' => 'HLDEV',
-        'user'   => 'zoe',
-        'pass'   => 'p9tX5vT3gZ6u2yH7QwXe',
+        'host'   => $envSettings['DB_HOST'] ?? 'prod2.home',
+        'port'   => $envSettings['DB_PORT'] ?? '3307',
+        'dbname' => $envSettings['DB_NAME'] ?? 'HLDEV',
+        'user'   => $secrets[$secretPrefix . '_MYSQL_DB_USER'] ?? '',
+        'pass'   => $secrets[$secretPrefix . '_MYSQL_DB_PWD']  ?? '',
     ],
     'prd' => [
-        'host'   => 'prod2.home',
-        'dbname' => 'HLDEV',
-        'user'   => 'zoe',
-        'pass'   => 'p9tX5vT3gZ6u2yH7QwXe',
+        'host'   => $envSettings['DB_HOST'] ?? 'prod2.home',
+        'port'   => $envSettings['DB_PORT'] ?? '3307',
+        'dbname' => $envSettings['DB_NAME'] ?? 'HLPRD',
+        'user'   => $secrets[$secretPrefix . '_MYSQL_DB_USER'] ?? '',
+        'pass'   => $secrets[$secretPrefix . '_MYSQL_DB_PWD']  ?? '',
     ],
 ];
 
@@ -62,7 +88,7 @@ $db = $dbConfigs[$appEnv];
 
 
 // ------------------------------------------------------------
-// 3. DEFINE CONSTANTS
+// 4. DEFINE CONSTANTS
 // ------------------------------------------------------------
 
 // -- Environment --
@@ -75,7 +101,7 @@ define('DB_HOST',   $db['host']);
 define('DB_NAME',   $db['dbname']);
 define('DB_USER',   $db['user']);
 define('DB_PASS',   $db['pass']);
-define('DB_PORT',   '3307');
+define('DB_PORT',   $db['port']);
 define('DB_CHARSET','utf8mb4');
 
 // -- Application --
@@ -88,6 +114,10 @@ define('APP_URL',   IS_DEV
 // -- Session --
 define('SESSION_NAME',    'ss_session');
 define('SESSION_TIMEOUT', 1800); // 30 minutes in seconds
+define('REMEMBER_ME_DAYS', 60); // how long the "Remember me" cookie lasts
+
+// -- Mail --
+define('MAIL_PASSWORD_SECRET', $secrets['SS_GMAIL_MAILER_PASSWORD'] ?? '');
 
 // -- Security --
 // Note: actual expiry is read from SS_CONFIG key RESET_TOKEN_EXPIRY_MINS at runtime
@@ -106,4 +136,4 @@ if (IS_DEV) {
 }
 
 // Clean up -- don't leave credentials floating in scope
-unset($envRaw, $envSettings, $appEnv, $dbConfigs, $db, $envFilePath, $key, $val, $line);
+unset($envRaw, $envSettings, $appEnv, $dbConfigs, $db, $envFilePath, $key, $val, $line, $secrets);

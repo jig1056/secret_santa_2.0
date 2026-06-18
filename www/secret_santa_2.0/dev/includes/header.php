@@ -24,19 +24,19 @@ $userMatch    = $matchesDone ? getMatchForUser($currentUser) : null;
 
 <nav class="navbar">
     <div class="nav-brand">
-        🎅🏾 <?= h(APP_NAME) ?> <?= h($xmasYear) ?>
+        <span class="santa-emoji">🎅🏾</span> <?= h(APP_NAME) ?> <?= h($xmasYear) ?>
     </div>
 
     <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">&#9776;</button>
 
     <ul class="nav-links" id="navLinks">
         <li><a href="<?= APP_URL ?>/pages/home.php">Home</a></li>
-        <li><a href="<?= APP_URL ?>/pages/gift_list.php">My Gift List</a></li>
+        <li><a href="<?= APP_URL ?>/pages/gift_list.php">My Wish List</a></li>
 
         <?php if ($matchesDone && $userMatch): ?>
         <li>
             <a href="<?= APP_URL ?>/pages/giftee_list.php">
-                View <?= h($userMatch['FIRST_NAME']) ?>'s Gift List
+                <?= h($userMatch['FIRST_NAME']) ?>'s Gift List
             </a>
         </li>
         <?php endif; ?>
@@ -47,7 +47,7 @@ $userMatch    = $matchesDone ? getMatchForUser($currentUser) : null;
         <li><a href="<?= APP_URL ?>/admin/messages.php">Messages</a></li>
         <li><a href="<?= APP_URL ?>/admin/generate.php">Generate Matches</a></li>
         <li><a href="<?= APP_URL ?>/admin/dashboard.php">Dashboard</a></li>
-        <li><a href="<?= APP_URL ?>/admin/config.php">Config</a></li>
+        <li><a href="<?= APP_URL ?>/admin/config_admin.php">Config</a></li>
         <?php endif; ?>
 
         <li class="nav-divider"></li>

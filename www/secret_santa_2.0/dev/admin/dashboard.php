@@ -13,12 +13,14 @@ $xmasYear = getConfig('XMAS_YEAR', date('Y'));
 
 // -- Summary stats --
 $totalUsers    = $pdo->query("SELECT COUNT(*) FROM SS_USERS WHERE STATUS = 'ACTIVE'")->fetchColumn();
-$totalGifts    = $pdo->query("SELECT COUNT(*) FROM SS_GIFTS")->fetchColumn();
+$totalGiftsStmt = $pdo->prepare("SELECT COUNT(*) FROM SS_GIFTS WHERE YEAR = ?");
+$totalGiftsStmt->execute([$xmasYear]);
+$totalGifts    = $totalGiftsStmt->fetchColumn();
 $matchesDone   = matchesGenerated();
 $totalMatches  = $pdo->query("SELECT COUNT(*) FROM SS_MATCHES WHERE YEAR = " . (int)$xmasYear)->fetchColumn();
 
 // -- Users with gift counts --
-$stmt = $pdo->query("
+$stmt = $pdo->prepare("
     SELECT
         u.USER_ID,
         u.FIRST_NAME,
@@ -27,11 +29,12 @@ $stmt = $pdo->query("
         u.USER_TYPE,
         COUNT(g.GIFT_ID) AS GIFT_COUNT
     FROM SS_USERS u
-    LEFT JOIN SS_GIFTS g ON g.USER_ID = u.USER_ID
+    LEFT JOIN SS_GIFTS g ON g.USER_ID = u.USER_ID AND g.YEAR = ?
     WHERE u.STATUS = 'ACTIVE'
     GROUP BY u.USER_ID, u.FIRST_NAME, u.LAST_NAME, u.STATUS, u.USER_TYPE
     ORDER BY GIFT_COUNT ASC, u.LAST_NAME ASC
 ");
+$stmt->execute([$xmasYear]);
 $userGifts = $stmt->fetchAll();
 
 // -- Who has 0 gifts --

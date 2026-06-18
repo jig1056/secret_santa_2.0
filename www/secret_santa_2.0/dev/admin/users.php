@@ -23,6 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $lastName  = trim($_POST['last_name']  ?? '');
         $email     = trim($_POST['email']      ?? '');
         $phone     = trim($_POST['phone']      ?? '');
+        $sex       = in_array($_POST['sex'] ?? '', ['MALE', 'FEMALE']) ? $_POST['sex'] : null;
         $userType  = $_POST['user_type'] === 'ADMIN' ? 'ADMIN' : 'STANDARD';
         $password  = trim($_POST['password']   ?? '');
 
@@ -39,10 +40,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $userId = generateUserId($firstName, $lastName, $pdo);
                 $hash   = password_hash($password, PASSWORD_BCRYPT);
                 $stmt   = $pdo->prepare("
-                    INSERT INTO SS_USERS (USER_ID, FIRST_NAME, LAST_NAME, EMAIL, PASSWORD_HASH, PHONE, USER_TYPE, STATUS)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE')
+                    INSERT INTO SS_USERS (USER_ID, FIRST_NAME, LAST_NAME, SEX, EMAIL, PASSWORD_HASH, PHONE, USER_TYPE, STATUS)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE')
                 ");
-                $stmt->execute([$userId, $firstName, $lastName, $email, $hash, $phone ?: null, $userType]);
+                $stmt->execute([$userId, $firstName, $lastName, $sex, $email, $hash, $phone ?: null, $userType]);
                 $msg = "User {$firstName} {$lastName} added successfully (ID: {$userId}).";
                 $msgType = 'success';
                 $addMode = false; // close form on success
@@ -55,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $lastName  = trim($_POST['last_name']  ?? '');
         $email     = trim($_POST['email']      ?? '');
         $phone     = trim($_POST['phone']      ?? '');
+        $sex       = in_array($_POST['sex'] ?? '', ['MALE', 'FEMALE']) ? $_POST['sex'] : null;
         $userType  = $_POST['user_type'] === 'ADMIN' ? 'ADMIN' : 'STANDARD';
         $newPass   = trim($_POST['password']   ?? '');
 
@@ -76,11 +78,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 if ($newPass) {
                     $hash = password_hash($newPass, PASSWORD_BCRYPT);
-                    $stmt = $pdo->prepare("UPDATE SS_USERS SET FIRST_NAME=?, LAST_NAME=?, EMAIL=?, PHONE=?, USER_TYPE=?, PASSWORD_HASH=?, UPDATED_AT=NOW() WHERE USER_ID=?");
-                    $stmt->execute([$firstName, $lastName, $email, $phone ?: null, $userType, $hash, $userId]);
+                    $stmt = $pdo->prepare("UPDATE SS_USERS SET FIRST_NAME=?, LAST_NAME=?, SEX=?, EMAIL=?, PHONE=?, USER_TYPE=?, PASSWORD_HASH=?, UPDATED_AT=NOW() WHERE USER_ID=?");
+                    $stmt->execute([$firstName, $lastName, $sex, $email, $phone ?: null, $userType, $hash, $userId]);
                 } else {
-                    $stmt = $pdo->prepare("UPDATE SS_USERS SET FIRST_NAME=?, LAST_NAME=?, EMAIL=?, PHONE=?, USER_TYPE=?, UPDATED_AT=NOW() WHERE USER_ID=?");
-                    $stmt->execute([$firstName, $lastName, $email, $phone ?: null, $userType, $userId]);
+                    $stmt = $pdo->prepare("UPDATE SS_USERS SET FIRST_NAME=?, LAST_NAME=?, SEX=?, EMAIL=?, PHONE=?, USER_TYPE=?, UPDATED_AT=NOW() WHERE USER_ID=?");
+                    $stmt->execute([$firstName, $lastName, $sex, $email, $phone ?: null, $userType, $userId]);
                 }
                 $msg = 'User updated successfully.';
                 $msgType = 'success';
@@ -123,9 +125,12 @@ if (!$editing && isset($_GET['edit']) && $msgType !== 'success') {
 // Fetch all users
 $users = $pdo->query("SELECT * FROM SS_USERS ORDER BY STATUS ASC, LAST_NAME ASC, FIRST_NAME ASC")->fetchAll();
 
-// Gift counts
+// Gift counts (current year only)
+$xmasYear   = getConfig('XMAS_YEAR', date('Y'));
 $giftCounts = [];
-foreach ($pdo->query("SELECT USER_ID, COUNT(*) as CNT FROM SS_GIFTS GROUP BY USER_ID")->fetchAll() as $row) {
+$gcStmt = $pdo->prepare("SELECT USER_ID, COUNT(*) as CNT FROM SS_GIFTS WHERE YEAR = ? GROUP BY USER_ID");
+$gcStmt->execute([$xmasYear]);
+foreach ($gcStmt->fetchAll() as $row) {
     $giftCounts[$row['USER_ID']] = $row['CNT'];
 }
 
@@ -182,12 +187,24 @@ require_once __DIR__ . '/../includes/header.php';
 
         <div class="form-row">
             <div class="form-group">
+                <label for="sex">Sex <span class="optional">(optional)</span></label>
+                <select id="sex" name="sex">
+                    <option value="">— Not specified —</option>
+                    <option value="MALE"   <?= ($editing['SEX'] ?? '') === 'MALE'   ? 'selected' : '' ?>>Male</option>
+                    <option value="FEMALE" <?= ($editing['SEX'] ?? '') === 'FEMALE' ? 'selected' : '' ?>>Female</option>
+                </select>
+                <div class="field-hint">Used to personalize messages (e.g. "his" / "her" list)</div>
+            </div>
+            <div class="form-group">
                 <label for="user_type">User Type <span class="required">*</span></label>
                 <select id="user_type" name="user_type">
                     <option value="STANDARD" <?= ($editing['USER_TYPE'] ?? 'STANDARD') === 'STANDARD' ? 'selected' : '' ?>>Standard</option>
                     <option value="ADMIN"    <?= ($editing['USER_TYPE'] ?? '') === 'ADMIN' ? 'selected' : '' ?>>Admin</option>
                 </select>
             </div>
+        </div>
+
+        <div class="form-row">
             <div class="form-group">
                 <label for="password">
                     <?= $editing ? 'New Password <span class="optional">(leave blank to keep current)</span>' : 'Password <span class="required">*</span>' ?>
@@ -273,12 +290,24 @@ require_once __DIR__ . '/../includes/header.php';
 
         <div class="form-row">
             <div class="form-group">
+                <label for="sex">Sex <span class="optional">(optional)</span></label>
+                <select id="sex" name="sex">
+                    <option value="">— Not specified —</option>
+                    <option value="MALE"   <?= ($_POST['sex'] ?? '') === 'MALE'   ? 'selected' : '' ?>>Male</option>
+                    <option value="FEMALE" <?= ($_POST['sex'] ?? '') === 'FEMALE' ? 'selected' : '' ?>>Female</option>
+                </select>
+                <div class="field-hint">Used to personalize messages (e.g. "his" / "her" list)</div>
+            </div>
+            <div class="form-group">
                 <label for="user_type">User Type <span class="required">*</span></label>
                 <select id="user_type" name="user_type">
                     <option value="STANDARD">Standard</option>
                     <option value="ADMIN">Admin</option>
                 </select>
             </div>
+        </div>
+
+        <div class="form-row">
             <div class="form-group">
                 <label for="password">Password <span class="required">*</span></label>
                 <input type="password" id="password" name="password" required minlength="8"
