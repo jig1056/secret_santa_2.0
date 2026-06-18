@@ -18,6 +18,10 @@ $userMatch    = $matchesDone ? getMatchForUser($currentUser) : null;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= h(APP_NAME) ?> <?= h($xmasYear) ?></title>
+    <link rel="icon" type="image/x-icon" href="<?= APP_URL ?>/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= APP_URL ?>/assets/images/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="<?= APP_URL ?>/assets/images/favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="<?= APP_URL ?>/assets/images/apple-touch-icon.png">
     <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css">
 </head>
 <body>
