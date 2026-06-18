@@ -246,8 +246,8 @@ require_once __DIR__ . '/../includes/header.php';
         <table>
             <thead>
                 <tr>
-                    <th>Key</th>
-                    <th>Value</th>
+                    <th class="sortable-th" id="th-key" onclick="sortBy('key')">Key <span class="sort-icon">▲</span></th>
+                    <th class="sortable-th" id="th-value" onclick="sortBy('value')">Value <span class="sort-icon"></span></th>
                     <th>Description</th>
                     <th>Last Updated</th>
                 </tr>
@@ -255,7 +255,9 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php foreach ($configs as $cfg): ?>
                 <tr class="config-row <?= $editing && $editing['CONFIG_ID'] == $cfg['CONFIG_ID'] ? 'row-active' : '' ?>"
-                    data-search="<?= strtolower(h($cfg['CONFIG_KEY'] . ' ' . $cfg['CONFIG_VALUE'] . ' ' . ($cfg['CONFIG_DESCRIPTION'] ?? ''))) ?>">
+                    data-search="<?= strtolower(h($cfg['CONFIG_KEY'] . ' ' . $cfg['CONFIG_VALUE'] . ' ' . ($cfg['CONFIG_DESCRIPTION'] ?? ''))) ?>"
+                    data-key="<?= strtolower(h($cfg['CONFIG_KEY'])) ?>"
+                    data-value="<?= strtolower(h($cfg['CONFIG_VALUE'])) ?>">
                     <td>
                         <a href="?edit=<?= $cfg['CONFIG_ID'] ?>" class="key-link">
                             <code class="key-code"><?= h($cfg['CONFIG_KEY']) ?></code>
@@ -268,6 +270,12 @@ require_once __DIR__ . '/../includes/header.php';
                 <?php endforeach; ?>
             </tbody>
         </table>
+    </div>
+    <div class="pagination-row" id="paginationRow" style="display:none;">
+        <button class="btn btn-secondary btn-sm" id="prevBtn" onclick="changePage(-1)">← Prev</button>
+        <span class="page-info" id="pageInfo"></span>
+        <button class="btn btn-secondary btn-sm" id="nextBtn" onclick="changePage(1)">Next →</button>
+        <button class="btn btn-secondary btn-sm" id="viewAllBtn" onclick="toggleViewAll()">View All</button>
     </div>
 </div>
 
@@ -300,6 +308,17 @@ require_once __DIR__ . '/../includes/header.php';
 .btn-danger:hover { opacity: 0.85; }
 .card-header-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; }
 .dash-search { padding: 0.4rem 0.75rem; border: 1px solid #ccc; border-radius: 8px; font-size: 0.9rem; min-width: 200px; }
+
+/* Sortable headers */
+.sortable-th    { cursor: pointer; user-select: none; white-space: nowrap; }
+.sortable-th:hover { color: #c0392b; }
+.sort-active    { color: #c0392b; }
+.sort-icon      { font-size: 0.75rem; opacity: 0.8; }
+
+/* Pagination */
+.pagination-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.75rem 0 0.25rem; flex-wrap: wrap; }
+.page-info      { font-size: 0.88rem; color: #666; min-width: 100px; text-align: center; }
+.btn-sm         { padding: 0.3rem 0.7rem; font-size: 0.85rem; }
 
 /* Initialize card */
 .init-card      { border-left: 4px solid #c0392b; }
@@ -342,13 +361,124 @@ function checkConfirm(input) {
 </script>
 
 <script>
-function filterConfig() {
-    const q    = document.getElementById('configSearch').value.toLowerCase();
-    const rows = document.querySelectorAll('.config-row');
-    rows.forEach(row => {
-        row.style.display = !q || row.dataset.search.includes(q) ? '' : 'none';
+const PAGE_SIZE = 10;
+let currentSort = { col: 'key', dir: 'asc' };
+let currentPage = 1;
+let viewAll = false;
+
+function getAllRows() {
+    return Array.from(document.querySelectorAll('.config-row'));
+}
+
+function getFilteredRows() {
+    const q = document.getElementById('configSearch').value.toLowerCase().trim();
+    return getAllRows().filter(row => !q || row.dataset.search.includes(q));
+}
+
+function sortRows(rows) {
+    return rows.slice().sort((a, b) => {
+        const av = a.dataset[currentSort.col] || '';
+        const bv = b.dataset[currentSort.col] || '';
+        const cmp = av.localeCompare(bv);
+        return currentSort.dir === 'asc' ? cmp : -cmp;
     });
 }
+
+function renderTable() {
+    const filtered  = getFilteredRows();
+    const sorted    = sortRows(filtered);
+    const total     = sorted.length;
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+    // Clamp page
+    currentPage = Math.max(1, Math.min(currentPage, totalPages));
+
+    // Hide all rows first
+    getAllRows().forEach(r => r.style.display = 'none');
+
+    // Show the right slice
+    const showRows = viewAll ? sorted : sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+    showRows.forEach(r => r.style.display = '');
+
+    // Pagination UI
+    const paginationRow = document.getElementById('paginationRow');
+    const pageInfo      = document.getElementById('pageInfo');
+    const prevBtn       = document.getElementById('prevBtn');
+    const nextBtn       = document.getElementById('nextBtn');
+    const viewAllBtn    = document.getElementById('viewAllBtn');
+
+    if (total > PAGE_SIZE || viewAll) {
+        paginationRow.style.display = '';
+        if (viewAll) {
+            pageInfo.textContent       = 'Showing all ' + total;
+            prevBtn.style.display      = 'none';
+            nextBtn.style.display      = 'none';
+            viewAllBtn.textContent     = '← Paginate';
+        } else {
+            const start = Math.min((currentPage - 1) * PAGE_SIZE + 1, total);
+            const end   = Math.min(currentPage * PAGE_SIZE, total);
+            pageInfo.textContent   = total ? start + '–' + end + ' of ' + total : 'No results';
+            prevBtn.style.display  = '';
+            nextBtn.style.display  = '';
+            prevBtn.disabled       = currentPage <= 1;
+            nextBtn.disabled       = currentPage >= totalPages;
+            viewAllBtn.textContent = 'View All';
+        }
+    } else {
+        paginationRow.style.display = 'none';
+    }
+
+    // Sort header indicators
+    ['key', 'value'].forEach(col => {
+        const th   = document.getElementById('th-' + col);
+        const icon = th.querySelector('.sort-icon');
+        if (currentSort.col === col) {
+            icon.textContent = currentSort.dir === 'asc' ? ' ▲' : ' ▼';
+            th.classList.add('sort-active');
+        } else {
+            icon.textContent = '';
+            th.classList.remove('sort-active');
+        }
+    });
+}
+
+function sortBy(col) {
+    if (currentSort.col === col) {
+        currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSort.col = col;
+        currentSort.dir = 'asc';
+    }
+    currentPage = 1;
+    renderTable();
+}
+
+function changePage(delta) {
+    currentPage += delta;
+    renderTable();
+}
+
+function toggleViewAll() {
+    viewAll = !viewAll;
+    currentPage = 1;
+    renderTable();
+}
+
+function filterConfig() {
+    currentPage = 1;
+    renderTable();
+}
+
+// On load: if an active (editing) row exists, start on its page
+(function init() {
+    const activeRow = document.querySelector('.config-row.row-active');
+    if (activeRow) {
+        const sorted = sortRows(getFilteredRows());
+        const idx    = sorted.indexOf(activeRow);
+        if (idx >= 0) currentPage = Math.floor(idx / PAGE_SIZE) + 1;
+    }
+    renderTable();
+})();
 </script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
