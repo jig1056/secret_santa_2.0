@@ -49,3 +49,5 @@ Desktop.ini
 
 
 secret_santa_create_database.sql
+
+.env*

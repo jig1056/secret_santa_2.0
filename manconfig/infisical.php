@@ -10,16 +10,25 @@
 // ============================================================
 
 // ------------------------------------------------------------
-// CONFIGURATION — edit these values
-// Store the Client ID and Secret in your env.conf or directly
-// here since this file is outside the web root.
-// ------------------------------------------------------------
-define('INFISICAL_HOST',          'https://pwd.nelsonone.com');
-define('INFISICAL_CLIENT_ID',     '33a0eb44-4429-4fff-896b-846e7ebccb12');
-define('INFISICAL_CLIENT_SECRET', '37ebbff57c44c90a97f4756b0a0d429ea47fba1bc10cc9a7372df407ecc7f321');
-define('INFISICAL_PROJECT_ID',    '2100e418-7227-4768-a01e-10d560730a56');
-define('INFISICAL_ENVIRONMENT',   'dev'); // prod, dev, staging etc.
-define('INFISICAL_SECRET_PATH',   '/');    // path within the project
+// CONFIGURATION — loaded from .env_infisical
+// ------------------------------------------------------------ 
+$_infisical_env_file = __DIR__ . '/.env_infisical';
+if (!file_exists($_infisical_env_file)) {
+    throw new RuntimeException('Infisical config missing: ' . $_infisical_env_file);
+}
+foreach (file($_infisical_env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $_line) {
+    if ($_line[0] === '#' || strpos($_line, '=') === false) continue;
+    [$_key, $_val] = explode('=', $_line, 2);
+    putenv(trim($_key) . '=' . trim($_val));
+}
+unset($_infisical_env_file, $_line, $_key, $_val);
+
+define('INFISICAL_HOST',          getenv('INFISICAL_HOST'));
+define('INFISICAL_CLIENT_ID',     getenv('INFISICAL_CLIENT_ID'));
+define('INFISICAL_CLIENT_SECRET', getenv('INFISICAL_CLIENT_SECRET'));
+define('INFISICAL_PROJECT_ID',    getenv('INFISICAL_PROJECT_ID'));
+define('INFISICAL_ENVIRONMENT',   getenv('INFISICAL_ENVIRONMENT'));
+define('INFISICAL_SECRET_PATH',   getenv('INFISICAL_SECRET_PATH'));
 
 // ------------------------------------------------------------
 // Internal in-memory cache — within a single PHP request
