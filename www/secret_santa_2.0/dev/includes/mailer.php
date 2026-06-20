@@ -123,11 +123,12 @@ Click the link below to reset your password (expires in {$expiryMins} minutes):
 // $to      - recipient email address
 // $toName  - recipient display name
 // $subject - email subject line
-// $body    - plain text email body
+// $body    - email body (plain text or HTML)
+// $isHtml  - set true to send as HTML email (default: false)
 //
 // Returns true on success, error string on failure.
 // ------------------------------------------------------------
-function sendMail(string $to, string $toName, string $subject, string $body): bool|string {
+function sendMail(string $to, string $toName, string $subject, string $body, bool $isHtml = false): bool|string {
     $mail = new PHPMailer(true);
 
     try {
@@ -157,9 +158,12 @@ function sendMail(string $to, string $toName, string $subject, string $body): bo
         );
 
         // -- Content --
-        $mail->isHTML(false); // Plain text
+        $mail->isHTML($isHtml);
         $mail->Subject = $subject;
         $mail->Body    = $body;
+        if ($isHtml) {
+            $mail->AltBody = strip_tags($body); // plain-text fallback for non-HTML clients
+        }
 
         $mail->send();
         return true;

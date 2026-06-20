@@ -49,7 +49,26 @@ function requireLogin(): void {
 // ------------------------------------------------------------
 function requireAdmin(): void {
     requireLogin();
-    if (($_SESSION['USER_TYPE'] ?? '') !== 'ADMIN') {
+    if (!hasRole('admin')) {
+        redirect('/pages/home.php');
+    }
+}
+
+// ------------------------------------------------------------
+// Check if the current user has a specific role.
+// $role: role key string e.g. 'admin', 'secret_santa',
+//        'wishlist_only', 'wishlist_gifter'
+// ------------------------------------------------------------
+function hasRole(string $role): bool {
+    return in_array($role, $_SESSION['ROLES'] ?? [], true);
+}
+
+// ------------------------------------------------------------
+// Require a specific role — redirects to home if not met.
+// ------------------------------------------------------------
+function requireRole(string $role): void {
+    requireLogin();
+    if (!hasRole($role)) {
         redirect('/pages/home.php');
     }
 }
@@ -65,7 +84,22 @@ function currentUserId(): ?string {
 // Return true if the current user is an admin.
 // ------------------------------------------------------------
 function isAdmin(): bool {
-    return ($_SESSION['USER_TYPE'] ?? '') === 'ADMIN';
+    return hasRole('admin');
+}
+
+// ------------------------------------------------------------
+// Internal: fetch role keys for a user from SS_USER_ROLES.
+// Returns an array of ROLE_KEY strings e.g. ['admin','secret_santa']
+// ------------------------------------------------------------
+function _loadUserRoles(string $userId, PDO $pdo): array {
+    $stmt = $pdo->prepare("
+        SELECT r.ROLE_KEY
+        FROM SS_USER_ROLES ur
+        JOIN SS_ROLES r ON r.ROLE_ID = ur.ROLE_ID
+        WHERE ur.USER_ID = ?
+    ");
+    $stmt->execute([$userId]);
+    return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
 }
 
 // ------------------------------------------------------------
@@ -73,12 +107,16 @@ function isAdmin(): bool {
 // If $rememberMe is true, also sets a 60-day persistent cookie.
 // ------------------------------------------------------------
 function loginUser(array $user, bool $rememberMe = false): void {
+    require_once __DIR__ . '/db.php';
+    $pdo = getDB();
+
     session_regenerate_id(true); // prevent session fixation
-    $_SESSION['USER_ID']    = $user['USER_ID'];
-    $_SESSION['FIRST_NAME'] = $user['FIRST_NAME'];
-    $_SESSION['LAST_NAME']  = $user['LAST_NAME'];
-    $_SESSION['EMAIL']      = $user['EMAIL'];
-    $_SESSION['USER_TYPE']  = $user['USER_TYPE'];
+    $_SESSION['USER_ID']       = $user['USER_ID'];
+    $_SESSION['FIRST_NAME']    = $user['FIRST_NAME'];
+    $_SESSION['LAST_NAME']     = $user['LAST_NAME'];
+    $_SESSION['EMAIL']         = $user['EMAIL'];
+    $_SESSION['USER_TYPE']     = $user['USER_TYPE']; // kept for backwards compat
+    $_SESSION['ROLES']         = _loadUserRoles($user['USER_ID'], $pdo);
     $_SESSION['LAST_ACTIVITY'] = time();
 
     if ($rememberMe) {
@@ -152,11 +190,12 @@ function attemptRememberMeLogin(): bool {
         session_start();
     }
     session_regenerate_id(true);
-    $_SESSION['USER_ID']    = $result['USER_ID'];
-    $_SESSION['FIRST_NAME'] = $result['FIRST_NAME'];
-    $_SESSION['LAST_NAME']  = $result['LAST_NAME'];
-    $_SESSION['EMAIL']      = $result['EMAIL'];
-    $_SESSION['USER_TYPE']  = $result['USER_TYPE'];
+    $_SESSION['USER_ID']       = $result['USER_ID'];
+    $_SESSION['FIRST_NAME']    = $result['FIRST_NAME'];
+    $_SESSION['LAST_NAME']     = $result['LAST_NAME'];
+    $_SESSION['EMAIL']         = $result['EMAIL'];
+    $_SESSION['USER_TYPE']     = $result['USER_TYPE']; // kept for backwards compat
+    $_SESSION['ROLES']         = _loadUserRoles($result['USER_ID'], $pdo);
     $_SESSION['LAST_ACTIVITY'] = time();
 
     return true;

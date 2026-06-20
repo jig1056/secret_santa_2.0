@@ -7,10 +7,15 @@
 
 require_once __DIR__ . '/helpers.php';
 
-$xmasYear     = getConfig('XMAS_YEAR', date('Y'));
-$matchesDone  = matchesGenerated();
-$currentUser  = currentUserId();
-$userMatch    = $matchesDone ? getMatchForUser($currentUser) : null;
+$xmasYear    = getConfig('XMAS_YEAR', date('Y'));
+$currentUser = currentUserId();
+
+// Only check matches for users who participate in Secret Santa
+$userMatch = null;
+if (hasRole('secret_santa') || hasRole('admin')) {
+    $matchesDone = matchesGenerated();
+    $userMatch   = $matchesDone ? getMatchForUser($currentUser) : null;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -35,14 +40,21 @@ $userMatch    = $matchesDone ? getMatchForUser($currentUser) : null;
 
     <ul class="nav-links" id="navLinks">
         <li><a href="<?= APP_URL ?>/pages/home.php">Home</a></li>
-        <li><a href="<?= APP_URL ?>/pages/gift_list.php">My Wish List</a></li>
 
-        <?php if ($matchesDone && $userMatch): ?>
+        <?php if (hasRole('secret_santa') || hasRole('admin') || hasRole('wishlist_only')): ?>
+        <li><a href="<?= APP_URL ?>/pages/gift_list.php">My Wish List</a></li>
+        <?php endif; ?>
+
+        <?php if ($userMatch && (hasRole('secret_santa') || hasRole('admin'))): ?>
         <li>
             <a href="<?= APP_URL ?>/pages/giftee_list.php">
-                <?= h($userMatch['FIRST_NAME']) ?>'s Gift List
+                <?= h($userMatch['FIRST_NAME']) ?>'s Wish List
             </a>
         </li>
+        <?php endif; ?>
+
+        <?php if (hasRole('wishlist_gifter')): ?>
+        <li><a href="<?= APP_URL ?>/pages/wishlists.php">Wishlists</a></li>
         <?php endif; ?>
 
         <?php if (isAdmin()): ?>

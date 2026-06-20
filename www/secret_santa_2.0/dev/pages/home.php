@@ -1,23 +1,38 @@
 <?php
 // ============================================================
 // home.php
-// Shows welcome message, year, and Secret Santa match info
-// once matches have been generated.
+// Role-aware dashboard.
 // ============================================================
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/helpers.php';
 requireLogin();
 
-$xmasYear    = getConfig('XMAS_YEAR', date('Y'));
-$matchesDone = matchesGenerated();
-$match       = $matchesDone ? getMatchForUser(currentUserId()) : null;
-
-// Get current user's gift count
+$xmasYear = getConfig('XMAS_YEAR', date('Y'));
 $pdo      = getDB();
-$stmt     = $pdo->prepare("SELECT COUNT(*) FROM SS_GIFTS WHERE USER_ID = ? AND YEAR = ?");
-$stmt->execute([currentUserId(), $xmasYear]);
-$giftCount = (int) $stmt->fetchColumn();
+
+// -- Banner message: priority admin/SS > wishlist_only > wishlist_gifter --
+if (hasRole('admin') || hasRole('secret_santa')) {
+    $bannerMsg = getConfig('HOME_MSG_SECRET_SANTA', 'Spread some holiday cheer — $50 budget!');
+} elseif (hasRole('wishlist_only')) {
+    $bannerMsg = getConfig('HOME_MSG_WISHLIST_ONLY', 'Add your wish list items so your family knows what to get you!');
+} else {
+    $bannerMsg = getConfig('HOME_MSG_WISHLIST_GIFTER', 'View and manage the wish lists of your loved ones!');
+}
+
+// -- Gift count (only for users with their own wish list) --
+$giftCount = 0;
+if (hasRole('admin') || hasRole('secret_santa') || hasRole('wishlist_only')) {
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM SS_GIFTS WHERE USER_ID = ? AND YEAR = ?");
+    $stmt->execute([currentUserId(), $xmasYear]);
+    $giftCount = (int) $stmt->fetchColumn();
+}
+
+// -- SS match (only for SS participants) --
+$match = null;
+if (hasRole('admin') || hasRole('secret_santa')) {
+    $match = matchesGenerated() ? getMatchForUser(currentUserId()) : null;
+}
 
 require_once __DIR__ . '/../includes/header.php';
 ?>
@@ -30,15 +45,15 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="banner-icon">🎅🏾</div>
         <div>
             <div class="banner-title">Secret Santa <?= h($xmasYear) ?></div>
-            <div class="banner-sub">Spread some holiday cheer — $50 budget</div>
+            <div class="banner-sub"><?= h($bannerMsg) ?></div>
         </div>
     </div>
 </div>
 
-<!-- Status cards -->
 <div class="home-grid">
 
-    <!-- Gift list status -->
+    <?php if (hasRole('admin') || hasRole('secret_santa') || hasRole('wishlist_only')): ?>
+    <!-- Wish List status card -->
     <div class="card status-card">
         <div class="status-icon <?= $giftCount > 0 ? 'green' : 'red' ?>">
             <?= $giftCount > 0 ? '🎁' : '📋' ?>
@@ -48,15 +63,17 @@ require_once __DIR__ . '/../includes/header.php';
             <?php if ($giftCount > 0): ?>
                 <p>You have <strong><?= $giftCount ?></strong> gift<?= $giftCount !== 1 ? 's' : '' ?> on your list.</p>
             <?php else: ?>
-                <p>You haven't added any gifts yet. Let your Secret Santa know what you want!</p>
+                <p>You haven't added any gifts yet. Let <?= hasRole('wishlist_only') ? 'your family' : 'your Secret Santa' ?> know what you want!</p>
             <?php endif; ?>
             <a href="<?= APP_URL ?>/pages/gift_list.php" class="btn btn-primary btn-sm" style="margin-top:0.75rem;">
                 <?= $giftCount > 0 ? 'Manage My Wish List' : 'Add Gifts' ?>
             </a>
         </div>
     </div>
+    <?php endif; ?>
 
-    <!-- Match status -->
+    <?php if (hasRole('admin') || hasRole('secret_santa')): ?>
+    <!-- Secret Santa match card -->
     <div class="card status-card">
         <div class="status-icon <?= $match ? 'green' : 'gold' ?>">
             <?= $match ? '🤫' : '⏳' ?>
@@ -73,10 +90,23 @@ require_once __DIR__ . '/../includes/header.php';
             <?php endif; ?>
         </div>
     </div>
+    <?php endif; ?>
+
+    <?php if (hasRole('wishlist_gifter')): ?>
+    <!-- Wishlists card -->
+    <div class="card status-card">
+        <div class="status-icon green">🎀</div>
+        <div class="status-body">
+            <div class="status-title">Wish Lists</div>
+            <p>View and manage the wish lists of your loved ones — mark items as you purchase them.</p>
+            <a href="<?= APP_URL ?>/pages/wishlists.php" class="btn btn-primary btn-sm" style="margin-top:0.75rem;">
+                View Wishlists
+            </a>
+        </div>
+    </div>
+    <?php endif; ?>
 
 </div>
-
-
 
 <style>
 .banner-card { background: linear-gradient(135deg, #c0392b, #922b21); color: #fff; }
@@ -94,8 +124,6 @@ require_once __DIR__ . '/../includes/header.php';
 .status-icon.gold  { filter: none; }
 .status-title { font-size: 1rem; font-weight: 700; color: #922b21; margin-bottom: 0.35rem; }
 .status-body p { font-size: 0.95rem; color: #444; }
-
-.admin-links { display: flex; flex-wrap: wrap; gap: 0.65rem; }
 </style>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

@@ -120,4 +120,6 @@ tr:last-child td { border-bottom: none; }
 
 /* -- Footer -- */
 .site-footer { text-align: center; padding: 1rem; font-size: 0.85rem; color: var(--gray); border-top: 1px solid #ddd; }
-.debug-badge { display: inline-block; background: var(--gold); color: var(--dark); font-size: 0.75rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; margin-top: 0.25rem; }
+.debug-badge  { display: inline-block; background: var(--gold); color: var(--dark); font-size: 0.75rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; margin-top: 0.25rem; }
+.version-link { color: var(--gray); text-decoration: none; font-size: 0.8rem; opacity: 0.7; }
+.version-link:hover { opacity: 1; text-decoration: underline; }
