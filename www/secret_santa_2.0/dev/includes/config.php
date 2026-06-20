@@ -106,10 +106,7 @@ define('DB_CHARSET','utf8mb4');
 
 // -- Application --
 define('APP_NAME',  'Secret Santa');
-define('APP_URL',   IS_DEV
-    ? 'https://web-ace.nelsonone.com/secret_santa_2.0/dev'
-    : 'https://web-ace.nelsonone.com/secret_santa_2.0/prd'
-);
+define('APP_URL',   $envSettings['APP_URL'] ?? '');
 
 // -- Session --
 define('SESSION_NAME',    'ss_session');

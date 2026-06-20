@@ -10,6 +10,7 @@ phpdoc/
 .env.*.local
 *.env.bak
 config.local.php
+.env*
 
 # === IDEs & Editors ===
 # JetBrains / PhpStorm
@@ -50,4 +51,3 @@ Desktop.ini
 
 secret_santa_create_database.sql
 
-.env*
