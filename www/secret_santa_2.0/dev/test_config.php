@@ -2,6 +2,7 @@
 // ============================================================
 // test_config.php
 // Upload to your dev root, visit it in browser, then DELETE IT
+//i wonder if it will see this
 // ============================================================
 ini_set('display_errors', 1);
 error_reporting(E_ALL);

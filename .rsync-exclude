@@ -1,0 +1,9 @@
+.vscode
+.git
+.DS_Store
+.venv
+secret_santa_create_database.sql
+message_notes.md
+CONTENT.md
+misc_docs
+sqls
