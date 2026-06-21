@@ -70,6 +70,39 @@ function sendSMS(string $to, string $body): bool|string {
 }
 
 // ------------------------------------------------------------
+// wrapHtmlEmail()
+// Wraps a plain-text message body in the standard Secret Santa
+// HTML email chrome (red header, white body, grey footer).
+//
+// $title    - heading text shown in the red banner
+// $subtitle - smaller line below the heading
+// $bodyText - raw plain text; will be HTML-escaped and nl2br'd
+// $year     - year shown in the footer
+// ------------------------------------------------------------
+function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string $year): string {
+    $appName   = defined('APP_NAME') ? APP_NAME : 'Secret Santa';
+    $safeTitle = htmlspecialchars($title,    ENT_QUOTES, 'UTF-8');
+    $safeSub   = htmlspecialchars($subtitle, ENT_QUOTES, 'UTF-8');
+    $safeBody  = nl2br(htmlspecialchars($bodyText, ENT_QUOTES, 'UTF-8'));
+    $safeApp   = htmlspecialchars($appName,  ENT_QUOTES, 'UTF-8');
+    $safeYear  = htmlspecialchars($year,     ENT_QUOTES, 'UTF-8');
+
+    return "
+<div style=\"font-family:Arial,sans-serif;max-width:680px;margin:0 auto;\">
+    <div style=\"background:#c0392b;color:#fff;padding:20px 24px;border-radius:8px 8px 0 0;\">
+        <h2 style=\"margin:0;font-size:1.3rem;\">🎅🏾 {$safeTitle}</h2>
+        <p style=\"margin:6px 0 0;opacity:0.85;font-size:0.9rem;\">{$safeSub}</p>
+    </div>
+    <div style=\"padding:24px;background:#fff;color:#333;font-size:0.97rem;line-height:1.7;\">
+        {$safeBody}
+    </div>
+    <div style=\"background:#f5f5f5;padding:14px 24px;border-radius:0 0 8px 8px;font-size:0.82rem;color:#888;\">
+        Sent from {$safeApp} &bull; {$safeYear}
+    </div>
+</div>";
+}
+
+// ------------------------------------------------------------
 // sendPasswordReset()
 // Generates a reset token, stores it, finds the Password Reset
 // message template, substitutes placeholders, and emails the user.

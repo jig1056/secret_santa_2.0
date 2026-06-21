@@ -209,7 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $xmasYear = getConfig('XMAS_YEAR', date('Y'));
 
                 foreach ($recipients as $recipient) {
-                    $body = str_replace(
+                    $plainBody = str_replace(
                         ['{FIRST_NAME}', '{LAST_NAME}', '{YEAR}', '{GIFT_DEADLINE}', '{SANTA_MATCH_DATE}'],
                         [$recipient['FIRST_NAME'], $recipient['LAST_NAME'], $xmasYear, getConfig('GIFT_DEADLINE', 'TBD'), getConfig('SANTA_MATCH_DATE', 'TBD')],
                         $template['MESSAGE_BODY']
@@ -218,8 +218,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $status = 'SENT';
 
                     if ($channel === 'EMAIL' || $channel === 'BOTH') {
-                        $subject    = getConfig('MAIL_SUBJECT', 'Secret Santa') . ' ' . $xmasYear;
-                        $mailResult = sendMail($recipient['EMAIL'], $toName, $subject, $body);
+                        $subject  = getConfig('MAIL_SUBJECT', 'Secret Santa') . ' — ' . $xmasYear;
+                        $htmlBody = wrapHtmlEmail(
+                            getConfig('MAIL_SUBJECT', 'Secret Santa'),
+                            $template['MESSAGE_NAME'],
+                            $plainBody,
+                            $xmasYear
+                        );
+                        $mailResult = sendMail($recipient['EMAIL'], $toName, $subject, $htmlBody, true);
                         if ($mailResult !== true) {
                             error_log("Mail failed to {$recipient['EMAIL']}: {$mailResult}");
                             $status = 'FAILED';
@@ -229,7 +235,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     if ($channel === 'SMS' || $channel === 'BOTH') {
                         if (!empty($recipient['PHONE'])) {
-                            $smsResult = sendSMS($recipient['PHONE'], $body);
+                            $smsResult = sendSMS($recipient['PHONE'], $plainBody);
                             if ($smsResult !== true) {
                                 error_log("SMS failed to {$recipient['PHONE']}: {$smsResult}");
                                 $status = 'FAILED';
