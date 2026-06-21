@@ -401,7 +401,6 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save Changes</button>
-            <a href="<?= APP_URL ?>/admin/messages.php" class="btn btn-secondary">↩ Return to List</a>
             <button type="button" class="btn btn-danger"
                     onclick="if(confirm('Delete this message template?')) document.getElementById('delMsg<?= $editing['MESSAGE_ID'] ?>').submit()">
                 Delete
@@ -409,6 +408,7 @@ require_once __DIR__ . '/../includes/header.php';
             <button type="button" class="btn btn-secondary" id="showSendBtn" onclick="toggleSendPanel()">
                 📤 Show Send Message
             </button>
+            <a href="<?= APP_URL ?>/admin/messages.php" class="btn btn-secondary">↩ Return to List</a>
         </div>
     </form>
     <form id="delMsg<?= $editing['MESSAGE_ID'] ?>" method="POST" action="" style="display:none;">
