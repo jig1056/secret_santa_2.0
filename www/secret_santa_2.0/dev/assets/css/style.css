@@ -86,7 +86,7 @@ body {
 .card-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; color: var(--red-dark); }
 
 /* -- Buttons -- */
-.btn { display: inline-block; padding: 0.5rem 1.2rem; border: none; border-radius: var(--radius); font-size: 0.95rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: opacity 0.2s; }
+.btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1.2rem; border: none; border-radius: var(--radius); font-size: 0.95rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: opacity 0.2s; box-sizing: border-box; }
 .btn:hover { opacity: 0.85; }
 .btn-primary   { background: var(--red);   color: var(--white); }
 .btn-success   { background: var(--green); color: var(--white); }
