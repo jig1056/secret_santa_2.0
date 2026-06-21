@@ -193,6 +193,48 @@ require_once __DIR__ . '/../includes/header.php';
 <?php endif; ?>
 
 <?php if (!$editing && !$addMode): ?>
+<!-- Config table -->
+<div class="card">
+    <div class="card-header-row">
+        <div class="card-title" style="margin-bottom:0;">⚙️ All Config Keys (<?= count($configs) ?>)</div>
+        <input type="text" id="configSearch" placeholder="🔍 Search keys..." oninput="filterConfig()" class="dash-search">
+    </div>
+    <div class="table-wrap" style="margin-top:1rem;">
+        <table>
+            <thead>
+                <tr>
+                    <th class="sortable-th" id="th-key" onclick="sortBy('key')">Key <span class="sort-icon">▲</span></th>
+                    <th class="sortable-th" id="th-value" onclick="sortBy('value')">Value <span class="sort-icon"></span></th>
+                    <th>Description</th>
+                    <th>Last Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($configs as $cfg): ?>
+                <tr class="config-row <?= $editing && $editing['CONFIG_ID'] == $cfg['CONFIG_ID'] ? 'row-active' : '' ?>"
+                    data-search="<?= strtolower(h($cfg['CONFIG_KEY'] . ' ' . $cfg['CONFIG_VALUE'] . ' ' . ($cfg['CONFIG_DESCRIPTION'] ?? ''))) ?>"
+                    data-key="<?= strtolower(h($cfg['CONFIG_KEY'])) ?>"
+                    data-value="<?= strtolower(h($cfg['CONFIG_VALUE'])) ?>">
+                    <td>
+                        <a href="?edit=<?= $cfg['CONFIG_ID'] ?>" class="key-link">
+                            <code class="key-code"><?= h($cfg['CONFIG_KEY']) ?></code>
+                        </a>
+                    </td>
+                    <td><?= h($cfg['CONFIG_VALUE']) ?></td>
+                    <td class="desc-col"><?= $cfg['CONFIG_DESCRIPTION'] ? h($cfg['CONFIG_DESCRIPTION']) : '<span class="muted">—</span>' ?></td>
+                    <td class="nowrap date-col"><?= date('M j, Y g:ia', strtotime($cfg['UPDATED_AT'])) ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <div class="pagination-row" id="paginationRow" style="display:none;">
+        <button class="btn btn-secondary btn-sm" id="prevBtn" onclick="changePage(-1)">← Prev</button>
+        <span class="page-info" id="pageInfo"></span>
+        <button class="btn btn-secondary btn-sm" id="nextBtn" onclick="changePage(1)">Next →</button>
+        <button class="btn btn-secondary btn-sm" id="viewAllBtn" onclick="toggleViewAll()">View All</button>
+    </div>
+</div>
 <!-- Initialize Season Card -->
 <div id="initSectionToggle" style="margin-bottom:1.25rem;">
     <button type="button" class="btn btn-secondary" onclick="showInitSection()">
@@ -235,49 +277,6 @@ require_once __DIR__ . '/../includes/header.php';
                 <button type="button" class="btn btn-secondary" onclick="hideInitForm()">Cancel</button>
             </div>
         </form>
-    </div>
-</div>
-
-<!-- Config table -->
-<div class="card">
-    <div class="card-header-row">
-        <div class="card-title" style="margin-bottom:0;">⚙️ All Config Keys (<?= count($configs) ?>)</div>
-        <input type="text" id="configSearch" placeholder="🔍 Search keys..." oninput="filterConfig()" class="dash-search">
-    </div>
-    <div class="table-wrap" style="margin-top:1rem;">
-        <table>
-            <thead>
-                <tr>
-                    <th class="sortable-th" id="th-key" onclick="sortBy('key')">Key <span class="sort-icon">▲</span></th>
-                    <th class="sortable-th" id="th-value" onclick="sortBy('value')">Value <span class="sort-icon"></span></th>
-                    <th>Description</th>
-                    <th>Last Updated</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($configs as $cfg): ?>
-                <tr class="config-row <?= $editing && $editing['CONFIG_ID'] == $cfg['CONFIG_ID'] ? 'row-active' : '' ?>"
-                    data-search="<?= strtolower(h($cfg['CONFIG_KEY'] . ' ' . $cfg['CONFIG_VALUE'] . ' ' . ($cfg['CONFIG_DESCRIPTION'] ?? ''))) ?>"
-                    data-key="<?= strtolower(h($cfg['CONFIG_KEY'])) ?>"
-                    data-value="<?= strtolower(h($cfg['CONFIG_VALUE'])) ?>">
-                    <td>
-                        <a href="?edit=<?= $cfg['CONFIG_ID'] ?>" class="key-link">
-                            <code class="key-code"><?= h($cfg['CONFIG_KEY']) ?></code>
-                        </a>
-                    </td>
-                    <td><?= h($cfg['CONFIG_VALUE']) ?></td>
-                    <td class="desc-col"><?= $cfg['CONFIG_DESCRIPTION'] ? h($cfg['CONFIG_DESCRIPTION']) : '<span class="muted">—</span>' ?></td>
-                    <td class="nowrap date-col"><?= date('M j, Y g:ia', strtotime($cfg['UPDATED_AT'])) ?></td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-    <div class="pagination-row" id="paginationRow" style="display:none;">
-        <button class="btn btn-secondary btn-sm" id="prevBtn" onclick="changePage(-1)">← Prev</button>
-        <span class="page-info" id="pageInfo"></span>
-        <button class="btn btn-secondary btn-sm" id="nextBtn" onclick="changePage(1)">Next →</button>
-        <button class="btn btn-secondary btn-sm" id="viewAllBtn" onclick="toggleViewAll()">View All</button>
     </div>
 </div>
 <?php endif; // end !$editing && !$addMode ?>
