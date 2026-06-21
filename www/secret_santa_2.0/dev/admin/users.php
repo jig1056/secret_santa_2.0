@@ -176,6 +176,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $msg     = 'User updated successfully.';
                 $msgType = 'success';
+                // Reload the user so the edit form stays open after save
+                $stmt = $pdo->prepare("SELECT * FROM SS_USERS WHERE USER_ID = ?");
+                $stmt->execute([$userId]);
+                $editing = $stmt->fetch() ?: null;
             }
         }
 
@@ -382,6 +386,7 @@ if ($editing):
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save Changes</button>
             <a href="<?= APP_URL ?>/admin/users.php" class="btn btn-secondary">Cancel</a>
+            <a href="<?= APP_URL ?>/admin/users.php" class="btn btn-secondary">↩ Return to List</a>
             <button type="button"
                     class="btn <?= $editing['STATUS'] === 'ACTIVE' ? 'btn-warning' : 'btn-success' ?>"
                     onclick="if(confirm('<?= $editing['STATUS'] === 'ACTIVE' ? 'Deactivate' : 'Activate' ?> <?= h($editing['FIRST_NAME']) ?>?')) document.getElementById('frmToggle').submit()">
