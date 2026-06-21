@@ -374,7 +374,7 @@ document.addEventListener('DOMContentLoaded', function () {
 <!-- EDIT Template + SEND Panel                                    -->
 <!-- ============================================================ -->
 <?php if ($editing): ?>
-<div class="card">
+<div class="card" id="editFormCard">
     <div class="card-title">✏️ Edit Template: <em><?= h($editing['MESSAGE_NAME']) ?></em></div>
     <form method="POST" action="">
         <input type="hidden" name="action"     value="update">
@@ -852,10 +852,12 @@ document.querySelectorAll('form').forEach(form => {
 
 // ---- Send panel toggle ----
 function toggleSendPanel() {
-    const panel = document.getElementById('sendPanel');
-    const btn   = document.getElementById('showSendBtn');
-    const visible = panel.style.display !== 'none';
-    panel.style.display = visible ? 'none' : 'block';
+    const panel    = document.getElementById('sendPanel');
+    const editCard = document.getElementById('editFormCard');
+    const btn      = document.getElementById('showSendBtn');
+    const visible  = panel.style.display !== 'none';
+    panel.style.display    = visible ? 'none'  : 'block';
+    editCard.style.display = visible ? 'block' : 'none';
     btn.textContent = visible ? '📤 Show Send Message' : '📤 Hide Send Message';
 }
 
