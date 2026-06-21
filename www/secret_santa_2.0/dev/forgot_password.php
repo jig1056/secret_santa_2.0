@@ -88,6 +88,6 @@ $xmasYear = getConfig('XMAS_YEAR', date('Y'));
         <a href="<?= APP_URL ?>/index.php">← Back to Sign In</a>
     </div>
 </div>
-<script src="<?= APP_URL ?>/assets/js/app.js"></script>
+<script src="<?= APP_URL ?>/assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
 </body>
 </html>
