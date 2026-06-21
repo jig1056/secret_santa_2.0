@@ -187,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if (empty($recipientIds)) {
-                $msg     = 'No eligible recipients found. Make sure this message has Allowed Roles assigned.';
+                $msg     = 'No eligible recipients found. Make sure this message has Eligible Roles assigned.';
                 $msgType = 'error';
                 $stmt = $pdo->prepare("SELECT * FROM SS_MESSAGES WHERE MESSAGE_ID = ?");
                 $stmt->execute([$messageId]);
@@ -345,7 +345,7 @@ require_once __DIR__ . '/../includes/header.php';
             <div class="field-hint">Placeholders: <code>{FIRST_NAME}</code> <code>{LAST_NAME}</code> <code>{YEAR}</code> <code>{GIFT_DEADLINE}</code> <code>{SANTA_MATCH_DATE}</code> <code>{PASSWORD_RESET_LINK}</code> <code>{RESET_EXPIRY_MINS}</code></div>
         </div>
         <div class="form-group">
-            <label>Allowed Roles <span class="required">*</span></label>
+            <label>Eligible Roles <span class="required">*</span></label>
             <div class="field-hint" style="margin-bottom:0.5rem;">This message can only be sent to users who have one of these roles.</div>
             <div class="role-grid" id="roleGrid_add"></div>
             <button type="button" class="btn btn-sm btn-add-role" id="addRoleBtn_add"
@@ -384,7 +384,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="field-hint">Placeholders: <code>{FIRST_NAME}</code> <code>{LAST_NAME}</code> <code>{YEAR}</code> <code>{GIFT_DEADLINE}</code> <code>{SANTA_MATCH_DATE}</code> <code>{PASSWORD_RESET_LINK}</code> <code>{RESET_EXPIRY_MINS}</code></div>
         </div>
         <div class="form-group">
-            <label>Allowed Roles <span class="required">*</span></label>
+            <label>Eligible Roles <span class="required">*</span></label>
             <div class="field-hint" style="margin-bottom:0.5rem;">This message can only be sent to users who have one of these roles.</div>
             <div class="role-grid" id="roleGrid_edit"></div>
             <button type="button" class="btn btn-sm btn-add-role" id="addRoleBtn_edit"
@@ -504,7 +504,7 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
             <thead>
                 <tr>
                     <th>Template Name</th>
-                    <th>Allowed Roles</th>
+                    <th>Eligible Roles</th>
                     <th>Preview</th>
                     <th>Last Updated</th>
                 </tr>
