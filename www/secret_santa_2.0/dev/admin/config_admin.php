@@ -145,6 +145,7 @@ require_once __DIR__ . '/../includes/header.php';
                     onclick="if(confirm('Delete config key &quot;<?= h($editing['CONFIG_KEY']) ?>&quot;? This cannot be undone.')) document.getElementById('delCfg<?= $editing['CONFIG_ID'] ?>').submit()">
                 Delete
             </button>
+            <a href="<?= APP_URL ?>/admin/config_admin.php" class="btn btn-secondary">↩ Return to List</a>
         </div>
     </form>
     <form id="delCfg<?= $editing['CONFIG_ID'] ?>" method="POST" action="" style="display:none;">
@@ -191,6 +192,7 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 <?php endif; ?>
 
+<?php if (!$editing && !$addMode): ?>
 <!-- Initialize Season Card -->
 <div id="initSectionToggle" style="margin-bottom:1.25rem;">
     <button type="button" class="btn btn-secondary" onclick="showInitSection()">
@@ -263,7 +265,7 @@ require_once __DIR__ . '/../includes/header.php';
                             <code class="key-code"><?= h($cfg['CONFIG_KEY']) ?></code>
                         </a>
                     </td>
-                    <td><strong><?= h($cfg['CONFIG_VALUE']) ?></strong></td>
+                    <td><?= h($cfg['CONFIG_VALUE']) ?></td>
                     <td class="desc-col"><?= $cfg['CONFIG_DESCRIPTION'] ? h($cfg['CONFIG_DESCRIPTION']) : '<span class="muted">—</span>' ?></td>
                     <td class="nowrap date-col"><?= date('M j, Y g:ia', strtotime($cfg['UPDATED_AT'])) ?></td>
                 </tr>
@@ -278,6 +280,7 @@ require_once __DIR__ . '/../includes/header.php';
         <button class="btn btn-secondary btn-sm" id="viewAllBtn" onclick="toggleViewAll()">View All</button>
     </div>
 </div>
+<?php endif; // end !$editing && !$addMode ?>
 
 <style>
 .page-header  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
