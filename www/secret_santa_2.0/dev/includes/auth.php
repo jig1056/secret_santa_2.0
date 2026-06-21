@@ -40,6 +40,17 @@ function requireLogin(): void {
         }
     }
 
+    // Status check -- kick out deactivated users mid-session
+    require_once __DIR__ . '/db.php';
+    $pdo  = getDB();
+    $stmt = $pdo->prepare("SELECT STATUS FROM SS_USERS WHERE USER_ID = ?");
+    $stmt->execute([$_SESSION['USER_ID']]);
+    $status = $stmt->fetchColumn();
+    if ($status !== 'ACTIVE') {
+        logoutUser();
+        redirect('/index.php');
+    }
+
     $_SESSION['LAST_ACTIVITY'] = time();
 }
 
