@@ -21,6 +21,17 @@ $addMode = isset($_GET['add']);
 // ------------------------------------------------------------
 $allRoles = $pdo->query("SELECT ROLE_ID, ROLE_KEY, ROLE_NAME FROM SS_ROLES ORDER BY SORT_ORDER ASC")->fetchAll();
 
+// Role descriptions from SS_CONFIG (ROLE_DESC_* keys)
+$roleDescRows = $pdo->query("
+    SELECT CONFIG_KEY, CONFIG_VALUE FROM SS_CONFIG
+    WHERE CONFIG_KEY LIKE 'ROLE_DESC_%'
+")->fetchAll();
+$roleDescs = [];
+foreach ($roleDescRows as $rd) {
+    $key = strtolower(str_replace('ROLE_DESC_', '', $rd['CONFIG_KEY']));
+    $roleDescs[$key] = $rd['CONFIG_VALUE'];
+}
+
 // ------------------------------------------------------------
 // Helper: save allowed roles for a message
 // ------------------------------------------------------------
@@ -342,20 +353,9 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="form-group">
             <label>Allowed Roles <span class="required">*</span></label>
             <div class="field-hint" style="margin-bottom:0.5rem;">This message can only be sent to users who have one of these roles.</div>
-            <div class="role-checkboxes">
-                <?php
-                $postRoles = array_map('intval', (array)($_POST['allowed_roles'] ?? []));
-                foreach ($allRoles as $role):
-                ?>
-                <label class="role-check-label">
-                    <input type="checkbox" name="allowed_roles[]" value="<?= $role['ROLE_ID'] ?>"
-                           <?= in_array((int)$role['ROLE_ID'], $postRoles) ? 'checked' : '' ?>>
-                    <span class="role-check-name <?= $role['ROLE_KEY'] === 'all_roles' ? 'role-all' : '' ?>">
-                        <?= h($role['ROLE_NAME']) ?>
-                    </span>
-                </label>
-                <?php endforeach; ?>
-            </div>
+            <div class="role-grid" id="roleGrid_add"></div>
+            <button type="button" class="btn btn-sm btn-add-role" id="addRoleBtn_add"
+                    onclick="addAllowedRoleRow('add')">+ Add Role</button>
         </div>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save Template</button>
@@ -363,6 +363,11 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
     </form>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    initAllowedRoleGrid('add', <?= json_encode(array_map('intval', (array)($_POST['allowed_roles'] ?? []))) ?>);
+});
+</script>
 <?php endif; ?>
 
 <!-- ============================================================ -->
@@ -387,17 +392,9 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="form-group">
             <label>Allowed Roles <span class="required">*</span></label>
             <div class="field-hint" style="margin-bottom:0.5rem;">This message can only be sent to users who have one of these roles.</div>
-            <div class="role-checkboxes">
-                <?php foreach ($allRoles as $role): ?>
-                <label class="role-check-label">
-                    <input type="checkbox" name="allowed_roles[]" value="<?= $role['ROLE_ID'] ?>"
-                           <?= in_array((int)$role['ROLE_ID'], $editingAllowedRoleIds) ? 'checked' : '' ?>>
-                    <span class="role-check-name <?= $role['ROLE_KEY'] === 'all_roles' ? 'role-all' : '' ?>">
-                        <?= h($role['ROLE_NAME']) ?>
-                    </span>
-                </label>
-                <?php endforeach; ?>
-            </div>
+            <div class="role-grid" id="roleGrid_edit"></div>
+            <button type="button" class="btn btn-sm btn-add-role" id="addRoleBtn_edit"
+                    onclick="addAllowedRoleRow('edit')">+ Add Role</button>
         </div>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -416,6 +413,11 @@ require_once __DIR__ . '/../includes/header.php';
         <input type="hidden" name="message_id" value="<?= $editing['MESSAGE_ID'] ?>">
     </form>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    initAllowedRoleGrid('edit', <?= json_encode($editingAllowedRoleIds) ?>);
+});
+</script>
 
 <!-- SEND Panel -->
 <?php
@@ -638,12 +640,42 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 .field-hint   { font-size:0.8rem; color:#999; margin-top:0.3rem; }
 .field-hint code { background:#f4f6f8; padding:0.1rem 0.35rem; border-radius:4px; font-size:0.82rem; color:#c0392b; }
 
-/* Role checkboxes */
-.role-checkboxes   { display:flex; flex-wrap:wrap; gap:0.5rem 1.25rem; margin-top:0.3rem; }
-.role-check-label  { display:flex; align-items:center; gap:0.4rem; cursor:pointer; font-size:0.9rem; }
-.role-check-label input { cursor:pointer; }
-.role-check-name   { font-weight:500; }
-.role-all          { font-style:italic; color:#c0392b; }
+/* Role dynamic grid */
+.role-grid { display:flex; flex-direction:column; gap:0.4rem; margin-top:0.3rem; margin-bottom:0.5rem; }
+.role-grid-row {
+    display:flex; align-items:center; gap:0.5rem;
+    background:#fff; border:1px solid #e0e0e0; border-radius:8px;
+    padding:0.35rem 0.5rem; border-left:4px solid #ccc;
+    transition:border-color 0.15s;
+}
+.role-grid-row select {
+    flex:0 0 190px; border:none; background:transparent; font-size:0.9rem;
+    font-family:inherit; cursor:pointer; outline:none; color:#212529; padding:0.15rem 0;
+}
+.role-desc {
+    flex:1; font-size:0.8rem; color:#888; font-style:italic;
+    padding:0 0.5rem; line-height:1.35; border-left:1px solid #e0e0e0; margin-left:0.25rem;
+}
+.role-grid-row .remove-role-btn {
+    background:none; border:none; color:#aaa; font-size:1rem; font-weight:700;
+    cursor:pointer; padding:0 0.25rem; line-height:1; border-radius:4px;
+    transition:color 0.15s, background 0.15s;
+}
+.role-grid-row .remove-role-btn:hover { color:#c0392b; background:#fdecea; }
+.btn-add-role {
+    background:#f4f6f8; color:#444; border:1px dashed #bbb;
+    font-size:0.85rem; padding:0.3rem 0.8rem; border-radius:8px;
+    cursor:pointer; transition:background 0.15s, border-color 0.15s;
+}
+.btn-add-role:hover  { background:#e8f0fb; border-color:#5b9bd5; color:#1a5276; }
+.btn-add-role:disabled { opacity:0.45; cursor:not-allowed; }
+
+/* Role row accent colors */
+.role-grid-row[data-role="all_roles"]       { border-left-color:#888; }
+.role-grid-row[data-role="admin"]           { border-left-color:#922b21; }
+.role-grid-row[data-role="secret_santa"]    { border-left-color:#1a5276; }
+.role-grid-row[data-role="wishlist_only"]   { border-left-color:#6c3483; }
+.role-grid-row[data-role="wishlist_gifter"] { border-left-color:#1e8449; }
 
 /* Send panel */
 .send-card { border-left:4px solid #1e8449; }
@@ -717,6 +749,107 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 </style>
 
 <script>
+// ── Shared role data ─────────────────────────────────────────
+const ALL_ROLES  = <?= json_encode(array_values($allRoles)) ?>;
+const ROLE_DESCS = <?= json_encode($roleDescs) ?>;
+const ROLE_BY_ID = {};
+ALL_ROLES.forEach(r => { ROLE_BY_ID[String(r.ROLE_ID)] = r; });
+
+// ── Allowed Role grid ────────────────────────────────────────
+function initAllowedRoleGrid(gridKey, preselected) {
+    if (!preselected || preselected.length === 0) {
+        addAllowedRoleRow(gridKey, '');
+    } else {
+        preselected.forEach(id => addAllowedRoleRow(gridKey, String(id)));
+    }
+}
+
+function addAllowedRoleRow(gridKey, selectedValue) {
+    selectedValue = selectedValue !== undefined ? String(selectedValue) : '';
+    const grid = document.getElementById('roleGrid_' + gridKey);
+    if (!grid) return;
+
+    const row = document.createElement('div');
+    row.className = 'role-grid-row';
+    if (selectedValue && ROLE_BY_ID[selectedValue]) {
+        row.dataset.role = ROLE_BY_ID[selectedValue].ROLE_KEY;
+    }
+
+    const sel = document.createElement('select');
+    sel.name = 'allowed_roles[]';
+    sel.className = 'allowed-role-select';
+    const ph = document.createElement('option');
+    ph.value = ''; ph.textContent = '— Select a role —';
+    sel.appendChild(ph);
+    ALL_ROLES.forEach(role => {
+        const opt = document.createElement('option');
+        opt.value = role.ROLE_ID;
+        opt.textContent = role.ROLE_NAME;
+        if (String(role.ROLE_ID) === selectedValue) opt.selected = true;
+        sel.appendChild(opt);
+    });
+    sel.addEventListener('change', function () {
+        const role = ROLE_BY_ID[this.value];
+        const key  = role ? role.ROLE_KEY : '';
+        row.dataset.role = key;
+        descSpan.textContent = key && ROLE_DESCS[key] ? ROLE_DESCS[key] : '';
+        refreshAllowedRoleDropdowns(gridKey);
+        updateAllowedRoleBtn(gridKey);
+    });
+
+    const descSpan = document.createElement('span');
+    descSpan.className = 'role-desc';
+    const initRole = ROLE_BY_ID[selectedValue];
+    descSpan.textContent = initRole && ROLE_DESCS[initRole.ROLE_KEY]
+        ? ROLE_DESCS[initRole.ROLE_KEY] : '';
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button'; removeBtn.className = 'remove-role-btn';
+    removeBtn.innerHTML = '&times;'; removeBtn.title = 'Remove';
+    removeBtn.addEventListener('click', function () {
+        row.remove();
+        refreshAllowedRoleDropdowns(gridKey);
+        updateAllowedRoleBtn(gridKey);
+    });
+
+    row.appendChild(sel); row.appendChild(descSpan); row.appendChild(removeBtn);
+    grid.appendChild(row);
+    refreshAllowedRoleDropdowns(gridKey);
+    updateAllowedRoleBtn(gridKey);
+}
+
+function refreshAllowedRoleDropdowns(gridKey) {
+    const grid = document.getElementById('roleGrid_' + gridKey);
+    if (!grid) return;
+    const selects = Array.from(grid.querySelectorAll('select.allowed-role-select'));
+    const used = selects.map(s => s.value).filter(v => v !== '');
+    selects.forEach(sel => {
+        const cur = sel.value;
+        Array.from(sel.options).forEach(opt => {
+            if (!opt.value) return;
+            opt.disabled = used.includes(opt.value) && opt.value !== cur;
+        });
+    });
+}
+
+function updateAllowedRoleBtn(gridKey) {
+    const btn  = document.getElementById('addRoleBtn_' + gridKey);
+    if (!btn) return;
+    const grid = document.getElementById('roleGrid_' + gridKey);
+    const used = Array.from(grid.querySelectorAll('select.allowed-role-select'))
+        .map(s => s.value).filter(v => v !== '');
+    btn.disabled = used.length >= ALL_ROLES.length;
+}
+
+// Strip blank selects before submit
+document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', function () {
+        this.querySelectorAll('select.allowed-role-select').forEach(sel => {
+            if (!sel.value) sel.disabled = true;
+        });
+    });
+});
+
 // ---- Send panel toggle ----
 function toggleSendPanel() {
     const panel = document.getElementById('sendPanel');
