@@ -2,8 +2,10 @@
 .git
 .DS_Store
 .venv
+.gitignore
+.rsync-exclude
 secret_santa_create_database.sql
 message_notes.md
-CONTENT.md
+CONTEXT.md
 misc_docs
-sqls
+sqls 
