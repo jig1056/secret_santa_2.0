@@ -185,7 +185,7 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
 
         <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Add Key</button>
+            <button type="submit" class="btn btn-primary">Save Key</button>
             <a href="<?= APP_URL ?>/admin/config_admin.php" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
