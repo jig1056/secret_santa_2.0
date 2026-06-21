@@ -18,7 +18,13 @@ $totalUsers    = $pdo->query("
     JOIN SS_ROLES r ON r.ROLE_ID = ur.ROLE_ID
     WHERE u.STATUS = 'ACTIVE' AND r.ROLE_KEY = 'secret_santa'
 ")->fetchColumn();
-$totalGiftsStmt = $pdo->prepare("SELECT COUNT(*) FROM SS_GIFTS WHERE YEAR = ?");
+$totalGiftsStmt = $pdo->prepare("
+    SELECT COUNT(*) FROM SS_GIFTS g
+    JOIN SS_USER_ROLES ur ON ur.USER_ID = g.USER_ID
+    JOIN SS_ROLES r ON r.ROLE_ID = ur.ROLE_ID
+    JOIN SS_USERS u ON u.USER_ID = g.USER_ID
+    WHERE g.YEAR = ? AND r.ROLE_KEY = 'secret_santa' AND u.STATUS = 'ACTIVE'
+");
 $totalGiftsStmt->execute([$xmasYear]);
 $totalGifts    = $totalGiftsStmt->fetchColumn();
 $matchesDone   = matchesGenerated();
@@ -59,7 +65,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="stat-card">
         <div class="stat-icon">👥</div>
         <div class="stat-value"><?= $totalUsers ?></div>
-        <div class="stat-label">Active Users</div>
+        <div class="stat-label">Participants</div>
     </div>
     <div class="stat-card">
         <div class="stat-icon">🎁</div>
