@@ -237,8 +237,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
 
-                    $pdo->prepare("INSERT INTO SS_MESSAGE_LOG (MESSAGE_ID, USER_ID, CHANNEL, STATUS, SENT_AT) VALUES (?, ?, ?, ?, NOW())")
-                        ->execute([$messageId, $recipient['USER_ID'], $channel, $status]);
+                    $pdo->prepare("INSERT INTO SS_MESSAGE_LOG (MESSAGE_ID, USER_ID, CHANNEL, STATUS, XMAS_YEAR, SENT_AT) VALUES (?, ?, ?, ?, ?, NOW())")
+                        ->execute([$messageId, $recipient['USER_ID'], $channel, $status, $xmasYear]);
                     $sent++;
                 }
 
@@ -297,17 +297,14 @@ $activeUsers = $pdo->query("
     ORDER BY FIRST_NAME ASC, LAST_NAME ASC
 ")->fetchAll();
 
-// Send log
-$logCount = (int) getConfig('MESSAGE_LOG_DISPLAY_COUNT', '20');
-$logStmt = $pdo->prepare("
+// Send log — no limit, fetch all
+$logStmt = $pdo->query("
     SELECT l.*, m.MESSAGE_NAME, u.FIRST_NAME, u.LAST_NAME
     FROM SS_MESSAGE_LOG l
     JOIN SS_MESSAGES m ON m.MESSAGE_ID = l.MESSAGE_ID
     JOIN SS_USERS u ON u.USER_ID = l.USER_ID
     ORDER BY l.SENT_AT DESC
-    LIMIT " . max(1, $logCount) . "
 ");
-$logStmt->execute();
 $logs = $logStmt->fetchAll();
 
 require_once __DIR__ . '/../includes/header.php';
@@ -554,25 +551,41 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 </div>
 
 <!-- ============================================================ -->
+<!-- Send Log Toggle                                               -->
+<!-- ============================================================ -->
+<div id="logToggleRow" style="margin-bottom:1.25rem;">
+    <button type="button" class="btn btn-secondary" onclick="showLog()">
+        📜 Show Send Log<?php if (!empty($logs)): ?> (<?= count($logs) ?>)<?php endif; ?>
+    </button>
+</div>
+
+<!-- ============================================================ -->
 <!-- Send Log                                                      -->
 <!-- ============================================================ -->
-<?php if (!empty($logs)): ?>
-<div class="card">
+<div class="card" id="logCard" style="display:none;">
     <div class="card-header-row">
-        <div class="card-title" style="margin-bottom:0;">📜 Recent Send Log (last <?= $logCount ?>)</div>
-        <button type="button" class="btn btn-danger btn-sm"
-                onclick="if(confirm('Clear the entire send log? This cannot be undone.')) document.getElementById('frmClearLog').submit()">
-            🗑️ Clear Log
-        </button>
+        <div class="card-title" style="margin-bottom:0;">📜 Send Log (<?= count($logs) ?>)</div>
+        <div style="display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap;">
+            <input type="text" id="logSearch" placeholder="🔍 Search log..." oninput="filterLog()" class="dash-search">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="hideLog()">✖ Hide</button>
+            <button type="button" class="btn btn-danger btn-sm"
+                    onclick="if(confirm('Clear the entire send log? This cannot be undone.')) document.getElementById('frmClearLog').submit()">
+                🗑️ Clear Log
+            </button>
+        </div>
     </div>
     <form id="frmClearLog" method="POST" action="" style="display:none;">
         <input type="hidden" name="action" value="clear_log">
     </form>
+    <?php if (empty($logs)): ?>
+    <div class="empty-state" style="margin-top:1rem;">No messages have been sent yet.</div>
+    <?php else: ?>
     <div class="table-wrap" style="margin-top:1rem;">
         <table>
             <thead>
                 <tr>
                     <th>Sent At</th>
+                    <th>Year</th>
                     <th>Template</th>
                     <th>Recipient</th>
                     <th>Channel</th>
@@ -581,8 +594,10 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
             </thead>
             <tbody>
                 <?php foreach ($logs as $log): ?>
-                <tr>
+                <tr class="log-row"
+                    data-search="<?= strtolower(h($log['MESSAGE_NAME'] . ' ' . $log['FIRST_NAME'] . ' ' . $log['LAST_NAME'] . ' ' . $log['CHANNEL'] . ' ' . $log['STATUS'] . ' ' . ($log['XMAS_YEAR'] ?? ''))) ?>">
                     <td class="nowrap date-col"><?= date('M j, Y g:ia', strtotime($log['SENT_AT'])) ?></td>
+                    <td class="year-col"><?= $log['XMAS_YEAR'] ? h($log['XMAS_YEAR']) : '<span class="muted">—</span>' ?></td>
                     <td><?= h($log['MESSAGE_NAME']) ?></td>
                     <td><?= h($log['FIRST_NAME']) ?> <?= h($log['LAST_NAME']) ?></td>
                     <td><span class="badge badge-channel"><?= h($log['CHANNEL']) ?></span></td>
@@ -592,8 +607,14 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
             </tbody>
         </table>
     </div>
+    <div class="pagination-row" id="logPaginationRow" style="display:none;">
+        <button class="btn btn-secondary btn-sm" id="logPrevBtn" onclick="changeLogPage(-1)">← Prev</button>
+        <span class="page-info" id="logPageInfo"></span>
+        <button class="btn btn-secondary btn-sm" id="logNextBtn" onclick="changeLogPage(1)">Next →</button>
+        <button class="btn btn-secondary btn-sm" id="logViewAllBtn" onclick="toggleLogViewAll()">View All</button>
+    </div>
+    <?php endif; ?>
 </div>
-<?php endif; ?>
 
 <style>
 .page-header     { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; }
@@ -678,6 +699,85 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 
 .btn-success { background:#1e8449; color:#fff; }
 .btn-danger  { background:#c0392b; color:#fff; }
+.btn-sm      { padding:0.3rem 0.7rem; font-size:0.85rem; }
+
+/* Log search + pagination */
+.dash-search    { padding:0.4rem 0.75rem; border:1px solid #ccc; border-radius:8px; font-size:0.9rem; min-width:180px; }
+.year-col       { font-size:0.85rem; color:#555; white-space:nowrap; }
+.pagination-row { display:flex; align-items:center; gap:0.6rem; padding:0.75rem 0 0.25rem; flex-wrap:wrap; }
+.page-info      { font-size:0.88rem; color:#666; min-width:100px; text-align:center; }
 </style>
+
+<script>
+// ---- Log show/hide ----
+function showLog() {
+    document.getElementById('logToggleRow').style.display = 'none';
+    document.getElementById('logCard').style.display = 'block';
+    renderLog();
+}
+function hideLog() {
+    document.getElementById('logToggleRow').style.display = '';
+    document.getElementById('logCard').style.display = 'none';
+}
+
+// ---- Log pagination + search ----
+const LOG_PAGE_SIZE = 25;
+let logPage    = 1;
+let logViewAll = false;
+
+function getLogRows() {
+    return Array.from(document.querySelectorAll('.log-row'));
+}
+
+function getFilteredLogRows() {
+    const q = (document.getElementById('logSearch')?.value || '').toLowerCase().trim();
+    return getLogRows().filter(row => !q || row.dataset.search.includes(q));
+}
+
+function renderLog() {
+    const filtered   = getFilteredLogRows();
+    const total      = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / LOG_PAGE_SIZE));
+    logPage          = Math.max(1, Math.min(logPage, totalPages));
+
+    getLogRows().forEach(r => r.style.display = 'none');
+    const showRows = logViewAll
+        ? filtered
+        : filtered.slice((logPage - 1) * LOG_PAGE_SIZE, logPage * LOG_PAGE_SIZE);
+    showRows.forEach(r => r.style.display = '');
+
+    const paginationRow = document.getElementById('logPaginationRow');
+    const pageInfo      = document.getElementById('logPageInfo');
+    const prevBtn       = document.getElementById('logPrevBtn');
+    const nextBtn       = document.getElementById('logNextBtn');
+    const viewAllBtn    = document.getElementById('logViewAllBtn');
+    if (!paginationRow) return;
+
+    if (total > LOG_PAGE_SIZE || logViewAll) {
+        paginationRow.style.display = '';
+        if (logViewAll) {
+            pageInfo.textContent   = 'Showing all ' + total;
+            prevBtn.style.display  = 'none';
+            nextBtn.style.display  = 'none';
+            viewAllBtn.textContent = '← Paginate';
+        } else {
+            const start = Math.min((logPage - 1) * LOG_PAGE_SIZE + 1, total);
+            const end   = Math.min(logPage * LOG_PAGE_SIZE, total);
+            pageInfo.textContent   = total ? start + '–' + end + ' of ' + total : 'No results';
+            prevBtn.style.display  = '';
+            nextBtn.style.display  = '';
+            prevBtn.disabled       = logPage <= 1;
+            nextBtn.disabled       = logPage >= totalPages;
+            viewAllBtn.textContent = 'View All';
+        }
+    } else {
+        paginationRow.style.display = 'none';
+    }
+}
+
+function filterLog()      { logPage = 1; renderLog(); }
+function changeLogPage(d) { logPage += d; renderLog(); }
+function toggleLogViewAll() { logViewAll = !logViewAll; logPage = 1; renderLog(); }
+</script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
