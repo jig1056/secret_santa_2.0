@@ -87,19 +87,30 @@ function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string
     $safeApp   = htmlspecialchars($appName,  ENT_QUOTES, 'UTF-8');
     $safeYear  = htmlspecialchars($year,     ENT_QUOTES, 'UTF-8');
 
+    // Use table-based layout — div backgrounds are stripped by Spark/iOS Mail
     return "
-<div style=\"font-family:Arial,sans-serif;max-width:680px;margin:0 auto;\">
-    <div style=\"background:#c0392b;color:#fff;padding:20px 24px;border-radius:8px 8px 0 0;\">
-        <h2 style=\"margin:0;\">🎁 {$safeTitle}</h2>
-        <p style=\"margin:6px 0 0;opacity:0.85;\">{$safeSub}</p>
-    </div>
-    <div style=\"padding:24px;background:#fff;color:#333;font-size:0.97rem;line-height:1.7;\">
-        {$safeBody}
-    </div>
-    <div style=\"background:#f5f5f5;padding:14px 24px;border-radius:0 0 8px 8px;font-size:0.82rem;color:#888;\">
-        Sent from {$safeApp} &bull; {$safeYear}
-    </div>
-</div>";
+<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"
+       style=\"font-family:Arial,sans-serif;max-width:680px;margin:0 auto;\">
+    <!-- Header -->
+    <tr>
+        <td bgcolor=\"#c0392b\" style=\"background:#c0392b;padding:20px 24px;border-radius:8px 8px 0 0;\">
+            <h2 style=\"margin:0;color:#ffffff;font-size:1.2rem;\">🎁 {$safeTitle}</h2>
+            <p style=\"margin:6px 0 0;color:#ffffff;opacity:0.85;font-size:0.9rem;\">{$safeSub}</p>
+        </td>
+    </tr>
+    <!-- Body -->
+    <tr>
+        <td bgcolor=\"#ffffff\" style=\"background:#ffffff;padding:24px;color:#333333;font-size:0.97rem;line-height:1.7;\">
+            {$safeBody}
+        </td>
+    </tr>
+    <!-- Footer -->
+    <tr>
+        <td bgcolor=\"#f5f5f5\" style=\"background:#f5f5f5;padding:14px 24px;border-radius:0 0 8px 8px;font-size:0.82rem;color:#888888;\">
+            Sent from {$safeApp} &bull; {$safeYear}
+        </td>
+    </tr>
+</table>";
 }
 
 // ------------------------------------------------------------
