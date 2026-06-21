@@ -81,23 +81,35 @@ function sendSMS(string $to, string $body): bool|string {
 // ------------------------------------------------------------
 function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string $year): string {
     $appName   = defined('APP_NAME') ? APP_NAME : 'Secret Santa';
-    $appUrl    = defined('APP_URL')  ? APP_URL  : '';
     $safeTitle = htmlspecialchars($title,    ENT_QUOTES, 'UTF-8');
     $safeSub   = htmlspecialchars($subtitle, ENT_QUOTES, 'UTF-8');
     $safeBody  = nl2br(htmlspecialchars($bodyText, ENT_QUOTES, 'UTF-8'));
     $safeApp   = htmlspecialchars($appName,  ENT_QUOTES, 'UTF-8');
     $safeYear  = htmlspecialchars($year,     ENT_QUOTES, 'UTF-8');
-    $logoUrl   = htmlspecialchars($appUrl . '/assets/images/apple-touch-icon.png', ENT_QUOTES, 'UTF-8');
+
+    // Embed logo as base64 so Gmail/Outlook don't block it as an external image
+    $iconPath = __DIR__ . '/../assets/images/apple-touch-icon.png';
+    $iconTag  = '';
+    if (file_exists($iconPath)) {
+        $b64     = base64_encode(file_get_contents($iconPath));
+        $iconTag = "<td width=\"62\" style=\"padding:16px 0 16px 20px;vertical-align:middle;\">
+                    <img src=\"data:image/png;base64,{$b64}\" alt=\"\" width=\"48\" height=\"48\"
+                         style=\"border-radius:8px;display:block;\">
+                </td>";
+    }
 
     return "
 <div style=\"font-family:Arial,sans-serif;max-width:680px;margin:0 auto;\">
-    <div style=\"background:#c0392b;color:#fff;padding:20px 24px;border-radius:8px 8px 0 0;display:flex;align-items:center;gap:14px;\">
-        <img src=\"{$logoUrl}\" alt=\"\" width=\"48\" height=\"48\"
-             style=\"border-radius:8px;flex-shrink:0;display:block;\">
-        <div>
-            <h2 style=\"margin:0;font-size:1.3rem;\">{$safeTitle}</h2>
-            <p style=\"margin:4px 0 0;opacity:0.85;font-size:0.9rem;\">{$safeSub}</p>
-        </div>
+    <div style=\"background:#c0392b;border-radius:8px 8px 0 0;\">
+        <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">
+            <tr>
+                {$iconTag}
+                <td style=\"padding:16px 16px 16px 12px;vertical-align:middle;\">
+                    <h2 style=\"margin:0;font-size:1.25rem;color:#fff;\">{$safeTitle}</h2>
+                    <p style=\"margin:4px 0 0;font-size:0.88rem;color:rgba(255,255,255,0.85);\">{$safeSub}</p>
+                </td>
+            </tr>
+        </table>
     </div>
     <div style=\"padding:24px;background:#fff;color:#333;font-size:0.97rem;line-height:1.7;\">
         {$safeBody}
