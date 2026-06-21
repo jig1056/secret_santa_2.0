@@ -137,10 +137,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // -- SEND --
     } elseif ($action === 'send') {
-        $messageId      = (int)($_POST['message_id']    ?? 0);
-        $channel        = $_POST['channel']              ?? 'EMAIL';
-        $targetRoleIds  = array_map('intval', (array)($_POST['target_roles']   ?? []));
-        $targetUserIds  = (array)($_POST['target_users'] ?? []);
+        $messageId     = (int)($_POST['message_id'] ?? 0);
+        $channel       = $_POST['channel']           ?? 'EMAIL';
+        $targetType    = $_POST['target_type']        ?? 'all';
+        $targetUserIds = (array)($_POST['target_users'] ?? []);
 
         // Load template
         $tplStmt = $pdo->prepare("SELECT * FROM SS_MESSAGES WHERE MESSAGE_ID = ?");
@@ -148,60 +148,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $template = $tplStmt->fetch();
 
         if (!$template) {
-            $msg = 'Message template not found.';
+            $msg     = 'Message template not found.';
             $msgType = 'error';
-        } elseif (empty($targetRoleIds) && empty(array_filter($targetUserIds))) {
-            $msg     = 'Please select at least one target role or individual user.';
+        } elseif ($targetType === 'individual' && empty(array_filter($targetUserIds))) {
+            $msg     = 'Please select at least one user.';
             $msgType = 'error';
             $stmt = $pdo->prepare("SELECT * FROM SS_MESSAGES WHERE MESSAGE_ID = ?");
             $stmt->execute([$messageId]);
             $editing = $stmt->fetch() ?: null;
         } else {
-            // ---- Get message's allowed role keys ----
-            $mrStmt = $pdo->prepare("
-                SELECT r.ROLE_KEY FROM SS_MESSAGE_ROLES mr
-                JOIN SS_ROLES r ON r.ROLE_ID = mr.ROLE_ID
-                WHERE mr.MESSAGE_ID = ?
-            ");
+            // ---- Get message's allowed role IDs ----
+            $mrStmt = $pdo->prepare("SELECT ROLE_ID FROM SS_MESSAGE_ROLES WHERE MESSAGE_ID = ?");
             $mrStmt->execute([$messageId]);
-            $allowedRoleKeys = $mrStmt->fetchAll(PDO::FETCH_COLUMN);
-            $hasAllRoles     = in_array('all_roles', $allowedRoleKeys);
+            $allowedRoleIds = $mrStmt->fetchAll(PDO::FETCH_COLUMN);
 
-            // ---- Build target user pool ----
+            // ---- Build recipient pool (keyed array = no duplicates) ----
             $recipientIds = [];
 
-            // By role
-            if (!empty($targetRoleIds)) {
-                $placeholders = implode(',', array_fill(0, count($targetRoleIds), '?'));
-                $rStmt = $pdo->prepare("
-                    SELECT DISTINCT u.USER_ID FROM SS_USERS u
-                    JOIN SS_USER_ROLES ur ON ur.USER_ID = u.USER_ID
-                    WHERE ur.ROLE_ID IN ({$placeholders}) AND u.STATUS = 'ACTIVE'
-                ");
-                $rStmt->execute($targetRoleIds);
-                foreach ($rStmt->fetchAll(PDO::FETCH_COLUMN) as $uid) {
-                    $recipientIds[$uid] = true;
-                }
-            }
-
-            // By individual user
-            foreach ($targetUserIds as $uid) {
-                if ($uid) $recipientIds[$uid] = true;
-            }
-
-            // ---- Apply message allowed-role filter ----
-            $userRolesMap = loadAllUserRoles($pdo);
-            if (!$hasAllRoles) {
-                foreach (array_keys($recipientIds) as $uid) {
-                    $userKeys = $userRolesMap[$uid] ?? [];
-                    if (empty(array_intersect($userKeys, $allowedRoleKeys))) {
-                        unset($recipientIds[$uid]); // user's roles don't match message's allowed roles
+            if ($targetType === 'all') {
+                // Everyone with an allowed role
+                if (!empty($allowedRoleIds)) {
+                    $ph    = implode(',', array_fill(0, count($allowedRoleIds), '?'));
+                    $rStmt = $pdo->prepare("
+                        SELECT DISTINCT u.USER_ID FROM SS_USERS u
+                        JOIN SS_USER_ROLES ur ON ur.USER_ID = u.USER_ID
+                        WHERE ur.ROLE_ID IN ({$ph}) AND u.STATUS = 'ACTIVE'
+                    ");
+                    $rStmt->execute($allowedRoleIds);
+                    foreach ($rStmt->fetchAll(PDO::FETCH_COLUMN) as $uid) {
+                        $recipientIds[$uid] = true;
                     }
+                }
+            } else {
+                // Individually selected (UI only shows eligible users, so no secondary filter needed)
+                foreach ($targetUserIds as $uid) {
+                    if ($uid) $recipientIds[$uid] = true;
                 }
             }
 
             if (empty($recipientIds)) {
-                $msg     = 'No eligible recipients after applying role restrictions. Check the message\'s Allowed Roles.';
+                $msg     = 'No eligible recipients found. Make sure this message has Allowed Roles assigned.';
                 $msgType = 'error';
                 $stmt = $pdo->prepare("SELECT * FROM SS_MESSAGES WHERE MESSAGE_ID = ?");
                 $stmt->execute([$messageId]);
@@ -301,12 +287,20 @@ foreach ($trStmt->fetchAll() as $row) {
     $templateRolesMap[$row['MESSAGE_ID']][] = $row;
 }
 
-// Active users for individual targeting
-$activeUsers = $pdo->query("
-    SELECT USER_ID, FIRST_NAME, LAST_NAME
-    FROM SS_USERS WHERE STATUS = 'ACTIVE'
-    ORDER BY FIRST_NAME ASC, LAST_NAME ASC
-")->fetchAll();
+// Eligible users for individual targeting — only those with this message's allowed roles
+$eligibleUsers = [];
+if ($editing && !empty($editingAllowedRoleIds)) {
+    $ph    = implode(',', array_fill(0, count($editingAllowedRoleIds), '?'));
+    $euStmt = $pdo->prepare("
+        SELECT DISTINCT u.USER_ID, u.FIRST_NAME, u.LAST_NAME
+        FROM SS_USERS u
+        JOIN SS_USER_ROLES ur ON ur.USER_ID = u.USER_ID
+        WHERE ur.ROLE_ID IN ({$ph}) AND u.STATUS = 'ACTIVE'
+        ORDER BY u.FIRST_NAME ASC, u.LAST_NAME ASC
+    ");
+    $euStmt->execute($editingAllowedRoleIds);
+    $eligibleUsers = $euStmt->fetchAll();
+}
 
 // Send log — no limit, fetch all
 $logStmt = $pdo->query("
@@ -434,9 +428,6 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
         <?php foreach ($editingAllowedRoles as $r): ?>
         <span class="badge badge-role-<?= h($r['ROLE_KEY']) ?>"><?= h($r['ROLE_NAME']) ?></span>
         <?php endforeach; ?>
-        <?php if (!$editingHasAllRoles): ?>
-        <span class="notice-hint">— Users without one of these roles will be skipped even if targeted.</span>
-        <?php endif; ?>
     </div>
     <?php endif; ?>
 
@@ -444,35 +435,33 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
         <input type="hidden" name="action"     value="send">
         <input type="hidden" name="message_id" value="<?= $editing['MESSAGE_ID'] ?>">
 
-        <div class="send-targets">
-
-            <!-- Target by Role -->
-            <div class="send-target-group">
-                <div class="send-target-label">Target by Role</div>
-                <div class="role-checkboxes">
-                    <?php foreach ($allRoles as $role):
-                        if ($role['ROLE_KEY'] === 'all_roles') continue; ?>
-                    <label class="role-check-label">
-                        <input type="checkbox" name="target_roles[]" value="<?= $role['ROLE_ID'] ?>">
-                        <span class="role-check-name"><?= h($role['ROLE_NAME']) ?></span>
-                    </label>
-                    <?php endforeach; ?>
-                </div>
+        <!-- Send To -->
+        <div class="form-group">
+            <label>Send To <span class="required">*</span></label>
+            <div class="target-radio-group">
+                <label class="target-radio-label">
+                    <input type="radio" name="target_type" value="all" checked onchange="updateTargetUI()">
+                    All eligible users
+                </label>
+                <label class="target-radio-label">
+                    <input type="radio" name="target_type" value="individual" onchange="updateTargetUI()">
+                    Select individuals
+                </label>
             </div>
-
-            <!-- Target by Individual User -->
-            <div class="send-target-group">
-                <div class="send-target-label">Target Individual Users <span class="optional">(optional)</span></div>
-                <select name="target_users[]" multiple size="5" class="user-multiselect">
-                    <?php foreach ($activeUsers as $u): ?>
+            <div id="individualPanel" style="display:none; margin-top:0.75rem;">
+                <?php if (empty($eligibleUsers)): ?>
+                <p class="muted" style="font-size:0.9rem;">No active users have the allowed roles for this message.</p>
+                <?php else: ?>
+                <select name="target_users[]" multiple size="<?= min(8, count($eligibleUsers)) ?>" class="user-multiselect">
+                    <?php foreach ($eligibleUsers as $u): ?>
                     <option value="<?= h($u['USER_ID']) ?>">
                         <?= h($u['FIRST_NAME']) ?> <?= h($u['LAST_NAME']) ?>
                     </option>
                     <?php endforeach; ?>
                 </select>
-                <div class="field-hint">Hold Ctrl / Cmd to select multiple. Can be used alone or combined with role targeting above.</div>
+                <div class="field-hint">Hold Ctrl / Cmd to select multiple. Only users with this message's allowed roles are listed.</div>
+                <?php endif; ?>
             </div>
-
         </div>
 
         <!-- Channel + Preview row -->
@@ -677,6 +666,11 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 .role-grid-row[data-role="wishlist_only"]   { border-left-color:#6c3483; }
 .role-grid-row[data-role="wishlist_gifter"] { border-left-color:#1e8449; }
 
+/* Send targeting */
+.target-radio-group  { display:flex; gap:1.5rem; margin-top:0.4rem; flex-wrap:wrap; }
+.target-radio-label  { display:flex; align-items:center; gap:0.4rem; cursor:pointer; font-size:0.95rem; font-weight:500; }
+.target-radio-label input { cursor:pointer; }
+
 /* Send panel */
 .send-card { border-left:4px solid #1e8449; }
 
@@ -693,12 +687,6 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
     gap:0.4rem;
 }
 .notice-hint { color:#666; font-style:italic; }
-
-.send-targets { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-bottom:1rem; }
-@media (max-width:680px) { .send-targets { grid-template-columns:1fr; } }
-
-.send-target-group { }
-.send-target-label { font-weight:600; font-size:0.9rem; color:#333; margin-bottom:0.5rem; }
 
 .user-multiselect {
     width:100%;
@@ -849,6 +837,13 @@ document.querySelectorAll('form').forEach(form => {
         });
     });
 });
+
+// ---- Send targeting UI ----
+function updateTargetUI() {
+    const type = document.querySelector('input[name="target_type"]:checked')?.value;
+    const panel = document.getElementById('individualPanel');
+    if (panel) panel.style.display = type === 'individual' ? '' : 'none';
+}
 
 // ---- Send panel toggle ----
 function toggleSendPanel() {
