@@ -117,6 +117,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             saveMessageRoles($messageId, $selectedRoleIds, $pdo);
             $msg     = 'Message template updated.';
             $msgType = 'success';
+            // Reload so the edit form stays open after save
+            $stmt = $pdo->prepare("SELECT * FROM SS_MESSAGES WHERE MESSAGE_ID = ?");
+            $stmt->execute([$messageId]);
+            $editing = $stmt->fetch() ?: null;
         }
 
     // -- DELETE template --
