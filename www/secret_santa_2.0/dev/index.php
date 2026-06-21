@@ -22,13 +22,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($email && $password) {
         $pdo  = getDB();
-        $stmt = $pdo->prepare("SELECT * FROM SS_USERS WHERE EMAIL = ? AND STATUS = 'ACTIVE'");
+        $stmt = $pdo->prepare("SELECT * FROM SS_USERS WHERE EMAIL = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['PASSWORD_HASH'])) {
-            loginUser($user, $rememberMe);
-            redirect('/pages/home.php');
+            if ($user['STATUS'] !== 'ACTIVE') {
+                $error = 'Your account is inactive. Please contact the administrator.';
+            } else {
+                loginUser($user, $rememberMe);
+                redirect('/pages/home.php');
+            }
         } else {
             $error = 'Invalid email or password.';
         }
