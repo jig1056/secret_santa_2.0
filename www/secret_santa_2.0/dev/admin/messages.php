@@ -392,6 +392,7 @@ document.addEventListener('DOMContentLoaded', function () {
 <!-- EDIT Template + SEND Panel                                    -->
 <!-- ============================================================ -->
 <?php if ($editing): ?>
+<a href="<?= APP_URL ?>/admin/messages.php" class="back-link">← Return to List</a>
 <div class="card" id="editFormCard">
     <div class="card-title">✏️ Edit Template: <em><?= h($editing['MESSAGE_NAME']) ?></em></div>
     <form method="POST" action="">
@@ -743,6 +744,10 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 .preview-label { font-size:0.82rem; font-weight:700; color:#888; margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.04em; }
 .preview-note  { font-weight:400; text-transform:none; font-style:italic; }
 .preview-body  { font-size:0.95rem; color:#333; line-height:1.6; }
+
+/* Back link */
+.back-link { display:inline-block; font-size:0.9rem; color:#c0392b; text-decoration:none; font-weight:600; margin-bottom:0.6rem; }
+.back-link:hover { text-decoration:underline; }
 
 /* Table */
 .name-link   { font-weight:600; color:#c0392b; text-decoration:none; }
