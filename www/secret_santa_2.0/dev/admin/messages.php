@@ -83,8 +83,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msgType = 'error';
             $addMode = true;
         } else {
-            $pdo->prepare("INSERT INTO SS_MESSAGES (MESSAGE_NAME, MESSAGE_BODY) VALUES (?, ?)")
-                ->execute([$name, $body]);
+            $isInternal = isset($_POST['is_internal']) ? 1 : 0;
+            $pdo->prepare("INSERT INTO SS_MESSAGES (MESSAGE_NAME, MESSAGE_BODY, IS_INTERNAL) VALUES (?, ?, ?)")
+                ->execute([$name, $body, $isInternal]);
             $newId = (int)$pdo->lastInsertId();
             saveMessageRoles($newId, $selectedRoleIds, $pdo);
             $msg     = "Message template \"{$name}\" created.";
@@ -112,8 +113,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$messageId]);
             $editing = $stmt->fetch() ?: null;
         } else {
-            $pdo->prepare("UPDATE SS_MESSAGES SET MESSAGE_NAME=?,MESSAGE_BODY=?,UPDATED_AT=NOW() WHERE MESSAGE_ID=?")
-                ->execute([$name, $body, $messageId]);
+            $isInternal = isset($_POST['is_internal']) ? 1 : 0;
+            $pdo->prepare("UPDATE SS_MESSAGES SET MESSAGE_NAME=?,MESSAGE_BODY=?,IS_INTERNAL=?,UPDATED_AT=NOW() WHERE MESSAGE_ID=?")
+                ->execute([$name, $body, $isInternal, $messageId]);
             saveMessageRoles($messageId, $selectedRoleIds, $pdo);
             $msg     = 'Message template updated.';
             $msgType = 'success';
@@ -365,6 +367,14 @@ require_once __DIR__ . '/../includes/header.php';
             <button type="button" class="btn btn-sm btn-add-role" id="addRoleBtn_add"
                     onclick="addAllowedRoleRow('add')">+ Add Role</button>
         </div>
+        <div class="form-group">
+            <label class="checkbox-label">
+                <input type="checkbox" name="is_internal" value="1"
+                       <?= !empty($_POST['is_internal']) ? 'checked' : '' ?>>
+                Internal System Use
+            </label>
+            <div class="field-hint">When checked, this message cannot be sent manually — the Send button will be hidden.</div>
+        </div>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save Template</button>
             <a href="<?= APP_URL ?>/admin/messages.php" class="btn btn-secondary">Cancel</a>
@@ -404,14 +414,24 @@ document.addEventListener('DOMContentLoaded', function () {
             <button type="button" class="btn btn-sm btn-add-role" id="addRoleBtn_edit"
                     onclick="addAllowedRoleRow('edit')">+ Add Role</button>
         </div>
+        <div class="form-group">
+            <label class="checkbox-label">
+                <input type="checkbox" name="is_internal" value="1" id="isInternalChk"
+                       <?= !empty($editing['IS_INTERNAL']) ? 'checked' : '' ?>
+                       onchange="updateSendBtnVisibility()">
+                Internal System Use
+            </label>
+            <div class="field-hint">When checked, this message cannot be sent manually — the Send button will be hidden.</div>
+        </div>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save Changes</button>
             <button type="button" class="btn btn-danger"
                     onclick="if(confirm('Delete this message template?')) document.getElementById('delMsg<?= $editing['MESSAGE_ID'] ?>').submit()">
                 Delete
             </button>
-            <button type="button" class="btn btn-secondary" id="showSendBtn" onclick="toggleSendPanel()">
-                📤 Show Send Message
+            <button type="button" class="btn btn-secondary" id="showSendBtn" onclick="toggleSendPanel()"
+                    <?= !empty($editing['IS_INTERNAL']) ? 'style="display:none;"' : '' ?>>
+                📤 Send Message
             </button>
             <a href="<?= APP_URL ?>/admin/messages.php" class="btn btn-secondary">↩ Return to List</a>
         </div>
@@ -552,9 +572,11 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
                     <td class="preview-col"><?= h(mb_substr($tpl['MESSAGE_BODY'], 0, 80)) ?>...</td>
                     <td class="nowrap date-col"><?= date('M j, Y g:ia', strtotime($tpl['UPDATED_AT'])) ?></td>
                     <td class="nowrap">
+                        <?php if (empty($tpl['IS_INTERNAL'])): ?>
                         <a href="?edit=<?= $tpl['MESSAGE_ID'] ?>&show_send=1" class="btn btn-success btn-sm">
                             📤 Send
                         </a>
+                        <?php endif; ?>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -711,6 +733,10 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 }
 
 .send-bottom-row { margin-bottom:0.75rem; }
+
+/* Internal checkbox */
+.checkbox-label { display:flex; align-items:center; gap:0.5rem; font-weight:600; cursor:pointer; }
+.checkbox-label input[type=checkbox] { width:1rem; height:1rem; cursor:pointer; accent-color:#c0392b; }
 
 /* Preview */
 .preview-box   { background:#f9f9f9; border:1px solid #e0e0e0; border-radius:8px; padding:1rem; margin-top:0.5rem; }
@@ -872,7 +898,23 @@ function toggleSendPanel() {
     const visible  = panel.style.display !== 'none';
     panel.style.display    = visible ? 'none'  : 'block';
     editCard.style.display = visible ? 'block' : 'none';
-    btn.textContent = visible ? '📤 Show Send Message' : '📤 Hide Send Message';
+    if (btn) btn.textContent = visible ? '📤 Send Message' : '📤 Hide Send Message';
+}
+
+function updateSendBtnVisibility() {
+    const chk = document.getElementById('isInternalChk');
+    const btn  = document.getElementById('showSendBtn');
+    if (!chk || !btn) return;
+    btn.style.display = chk.checked ? 'none' : '';
+    // If the send panel is open and we mark as internal, close it
+    if (chk.checked) {
+        const panel = document.getElementById('sendPanel');
+        const editCard = document.getElementById('editFormCard');
+        if (panel && panel.style.display !== 'none') {
+            panel.style.display    = 'none';
+            editCard.style.display = 'block';
+        }
+    }
 }
 
 // ---- Log show/hide ----
