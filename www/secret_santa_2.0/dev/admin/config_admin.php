@@ -238,7 +238,7 @@ require_once __DIR__ . '/../includes/header.php';
 <!-- Initialize Season Card -->
 <div id="initSectionToggle" style="margin-bottom:1.25rem;">
     <button type="button" class="btn btn-secondary" onclick="showInitSection()">
-        🎄 Show Initialize New Season
+        🎄 Initialize New Season
     </button>
 </div>
 
