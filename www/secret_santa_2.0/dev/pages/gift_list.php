@@ -16,6 +16,16 @@ $msgType  = '';
 $editing  = null;
 $addMode  = isset($_GET['add']);
 
+// Normalize a URL: prepend https:// if no protocol given, then validate.
+// Returns the normalized URL on success, or empty string if blank, or false if invalid.
+function normalizeUrl(string $url): string|false {
+    if ($url === '') return '';
+    if (!preg_match('#^https?://#i', $url)) {
+        $url = 'https://' . $url;
+    }
+    return filter_var($url, FILTER_VALIDATE_URL) !== false ? $url : false;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
@@ -28,12 +38,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // -- ADD --
     } elseif ($action === 'add') {
-        $name = trim($_POST['name']        ?? '');
-        $desc = trim($_POST['description'] ?? '');
-        $url  = trim($_POST['url']         ?? '');
+        $name    = trim($_POST['name']        ?? '');
+        $desc    = trim($_POST['description'] ?? '');
+        $rawUrl  = trim($_POST['url']         ?? '');
+        $url     = normalizeUrl($rawUrl);
 
         if ($name === '') {
             $msg = 'Gift name is required.';
+            $msgType = 'error';
+            $addMode = true;
+        } elseif ($url === false) {
+            $msg = 'The URL doesn\'t look valid. Try something like nike.com or https://nike.com.';
             $msgType = 'error';
             $addMode = true;
         } else {
@@ -46,15 +61,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // -- UPDATE --
     } elseif ($action === 'update') {
-        $giftId = (int)($_POST['gift_id'] ?? 0);
-        $name   = trim($_POST['name']        ?? '');
-        $desc   = trim($_POST['description'] ?? '');
-        $url    = trim($_POST['url']         ?? '');
+        $giftId  = (int)($_POST['gift_id'] ?? 0);
+        $name    = trim($_POST['name']        ?? '');
+        $desc    = trim($_POST['description'] ?? '');
+        $rawUrl  = trim($_POST['url']         ?? '');
+        $url     = normalizeUrl($rawUrl);
 
         if ($name === '') {
             $msg = 'Gift name is required.';
             $msgType = 'error';
-            // Keep edit form open on error
+            $stmt = $pdo->prepare("SELECT * FROM SS_GIFTS WHERE GIFT_ID = ? AND USER_ID = ? AND YEAR = ?");
+            $stmt->execute([$giftId, $userId, $xmasYear]);
+            $editing = $stmt->fetch() ?: null;
+        } elseif ($url === false) {
+            $msg = 'The URL doesn\'t look valid. Try something like nike.com or https://nike.com.';
+            $msgType = 'error';
             $stmt = $pdo->prepare("SELECT * FROM SS_GIFTS WHERE GIFT_ID = ? AND USER_ID = ? AND YEAR = ?");
             $stmt->execute([$giftId, $userId, $xmasYear]);
             $editing = $stmt->fetch() ?: null;
@@ -111,8 +132,8 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
         <div class="form-group">
             <label for="url">Link / URL <span class="optional">(optional)</span></label>
-            <input type="url" id="url" name="url" maxlength="500"
-                   placeholder="https://www.amazon.com/..."
+            <input type="text" id="url" name="url" maxlength="500"
+                   placeholder="e.g. nike.com or https://www.amazon.com/..."
                    value="<?= h($_POST['url'] ?? '') ?>">
         </div>
         <div class="form-actions">
@@ -141,7 +162,8 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
         <div class="form-group">
             <label for="url">Link / URL <span class="optional">(optional)</span></label>
-            <input type="url" id="url" name="url" maxlength="500"
+            <input type="text" id="url" name="url" maxlength="500"
+                   placeholder="e.g. nike.com or https://www.amazon.com/..."
                    value="<?= h($editing['URL'] ?? '') ?>">
         </div>
         <div class="form-actions">
