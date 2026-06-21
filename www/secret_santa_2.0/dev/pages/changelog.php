@@ -16,7 +16,50 @@ require_once __DIR__ . '/../includes/header.php';
 
     <div class="cl-version">
         <div class="cl-version-header">
-            <span class="cl-badge">v2.5</span>
+            <span class="cl-badge">v2.6</span>
+            <span class="cl-version-title">Polished Messaging &amp; Admin Tools</span>
+            <span class="cl-version-date">June 2026</span>
+        </div>
+        <ul class="cl-items">
+            <li>
+                <strong>HTML Email Branding</strong> — All outbound messages now use a styled HTML email template with a red header, clean body, and branded footer — matching the look of the wishlist email.
+            </li>
+            <li>
+                <strong>Password Reset Email</strong> — The password reset email now uses the same HTML template, with a properly formatted clickable reset link. Fixed an encoding issue that caused garbled subject lines.
+            </li>
+            <li>
+                <strong>Message Center Overhaul</strong> — Editing a message now hides the template list and log toggle to reduce clutter. The Send Message panel is hidden by default and revealed with a dedicated button. The edit form stays open after saving so you can keep making changes.
+            </li>
+            <li>
+                <strong>Eligible Roles Grid</strong> — The Allowed Roles section on message templates now uses the same dynamic role grid as User Management — add roles from a dropdown with descriptions, remove with ×. Renamed to "Eligible Roles" throughout. The internal <em>all_roles</em> role is excluded.
+            </li>
+            <li>
+                <strong>Smarter Send Panel</strong> — Send To is now a dropdown: choose "All eligible users" or "Select individuals." Individual mode shows only users with the message's eligible roles. Duplicate sends are prevented regardless of how many roles a user has.
+            </li>
+            <li>
+                <strong>Send Log Improvements</strong> — The log is now hidden by default with a show/hide toggle. All log entries are fetched (no more 25-row cap) with 25-per-page pagination and a live search. A Secret Santa Year column now tracks which year each message was sent for.
+            </li>
+            <li>
+                <strong>Quick Send from List</strong> — A 📤 Send button in the template list takes you directly to the Send panel. The Return button is context-aware — it goes back to the list or back to the edit form depending on how you got there.
+            </li>
+            <li>
+                <strong>Internal System Use Flag</strong> — Message templates can now be marked as Internal System Use. When set, the Send button is hidden everywhere — useful for templates like Password Reset that are sent automatically by the system and should never be triggered manually.
+            </li>
+            <li>
+                <strong>Config Admin Sorting &amp; Pagination</strong> — The config table now supports click-to-sort on Key and Value columns, with 10-per-page pagination, Prev/Next, and a View All option. Search interacts with sort and pagination.
+            </li>
+            <li>
+                <strong>Error Alert Timing</strong> — Error alerts now stay visible for 30 seconds instead of 4, giving you time to read them before they fade.
+            </li>
+            <li>
+                <strong>Session Fixes</strong> — Fixed PHP session warnings on the Forgot Password and Reset Password pages that appeared when a session was already active.
+            </li>
+        </ul>
+    </div>
+
+    <div class="cl-version cl-version-older">
+        <div class="cl-version-header">
+            <span class="cl-badge cl-badge-old">v2.5</span>
             <span class="cl-version-title">Roles &amp; Wishlists</span>
             <span class="cl-version-date">2026</span>
         </div>
