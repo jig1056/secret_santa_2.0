@@ -424,7 +424,7 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 
     <?php if (!empty($editingAllowedRoles)): ?>
     <div class="allowed-roles-notice">
-        <strong>Allowed roles:</strong>
+        <strong>Eligible roles:</strong>
         <?php foreach ($editingAllowedRoles as $r): ?>
         <span class="badge badge-role-<?= h($r['ROLE_KEY']) ?>"><?= h($r['ROLE_NAME']) ?></span>
         <?php endforeach; ?>
