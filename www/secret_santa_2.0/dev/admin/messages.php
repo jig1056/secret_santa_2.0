@@ -485,6 +485,7 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
                     onclick="return confirm('Send this message now?')">
                 📤 Send Message
             </button>
+            <a href="<?= APP_URL ?>/admin/messages.php" class="btn btn-secondary">↩ Return to List</a>
         </div>
     </form>
 </div>
