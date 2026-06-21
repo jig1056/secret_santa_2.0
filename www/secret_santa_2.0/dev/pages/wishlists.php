@@ -62,6 +62,16 @@ if ($selectedUserId) {
     // --------------------------------------------------------
     // Handle POST actions
     // --------------------------------------------------------
+    // Normalize a URL: prepend https:// if no protocol, then validate.
+    // Returns normalized URL, empty string if blank, or false if invalid.
+    function normalizeUrl(string $url): string|false {
+        if ($url === '') return '';
+        if (!preg_match('#^https?://#i', $url)) {
+            $url = 'https://' . $url;
+        }
+        return filter_var($url, FILTER_VALIDATE_URL) !== false ? $url : false;
+    }
+
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = $_POST['action'] ?? '';
 
@@ -99,12 +109,17 @@ if ($selectedUserId) {
 
         // -- Add gift to wishlist user's list --
         } elseif ($action === 'add_gift') {
-            $name = trim($_POST['name']        ?? '');
-            $desc = trim($_POST['description'] ?? '');
-            $url  = trim($_POST['url']         ?? '');
+            $name   = trim($_POST['name']        ?? '');
+            $desc   = trim($_POST['description'] ?? '');
+            $rawUrl = trim($_POST['url']         ?? '');
+            $url    = normalizeUrl($rawUrl);
 
             if ($name === '') {
                 $msg     = 'Gift name is required.';
+                $msgType = 'error';
+                $addMode = true;
+            } elseif ($url === false) {
+                $msg     = 'The URL doesn\'t look valid. Try something like nike.com or https://nike.com.';
                 $msgType = 'error';
                 $addMode = true;
             } else {
@@ -264,18 +279,20 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
         <div class="form-group">
             <label for="url">Link / URL <span class="optional">(optional)</span></label>
-            <input type="url" id="url" name="url" maxlength="500"
-                   placeholder="https://www.amazon.com/..."
+            <input type="text" id="url" name="url" maxlength="500"
+                   placeholder="e.g. nike.com or https://www.amazon.com/..."
                    value="<?= h($_POST['url'] ?? '') ?>">
         </div>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Add Gift</button>
             <a href="?user=<?= h($selectedUserId) ?>" class="btn btn-secondary">Cancel</a>
+            <a href="?user=<?= h($selectedUserId) ?>" class="btn btn-secondary">↩ Return to List</a>
         </div>
     </form>
 </div>
 <?php endif; ?>
 
+<?php if (!$addMode): ?>
 <!-- Gift List -->
 <div class="card">
     <div class="card-title">
@@ -342,6 +359,7 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
     <?php endif; ?>
 </div>
+<?php endif; // end !$addMode ?>
 
 <?php else: ?>
 <!-- ============================================================ -->
