@@ -158,7 +158,7 @@ function sendPasswordReset(array $user, PDO $pdo): bool|string {
     // Build HTML body: escape text, nl2br, then make any URLs clickable links
     $htmlBody = nl2br(htmlspecialchars($plainBody, ENT_QUOTES, 'UTF-8'));
     $htmlBody = preg_replace(
-        '~(https?://\S+)~',
+        '~(https?://[^\s<]+)~',
         '<a href="$1" style="color:#c0392b;word-break:break-all;">$1</a>',
         $htmlBody
     );

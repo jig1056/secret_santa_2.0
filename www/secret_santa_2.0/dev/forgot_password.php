@@ -8,9 +8,7 @@ require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/helpers.php';
 require_once __DIR__ . '/includes/mailer.php';
 
-// Already logged in? Go home
-session_name(SESSION_NAME);
-session_start();
+// Already logged in? Go home — session already started by config.php
 if (!empty($_SESSION['USER_ID'])) {
     header('Location: ' . APP_URL . '/pages/home.php');
     exit;
