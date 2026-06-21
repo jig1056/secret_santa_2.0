@@ -81,17 +81,23 @@ function sendSMS(string $to, string $body): bool|string {
 // ------------------------------------------------------------
 function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string $year): string {
     $appName   = defined('APP_NAME') ? APP_NAME : 'Secret Santa';
+    $appUrl    = defined('APP_URL')  ? APP_URL  : '';
     $safeTitle = htmlspecialchars($title,    ENT_QUOTES, 'UTF-8');
     $safeSub   = htmlspecialchars($subtitle, ENT_QUOTES, 'UTF-8');
     $safeBody  = nl2br(htmlspecialchars($bodyText, ENT_QUOTES, 'UTF-8'));
     $safeApp   = htmlspecialchars($appName,  ENT_QUOTES, 'UTF-8');
     $safeYear  = htmlspecialchars($year,     ENT_QUOTES, 'UTF-8');
+    $logoUrl   = htmlspecialchars($appUrl . '/assets/images/apple-touch-icon.png', ENT_QUOTES, 'UTF-8');
 
     return "
 <div style=\"font-family:Arial,sans-serif;max-width:680px;margin:0 auto;\">
-    <div style=\"background:#c0392b;color:#fff;padding:20px 24px;border-radius:8px 8px 0 0;\">
-        <h2 style=\"margin:0;font-size:1.3rem;\">🎅🏾 {$safeTitle}</h2>
-        <p style=\"margin:6px 0 0;opacity:0.85;font-size:0.9rem;\">{$safeSub}</p>
+    <div style=\"background:#c0392b;color:#fff;padding:20px 24px;border-radius:8px 8px 0 0;display:flex;align-items:center;gap:14px;\">
+        <img src=\"{$logoUrl}\" alt=\"\" width=\"48\" height=\"48\"
+             style=\"border-radius:8px;flex-shrink:0;display:block;\">
+        <div>
+            <h2 style=\"margin:0;font-size:1.3rem;\">{$safeTitle}</h2>
+            <p style=\"margin:4px 0 0;opacity:0.85;font-size:0.9rem;\">{$safeSub}</p>
+        </div>
     </div>
     <div style=\"padding:24px;background:#fff;color:#333;font-size:0.97rem;line-height:1.7;\">
         {$safeBody}

@@ -218,7 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $status = 'SENT';
 
                     if ($channel === 'EMAIL' || $channel === 'BOTH') {
-                        $subject  = getConfig('MAIL_SUBJECT', 'Secret Santa') . ' — ' . $xmasYear;
+                        $subject  = getConfig('MAIL_SUBJECT', 'Secret Santa') . ' - ' . $xmasYear;
                         $htmlBody = wrapHtmlEmail(
                             getConfig('MAIL_SUBJECT', 'Secret Santa'),
                             $template['MESSAGE_NAME'],
