@@ -18,8 +18,15 @@ $newMatches = [];
 // -- Check if matches already exist --
 $matchesDone = matchesGenerated();
 
-// -- Fetch active users --
-$stmt  = $pdo->query("SELECT USER_ID, FIRST_NAME, LAST_NAME FROM SS_USERS WHERE STATUS = 'ACTIVE' ORDER BY FIRST_NAME ASC");
+// -- Fetch active users with the secret_santa role only --
+$stmt  = $pdo->query("
+    SELECT u.USER_ID, u.FIRST_NAME, u.LAST_NAME
+    FROM SS_USERS u
+    JOIN SS_USER_ROLES ur ON ur.USER_ID = u.USER_ID
+    JOIN SS_ROLES r ON r.ROLE_ID = ur.ROLE_ID
+    WHERE u.STATUS = 'ACTIVE' AND r.ROLE_KEY = 'secret_santa'
+    ORDER BY u.FIRST_NAME ASC
+");
 $users = $stmt->fetchAll();
 
 // -- Fetch existing matches for this year --
@@ -219,7 +226,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- Active users in pool -->
 <div class="card">
-    <div class="card-title">👥 Active Users in Pool (<?= count($users) ?>)</div>
+    <div class="card-title">👥 Secret Santa Participants (<?= count($users) ?>)</div>
     <div class="user-pool">
         <?php foreach ($users as $user): ?>
         <div class="pool-chip">
