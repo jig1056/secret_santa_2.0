@@ -12,26 +12,32 @@ $pdo      = getDB();
 $xmasYear = getConfig('XMAS_YEAR', date('Y'));
 
 // -- Summary stats --
-$totalUsers    = $pdo->query("SELECT COUNT(*) FROM SS_USERS WHERE STATUS = 'ACTIVE'")->fetchColumn();
+$totalUsers    = $pdo->query("
+    SELECT COUNT(DISTINCT u.USER_ID) FROM SS_USERS u
+    JOIN SS_USER_ROLES ur ON ur.USER_ID = u.USER_ID
+    JOIN SS_ROLES r ON r.ROLE_ID = ur.ROLE_ID
+    WHERE u.STATUS = 'ACTIVE' AND r.ROLE_KEY = 'secret_santa'
+")->fetchColumn();
 $totalGiftsStmt = $pdo->prepare("SELECT COUNT(*) FROM SS_GIFTS WHERE YEAR = ?");
 $totalGiftsStmt->execute([$xmasYear]);
 $totalGifts    = $totalGiftsStmt->fetchColumn();
 $matchesDone   = matchesGenerated();
 $totalMatches  = $pdo->query("SELECT COUNT(*) FROM SS_MATCHES WHERE YEAR = " . (int)$xmasYear)->fetchColumn();
 
-// -- Users with gift counts --
+// -- Users with gift counts (secret_santa role only) --
 $stmt = $pdo->prepare("
     SELECT
         u.USER_ID,
         u.FIRST_NAME,
         u.LAST_NAME,
         u.STATUS,
-        u.USER_TYPE,
         COUNT(g.GIFT_ID) AS GIFT_COUNT
     FROM SS_USERS u
+    JOIN SS_USER_ROLES ur ON ur.USER_ID = u.USER_ID
+    JOIN SS_ROLES r ON r.ROLE_ID = ur.ROLE_ID
     LEFT JOIN SS_GIFTS g ON g.USER_ID = u.USER_ID AND g.YEAR = ?
-    WHERE u.STATUS = 'ACTIVE'
-    GROUP BY u.USER_ID, u.FIRST_NAME, u.LAST_NAME, u.STATUS, u.USER_TYPE
+    WHERE u.STATUS = 'ACTIVE' AND r.ROLE_KEY = 'secret_santa'
+    GROUP BY u.USER_ID, u.FIRST_NAME, u.LAST_NAME, u.STATUS
     ORDER BY GIFT_COUNT ASC, u.LAST_NAME ASC
 ");
 $stmt->execute([$xmasYear]);
@@ -95,8 +101,7 @@ require_once __DIR__ . '/../includes/header.php';
             <thead>
                 <tr>
                     <th class="sortable" onclick="sortDash(0)">Name <span class="sort-icon">↕</span></th>
-                    <th class="sortable" onclick="sortDash(1)">Type <span class="sort-icon">↕</span></th>
-                    <th class="sortable" onclick="sortDash(2)">Gifts Added <span class="sort-icon">↕</span></th>
+                    <th class="sortable" onclick="sortDash(1)">Gifts Added <span class="sort-icon">↕</span></th>
                     <th>Progress</th>
                 </tr>
             </thead>
@@ -110,11 +115,6 @@ require_once __DIR__ . '/../includes/header.php';
                     <td>
                         <strong><?= h($user['FIRST_NAME']) ?> <?= h($user['LAST_NAME']) ?></strong>
                         <div class="user-id-small"><?= h($user['USER_ID']) ?></div>
-                    </td>
-                    <td>
-                        <span class="badge <?= $user['USER_TYPE'] === 'ADMIN' ? 'badge-admin' : 'badge-standard' ?>">
-                            <?= h($user['USER_TYPE']) ?>
-                        </span>
                     </td>
                     <td class="gift-count <?= $user['GIFT_COUNT'] == 0 ? 'count-zero' : '' ?>">
                         <?= $user['GIFT_COUNT'] ?>
@@ -196,7 +196,7 @@ function sortDash(col) {
         const aVal = a.cells[col]?.innerText.trim().toLowerCase() || '';
         const bVal = b.cells[col]?.innerText.trim().toLowerCase() || '';
         // Numeric sort for gift count column
-        if (col === 2) return dashSortAsc ? parseFloat(aVal) - parseFloat(bVal) : parseFloat(bVal) - parseFloat(aVal);
+        if (col === 1) return dashSortAsc ? parseFloat(aVal) - parseFloat(bVal) : parseFloat(bVal) - parseFloat(aVal);
         return dashSortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
     });
 
