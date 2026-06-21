@@ -88,10 +88,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msg     = 'First name, last name, email and password are required.';
             $msgType = 'error';
             $addMode = true;
-        } elseif (empty($selectedRoleIds)) {
-            $msg     = 'Please assign at least one role.';
-            $msgType = 'error';
-            $addMode = true;
         } else {
             $chk = $pdo->prepare("SELECT COUNT(*) FROM SS_USERS WHERE EMAIL = ?");
             $chk->execute([$email]);
@@ -128,12 +124,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (!$firstName || !$lastName || !$email) {
             $msg     = 'First name, last name and email are required.';
-            $msgType = 'error';
-            $stmt = $pdo->prepare("SELECT * FROM SS_USERS WHERE USER_ID = ?");
-            $stmt->execute([$userId]);
-            $editing = $stmt->fetch();
-        } elseif (empty($selectedRoleIds)) {
-            $msg     = 'Please assign at least one role.';
             $msgType = 'error';
             $stmt = $pdo->prepare("SELECT * FROM SS_USERS WHERE USER_ID = ?");
             $stmt->execute([$userId]);
@@ -253,6 +243,12 @@ foreach ($allRoles as $r) {
     }
 }
 
+// Gifter role ID (needed in JS for both add and edit modes)
+$gifterRoleId = null;
+foreach ($allRoles as $r) {
+    if ($r['ROLE_KEY'] === 'wishlist_gifter') { $gifterRoleId = $r['ROLE_ID']; break; }
+}
+
 // All users for the table
 $users = $pdo->query("SELECT * FROM SS_USERS ORDER BY STATUS ASC, LAST_NAME ASC, FIRST_NAME ASC")->fetchAll();
 
@@ -355,12 +351,6 @@ if ($editing):
         </div>
 
         <!-- Wishlist Access (shown when wishlist_gifter is selected) -->
-        <?php
-        $gifterRoleId = null;
-        foreach ($allRoles as $r) {
-            if ($r['ROLE_KEY'] === 'wishlist_gifter') { $gifterRoleId = $r['ROLE_ID']; break; }
-        }
-        ?>
         <div id="wishlistAccessPanel" class="wishlist-access-panel" style="display:<?= $editingIsGifter ? 'block' : 'none' ?>;">
             <div class="form-group">
                 <label>Wishlist Access</label>
