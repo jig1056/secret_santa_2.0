@@ -79,11 +79,11 @@ function sendSMS(string $to, string $body): bool|string {
 // $bodyText - raw plain text; will be HTML-escaped and nl2br'd
 // $year     - year shown in the footer
 // ------------------------------------------------------------
-function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string $year): string {
+function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string $year, bool $bodyIsHtml = false): string {
     $appName   = defined('APP_NAME') ? APP_NAME : 'Secret Santa';
     $safeTitle = htmlspecialchars($title,    ENT_QUOTES, 'UTF-8');
     $safeSub   = htmlspecialchars($subtitle, ENT_QUOTES, 'UTF-8');
-    $safeBody  = nl2br(htmlspecialchars($bodyText, ENT_QUOTES, 'UTF-8'));
+    $safeBody  = $bodyIsHtml ? $bodyText : nl2br(htmlspecialchars($bodyText, ENT_QUOTES, 'UTF-8'));
     $safeApp   = htmlspecialchars($appName,  ENT_QUOTES, 'UTF-8');
     $safeYear  = htmlspecialchars($year,     ENT_QUOTES, 'UTF-8');
 
@@ -140,26 +140,38 @@ function sendPasswordReset(array $user, PDO $pdo): bool|string {
     $stmt->execute();
     $template = $stmt->fetch();
 
+    $xmasYear = getConfig('XMAS_YEAR', date('Y'));
+
     if ($template) {
-        $body = str_replace(
+        $plainBody = str_replace(
             ['{FIRST_NAME}', '{LAST_NAME}', '{YEAR}', '{PASSWORD_RESET_LINK}', '{RESET_EXPIRY_MINS}', '{RESET_TOKEN_EXPIRY_MINS}', '{GIFT_DEADLINE}', '{SANTA_MATCH_DATE}'],
-            [$user['FIRST_NAME'], $user['LAST_NAME'], getConfig('XMAS_YEAR', date('Y')), $resetLink, $expiryMins, $expiryMins, getConfig('GIFT_DEADLINE', 'TBD'), getConfig('SANTA_MATCH_DATE', 'TBD')],
+            [$user['FIRST_NAME'], $user['LAST_NAME'], $xmasYear, $resetLink, $expiryMins, $expiryMins, getConfig('GIFT_DEADLINE', 'TBD'), getConfig('SANTA_MATCH_DATE', 'TBD')],
             $template['MESSAGE_BODY']
         );
-        $subject = $template['MESSAGE_NAME'] . ' — ' . getConfig('MAIL_SUBJECT', 'Secret Santa');
+        $subject = $template['MESSAGE_NAME'] . ' - ' . getConfig('MAIL_SUBJECT', 'Secret Santa');
     } else {
         // Fallback body if template not found
-        $body    = "Hi {$user['FIRST_NAME']},
-
-Click the link below to reset your password (expires in {$expiryMins} minutes):
-
-{$resetLink}
-
-— Secret Santa Admin";
-        $subject = 'Password Reset — ' . getConfig('MAIL_SUBJECT', 'Secret Santa');
+        $plainBody = "Hi {$user['FIRST_NAME']},\n\nClick the link below to reset your password (expires in {$expiryMins} minutes):\n\n{$resetLink}\n\nIf you did not request this, you can ignore this email.";
+        $subject   = 'Password Reset - ' . getConfig('MAIL_SUBJECT', 'Secret Santa');
     }
 
-    return sendMail($user['EMAIL'], $user['FIRST_NAME'] . ' ' . $user['LAST_NAME'], $subject, $body);
+    // Build HTML body: escape text, nl2br, then make any URLs clickable links
+    $htmlBody = nl2br(htmlspecialchars($plainBody, ENT_QUOTES, 'UTF-8'));
+    $htmlBody = preg_replace(
+        '~(https?://\S+)~',
+        '<a href="$1" style="color:#c0392b;word-break:break-all;">$1</a>',
+        $htmlBody
+    );
+
+    $wrappedBody = wrapHtmlEmail(
+        getConfig('MAIL_SUBJECT', 'Secret Santa'),
+        $template['MESSAGE_NAME'] ?? 'Password Reset',
+        $htmlBody,
+        $xmasYear,
+        true  // body is already HTML
+    );
+
+    return sendMail($user['EMAIL'], $user['FIRST_NAME'] . ' ' . $user['LAST_NAME'], $subject, $wrappedBody, true);
 }
 
 // ------------------------------------------------------------

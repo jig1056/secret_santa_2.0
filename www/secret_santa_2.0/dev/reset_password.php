@@ -7,8 +7,7 @@ require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/helpers.php';
 
-session_name(SESSION_NAME);
-session_start();
+// Session already started by config.php — just check if logged in
 if (!empty($_SESSION['USER_ID'])) {
     header('Location: ' . APP_URL . '/pages/home.php');
     exit;
