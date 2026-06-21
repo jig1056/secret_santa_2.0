@@ -386,7 +386,6 @@ if ($editing):
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save Changes</button>
             <a href="<?= APP_URL ?>/admin/users.php" class="btn btn-secondary">Cancel</a>
-            <a href="<?= APP_URL ?>/admin/users.php" class="btn btn-secondary">↩ Return to List</a>
             <button type="button"
                     class="btn <?= $editing['STATUS'] === 'ACTIVE' ? 'btn-warning' : 'btn-success' ?>"
                     onclick="if(confirm('<?= $editing['STATUS'] === 'ACTIVE' ? 'Deactivate' : 'Activate' ?> <?= h($editing['FIRST_NAME']) ?>?')) document.getElementById('frmToggle').submit()">
@@ -396,6 +395,7 @@ if ($editing):
                     onclick="if(confirm('Send a password reset email to <?= h($editing['FIRST_NAME']) ?>?')) document.getElementById('frmReset').submit()">
                 Reset Password
             </button>
+            <a href="<?= APP_URL ?>/admin/users.php" class="btn btn-secondary">↩ Return to List</a>
         </div>
     </form>
 </div>
