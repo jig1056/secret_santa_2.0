@@ -264,6 +264,9 @@ if (!$editing && isset($_GET['edit']) && $msgType !== 'success') {
     $editing = $stmt->fetch() ?: null;
 }
 
+// True when arriving directly from the template list via the Send button
+$showSend = isset($_GET['show_send']);
+
 // Current allowed roles for the message being edited
 $editingAllowedRoleIds = [];
 if ($editing) {
@@ -485,7 +488,11 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
                     onclick="return confirm('Send this message now?')">
                 📤 Send Message
             </button>
+            <?php if ($showSend): ?>
             <a href="<?= APP_URL ?>/admin/messages.php" class="btn btn-secondary">↩ Return to List</a>
+            <?php else: ?>
+            <button type="button" class="btn btn-secondary" onclick="toggleSendPanel()">↩ Return to Edit</button>
+            <?php endif; ?>
         </div>
     </form>
 </div>
@@ -508,6 +515,7 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
                     <th>Eligible Roles</th>
                     <th>Preview</th>
                     <th>Last Updated</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -532,6 +540,11 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
                     </td>
                     <td class="preview-col"><?= h(mb_substr($tpl['MESSAGE_BODY'], 0, 80)) ?>...</td>
                     <td class="nowrap date-col"><?= date('M j, Y g:ia', strtotime($tpl['UPDATED_AT'])) ?></td>
+                    <td class="nowrap">
+                        <a href="?edit=<?= $tpl['MESSAGE_ID'] ?>&show_send=1" class="btn btn-success btn-sm">
+                            📤 Send
+                        </a>
+                    </td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -827,6 +840,11 @@ document.querySelectorAll('form').forEach(form => {
         });
     });
 });
+
+// Auto-open send panel when arriving via the Send button in the list
+<?php if ($showSend): ?>
+document.addEventListener('DOMContentLoaded', function () { toggleSendPanel(); });
+<?php endif; ?>
 
 // ---- Send targeting UI ----
 function updateTargetUI() {
