@@ -436,18 +436,12 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
         <input type="hidden" name="message_id" value="<?= $editing['MESSAGE_ID'] ?>">
 
         <!-- Send To -->
-        <div class="form-group">
-            <label>Send To <span class="required">*</span></label>
-            <div class="target-radio-group">
-                <label class="target-radio-label">
-                    <input type="radio" name="target_type" value="all" checked onchange="updateTargetUI()">
-                    All eligible users
-                </label>
-                <label class="target-radio-label">
-                    <input type="radio" name="target_type" value="individual" onchange="updateTargetUI()">
-                    Select individuals
-                </label>
-            </div>
+        <div class="form-group" style="max-width:260px;">
+            <label for="target_type">Send To <span class="required">*</span></label>
+            <select id="target_type" name="target_type" onchange="updateTargetUI()">
+                <option value="all">All eligible users</option>
+                <option value="individual">Select individuals</option>
+            </select>
             <div id="individualPanel" style="display:none; margin-top:0.75rem;">
                 <?php if (empty($eligibleUsers)): ?>
                 <p class="muted" style="font-size:0.9rem;">No active users have the allowed roles for this message.</p>
@@ -666,11 +660,6 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 .role-grid-row[data-role="wishlist_only"]   { border-left-color:#6c3483; }
 .role-grid-row[data-role="wishlist_gifter"] { border-left-color:#1e8449; }
 
-/* Send targeting */
-.target-radio-group  { display:flex; gap:1.5rem; margin-top:0.4rem; flex-wrap:wrap; }
-.target-radio-label  { display:flex; align-items:center; gap:0.4rem; cursor:pointer; font-size:0.95rem; font-weight:500; }
-.target-radio-label input { cursor:pointer; }
-
 /* Send panel */
 .send-card { border-left:4px solid #1e8449; }
 
@@ -840,7 +829,7 @@ document.querySelectorAll('form').forEach(form => {
 
 // ---- Send targeting UI ----
 function updateTargetUI() {
-    const type = document.querySelector('input[name="target_type"]:checked')?.value;
+    const type  = document.getElementById('target_type')?.value;
     const panel = document.getElementById('individualPanel');
     if (panel) panel.style.display = type === 'individual' ? '' : 'none';
 }
