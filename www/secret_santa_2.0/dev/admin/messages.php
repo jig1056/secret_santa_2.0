@@ -406,6 +406,9 @@ require_once __DIR__ . '/../includes/header.php';
                     onclick="if(confirm('Delete this message template?')) document.getElementById('delMsg<?= $editing['MESSAGE_ID'] ?>').submit()">
                 Delete
             </button>
+            <button type="button" class="btn btn-secondary" id="showSendBtn" onclick="toggleSendPanel()">
+                📤 Show Send Message
+            </button>
         </div>
     </form>
     <form id="delMsg<?= $editing['MESSAGE_ID'] ?>" method="POST" action="" style="display:none;">
@@ -420,7 +423,7 @@ require_once __DIR__ . '/../includes/header.php';
 $editingAllowedRoles = $templateRolesMap[$editing['MESSAGE_ID']] ?? [];
 $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['ROLE_KEY'] === 'all_roles'));
 ?>
-<div class="card send-card">
+<div class="card send-card" id="sendPanel" style="display:none;">
     <div class="card-title">📤 Send This Message</div>
 
     <?php if (!empty($editingAllowedRoles)): ?>
@@ -714,6 +717,15 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 </style>
 
 <script>
+// ---- Send panel toggle ----
+function toggleSendPanel() {
+    const panel = document.getElementById('sendPanel');
+    const btn   = document.getElementById('showSendBtn');
+    const visible = panel.style.display !== 'none';
+    panel.style.display = visible ? 'none' : 'block';
+    btn.textContent = visible ? '📤 Show Send Message' : '📤 Hide Send Message';
+}
+
 // ---- Log show/hide ----
 function showLog() {
     document.getElementById('logToggleRow').style.display = 'none';
