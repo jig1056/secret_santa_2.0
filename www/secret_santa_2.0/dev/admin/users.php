@@ -32,7 +32,7 @@ $roleDescRows = $pdo->query("
     SELECT CONFIG_KEY, CONFIG_VALUE FROM SS_CONFIG
     WHERE CONFIG_KEY LIKE 'ROLE_DESC_%'
 ")->fetchAll();
-$roleDescs = [];  // keyed by lowercase role_key, e.g. 'admin', 'secret_santa'
+$roleDescs = [];
 foreach ($roleDescRows as $rd) {
     $key = strtolower(str_replace('ROLE_DESC_', '', $rd['CONFIG_KEY']));
     $roleDescs[$key] = $rd['CONFIG_VALUE'];
@@ -350,9 +350,8 @@ if ($editing):
                     onclick="addRoleRow('edit')">+ Add Role</button>
         </div>
 
-        <!-- Wishlist Access (shown when wishlist_gifter is checked) -->
+        <!-- Wishlist Access (shown when wishlist_gifter is selected) -->
         <?php
-        // Find the gifter role's checkbox ID for JS reference
         $gifterRoleId = null;
         foreach ($allRoles as $r) {
             if ($r['ROLE_KEY'] === 'wishlist_gifter') { $gifterRoleId = $r['ROLE_ID']; break; }
@@ -367,15 +366,9 @@ if ($editing):
                 <?php if (empty($wishlistOnlyUsers)): ?>
                 <p class="muted" style="font-size:0.9rem;">No Wishlist Only users exist yet.</p>
                 <?php else: ?>
-                <div class="role-checkboxes">
-                    <?php foreach ($wishlistOnlyUsers as $wu): ?>
-                    <label class="role-check-label">
-                        <input type="checkbox" name="wishlist_access[]" value="<?= h($wu['USER_ID']) ?>"
-                               <?= in_array($wu['USER_ID'], $editingWishlistAccess) ? 'checked' : '' ?>>
-                        <span class="role-check-name"><?= h($wu['FIRST_NAME']) ?> <?= h($wu['LAST_NAME']) ?></span>
-                    </label>
-                    <?php endforeach; ?>
-                </div>
+                <div class="role-grid" id="wishlistGrid"></div>
+                <button type="button" class="btn btn-sm btn-add-role" id="addWishlistBtn"
+                        onclick="addWishlistRow()">+ Add Giftee</button>
                 <?php endif; ?>
             </div>
         </div>
@@ -415,6 +408,7 @@ if ($editing):
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     initRoleGrid('edit', <?= json_encode($editingRoleIds) ?>);
+    initWishlistGrid(<?= json_encode($editingWishlistAccess) ?>);
 });
 </script>
 <?php endif; ?>
@@ -496,8 +490,9 @@ document.addEventListener('DOMContentLoaded', function () {
 <?php endif; ?>
 
 <!-- ============================================================ -->
-<!-- USERS TABLE                                                   -->
+<!-- USERS TABLE (hidden while editing or adding)                  -->
 <!-- ============================================================ -->
+<?php if (!$editing && !$addMode): ?>
 <div class="card">
     <div class="card-title">👥 All Users (<?= count($users) ?>)</div>
 
@@ -572,12 +567,14 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
 </div>
 
+<?php endif; // end !$editing && !$addMode ?>
+
 <style>
 .page-header  { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; }
 .page-header .page-title { margin-bottom:0; }
 
 .form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
-@media (max-width:600px) { .form-row { grid-template-columns:1fr; } }
+@media (max-width:480px) { .form-row { grid-template-columns:1fr; } }
 
 .required { color:#c0392b; }
 .optional  { color:#999; font-weight:400; font-size:0.85rem; }
@@ -589,24 +586,21 @@ document.addEventListener('DOMContentLoaded', function () {
 .user-id-small { font-size:0.75rem; color:#999; margin-top:0.15rem; }
 .field-hint    { font-size:0.82rem; color:#888; margin-top:0.3rem; }
 
-/* Role grid */
+/* Role / Giftee dynamic grid */
 .role-grid { display:flex; flex-direction:column; gap:0.4rem; margin-top:0.3rem; margin-bottom:0.5rem; }
 .role-grid-row {
     display:flex; align-items:center; gap:0.5rem;
     background:#fff; border:1px solid #e0e0e0; border-radius:8px;
-    padding:0.35rem 0.5rem;
-    border-left:4px solid #ccc;
+    padding:0.35rem 0.5rem; border-left:4px solid #ccc;
     transition:border-color 0.15s;
 }
 .role-grid-row select {
     flex:0 0 190px; border:none; background:transparent; font-size:0.9rem;
-    font-family:inherit; cursor:pointer; outline:none; color:#212529;
-    padding:0.15rem 0;
+    font-family:inherit; cursor:pointer; outline:none; color:#212529; padding:0.15rem 0;
 }
 .role-desc {
     flex:1; font-size:0.8rem; color:#888; font-style:italic;
-    padding:0 0.5rem; line-height:1.35;
-    border-left:1px solid #e0e0e0; margin-left:0.25rem;
+    padding:0 0.5rem; line-height:1.35; border-left:1px solid #e0e0e0; margin-left:0.25rem;
 }
 .role-grid-row .remove-role-btn {
     background:none; border:none; color:#aaa; font-size:1rem; font-weight:700;
@@ -622,13 +616,7 @@ document.addEventListener('DOMContentLoaded', function () {
 .btn-add-role:hover { background:#e8f0fb; border-color:#5b9bd5; color:#1a5276; }
 .btn-add-role:disabled { opacity:0.45; cursor:not-allowed; }
 
-/* Wishlist access checkboxes (still used in access panel) */
-.role-checkboxes { display:flex; flex-wrap:wrap; gap:0.5rem 1rem; margin-top:0.3rem; }
-.role-check-label { display:flex; align-items:center; gap:0.4rem; cursor:pointer; font-size:0.9rem; }
-.role-check-label input { cursor:pointer; }
-.role-check-name { font-weight:500; }
-
-/* Row accent colors per role */
+/* Role row accent colors */
 .role-grid-row[data-role="admin"]           { border-left-color:#922b21; }
 .role-grid-row[data-role="secret_santa"]    { border-left-color:#1a5276; }
 .role-grid-row[data-role="wishlist_only"]   { border-left-color:#6c3483; }
@@ -674,25 +662,25 @@ th.sort-asc .sort-icon, th.sort-desc .sort-icon { color:#c0392b; }
 </style>
 
 <script>
-// ── Role grid data ────────────────────────────────────────────
-const ALL_ROLES      = <?= json_encode(array_values($allRoles)) ?>;
-const GIFTER_ROLE_ID = '<?= $gifterRoleId ?>';
-const ROLE_DESCS     = <?= json_encode($roleDescs) ?>;  // keyed by role_key
+// ── Shared data ───────────────────────────────────────────────
+const ALL_ROLES           = <?= json_encode(array_values($allRoles)) ?>;
+const GIFTER_ROLE_ID      = '<?= $gifterRoleId ?>';
+const ROLE_DESCS          = <?= json_encode($roleDescs) ?>;
+const ALL_WISHLIST_USERS  = <?= json_encode(array_values($wishlistOnlyUsers)) ?>;
 
-// Key role data by ID for fast lookup
 const ROLE_BY_ID = {};
 ALL_ROLES.forEach(r => { ROLE_BY_ID[String(r.ROLE_ID)] = r; });
 
-// ── Role grid init ────────────────────────────────────────────
+// ══ ROLE GRID ════════════════════════════════════════════════
+
 function initRoleGrid(gridKey, preselected) {
     if (!preselected || preselected.length === 0) {
-        addRoleRow(gridKey, '');  // start with one empty row
+        addRoleRow(gridKey, '');
     } else {
         preselected.forEach(id => addRoleRow(gridKey, String(id)));
     }
 }
 
-// ── Add a row ─────────────────────────────────────────────────
 function addRoleRow(gridKey, selectedValue) {
     selectedValue = selectedValue !== undefined ? String(selectedValue) : '';
     const grid = document.getElementById('roleGrid_' + gridKey);
@@ -707,13 +695,9 @@ function addRoleRow(gridKey, selectedValue) {
     const sel = document.createElement('select');
     sel.name = 'roles[]';
     sel.className = 'role-select';
-
-    // Placeholder option
     const ph = document.createElement('option');
-    ph.value = '';
-    ph.textContent = '— Select a role —';
+    ph.value = ''; ph.textContent = '— Select a role —';
     sel.appendChild(ph);
-
     ALL_ROLES.forEach(role => {
         const opt = document.createElement('option');
         opt.value = role.ROLE_ID;
@@ -721,18 +705,16 @@ function addRoleRow(gridKey, selectedValue) {
         if (String(role.ROLE_ID) === selectedValue) opt.selected = true;
         sel.appendChild(opt);
     });
-
     sel.addEventListener('change', function () {
         const role = ROLE_BY_ID[this.value];
         const key  = role ? role.ROLE_KEY : '';
         row.dataset.role = key;
         descSpan.textContent = key && ROLE_DESCS[key] ? ROLE_DESCS[key] : '';
-        refreshDropdowns(gridKey);
-        updateAddBtn(gridKey);
+        refreshRoleDropdowns(gridKey);
+        updateRoleBtn(gridKey);
         toggleWishlistAccess();
     });
 
-    // Description span — shows the role's purpose text
     const descSpan = document.createElement('span');
     descSpan.className = 'role-desc';
     const initRole = ROLE_BY_ID[selectedValue];
@@ -740,45 +722,37 @@ function addRoleRow(gridKey, selectedValue) {
         ? ROLE_DESCS[initRole.ROLE_KEY] : '';
 
     const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'remove-role-btn';
-    removeBtn.innerHTML = '&times;';
-    removeBtn.title = 'Remove';
+    removeBtn.type = 'button'; removeBtn.className = 'remove-role-btn';
+    removeBtn.innerHTML = '&times;'; removeBtn.title = 'Remove';
     removeBtn.addEventListener('click', function () {
         row.remove();
-        refreshDropdowns(gridKey);
-        updateAddBtn(gridKey);
+        refreshRoleDropdowns(gridKey);
+        updateRoleBtn(gridKey);
         toggleWishlistAccess();
     });
 
-    row.appendChild(sel);
-    row.appendChild(descSpan);
-    row.appendChild(removeBtn);
+    row.appendChild(sel); row.appendChild(descSpan); row.appendChild(removeBtn);
     grid.appendChild(row);
-
-    refreshDropdowns(gridKey);
-    updateAddBtn(gridKey);
+    refreshRoleDropdowns(gridKey);
+    updateRoleBtn(gridKey);
     toggleWishlistAccess();
 }
 
-// ── Refresh all dropdowns in a grid (disable already-used options) ──
-function refreshDropdowns(gridKey) {
+function refreshRoleDropdowns(gridKey) {
     const grid = document.getElementById('roleGrid_' + gridKey);
     if (!grid) return;
     const selects = Array.from(grid.querySelectorAll('select.role-select'));
     const used = selects.map(s => s.value).filter(v => v !== '');
-
     selects.forEach(sel => {
         const cur = sel.value;
         Array.from(sel.options).forEach(opt => {
-            if (!opt.value) return;  // keep placeholder
+            if (!opt.value) return;
             opt.disabled = used.includes(opt.value) && opt.value !== cur;
         });
     });
 }
 
-// ── Enable/disable the Add Role button ────────────────────────
-function updateAddBtn(gridKey) {
+function updateRoleBtn(gridKey) {
     const btn  = document.getElementById('addRoleBtn_' + gridKey);
     if (!btn) return;
     const grid = document.getElementById('roleGrid_' + gridKey);
@@ -787,7 +761,6 @@ function updateAddBtn(gridKey) {
     btn.disabled = used.length >= ALL_ROLES.length;
 }
 
-// ── Show/hide wishlist access panel ───────────────────────────
 function toggleWishlistAccess() {
     const panel = document.getElementById('wishlistAccessPanel');
     if (!panel) return;
@@ -796,10 +769,81 @@ function toggleWishlistAccess() {
     panel.style.display = gifterSelected ? 'block' : 'none';
 }
 
-// ── Strip unselected role rows before submit ───────────────────
+// ══ WISHLIST ACCESS GRID ══════════════════════════════════════
+
+function initWishlistGrid(preselected) {
+    if (!preselected || preselected.length === 0) return; // start empty; user clicks + Add Giftee
+    preselected.forEach(uid => addWishlistRow(uid));
+}
+
+function addWishlistRow(selectedValue) {
+    selectedValue = selectedValue || '';
+    const grid = document.getElementById('wishlistGrid');
+    if (!grid) return;
+
+    const row = document.createElement('div');
+    row.className = 'role-grid-row';
+
+    const sel = document.createElement('select');
+    sel.name = 'wishlist_access[]';
+    sel.className = 'wishlist-select';
+    const ph = document.createElement('option');
+    ph.value = ''; ph.textContent = '— Select a person —';
+    sel.appendChild(ph);
+    ALL_WISHLIST_USERS.forEach(user => {
+        const opt = document.createElement('option');
+        opt.value = user.USER_ID;
+        opt.textContent = user.FIRST_NAME + ' ' + user.LAST_NAME;
+        if (user.USER_ID === String(selectedValue)) opt.selected = true;
+        sel.appendChild(opt);
+    });
+    sel.addEventListener('change', function () {
+        refreshWishlistDropdowns();
+        updateWishlistBtn();
+    });
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button'; removeBtn.className = 'remove-role-btn';
+    removeBtn.innerHTML = '&times;'; removeBtn.title = 'Remove';
+    removeBtn.addEventListener('click', function () {
+        row.remove();
+        refreshWishlistDropdowns();
+        updateWishlistBtn();
+    });
+
+    row.appendChild(sel); row.appendChild(removeBtn);
+    grid.appendChild(row);
+    refreshWishlistDropdowns();
+    updateWishlistBtn();
+}
+
+function refreshWishlistDropdowns() {
+    const grid = document.getElementById('wishlistGrid');
+    if (!grid) return;
+    const selects = Array.from(grid.querySelectorAll('select.wishlist-select'));
+    const used = selects.map(s => s.value).filter(v => v !== '');
+    selects.forEach(sel => {
+        const cur = sel.value;
+        Array.from(sel.options).forEach(opt => {
+            if (!opt.value) return;
+            opt.disabled = used.includes(opt.value) && opt.value !== cur;
+        });
+    });
+}
+
+function updateWishlistBtn() {
+    const btn  = document.getElementById('addWishlistBtn');
+    if (!btn) return;
+    const grid = document.getElementById('wishlistGrid');
+    const used = Array.from(grid.querySelectorAll('select.wishlist-select'))
+        .map(s => s.value).filter(v => v !== '');
+    btn.disabled = used.length >= ALL_WISHLIST_USERS.length;
+}
+
+// ── Strip blank selects before submit ─────────────────────────
 document.querySelectorAll('form').forEach(form => {
     form.addEventListener('submit', function () {
-        this.querySelectorAll('select.role-select').forEach(sel => {
+        this.querySelectorAll('select.role-select, select.wishlist-select').forEach(sel => {
             if (!sel.value) sel.disabled = true;
         });
     });
