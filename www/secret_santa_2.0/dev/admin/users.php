@@ -472,7 +472,7 @@ if ($addMode && !$editing):
         </div>
 
         <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Add User</button>
+            <button type="submit" class="btn btn-primary">Save User</button>
             <a href="<?= APP_URL ?>/admin/users.php" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
@@ -834,6 +834,16 @@ function updateWishlistBtn() {
         .map(s => s.value).filter(v => v !== '');
     btn.disabled = used.length >= ALL_WISHLIST_USERS.length;
 }
+
+// ── Auto-dismiss success alert after 5 seconds ───────────────
+(function () {
+    const alert = document.querySelector('.alert-success');
+    if (alert) setTimeout(() => {
+        alert.style.transition = 'opacity 0.5s';
+        alert.style.opacity = '0';
+        setTimeout(() => alert.remove(), 500);
+    }, 5000);
+})();
 
 // ── Strip blank selects before submit ─────────────────────────
 document.querySelectorAll('form').forEach(form => {
