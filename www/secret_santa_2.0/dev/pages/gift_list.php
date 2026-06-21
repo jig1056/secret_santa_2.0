@@ -139,6 +139,7 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Add Gift</button>
             <a href="<?= APP_URL ?>/pages/gift_list.php" class="btn btn-secondary">Cancel</a>
+            <a href="<?= APP_URL ?>/pages/gift_list.php" class="btn btn-secondary">↩ Return to List</a>
         </div>
     </form>
 </div>
@@ -173,6 +174,7 @@ require_once __DIR__ . '/../includes/header.php';
                     onclick="if(confirm('Remove this gift from your list?')) document.getElementById('delGift<?= $editing['GIFT_ID'] ?>').submit()">
                 Delete
             </button>
+            <a href="<?= APP_URL ?>/pages/gift_list.php" class="btn btn-secondary">↩ Return to List</a>
         </div>
     </form>
     <form id="delGift<?= $editing['GIFT_ID'] ?>" method="POST" action="" style="display:none;">
@@ -182,6 +184,7 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 <?php endif; ?>
 
+<?php if (!$editing && !$addMode): ?>
 <!-- Gift List Table -->
 <div class="card">
     <div class="card-title">🎄 Your Wish List (<?= count($gifts) ?> gift<?= count($gifts) !== 1 ? 's' : '' ?>)</div>
@@ -224,6 +227,7 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
     <?php endif; ?>
 </div>
+<?php endif; // end !$editing && !$addMode ?>
 
 <style>
 .page-header  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
