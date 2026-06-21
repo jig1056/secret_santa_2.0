@@ -19,7 +19,7 @@ $addMode = isset($_GET['add']);
 // ------------------------------------------------------------
 // All roles (including all_roles for message targeting)
 // ------------------------------------------------------------
-$allRoles = $pdo->query("SELECT ROLE_ID, ROLE_KEY, ROLE_NAME FROM SS_ROLES ORDER BY SORT_ORDER ASC")->fetchAll();
+$allRoles = $pdo->query("SELECT ROLE_ID, ROLE_KEY, ROLE_NAME FROM SS_ROLES WHERE ROLE_KEY != 'all_roles' ORDER BY SORT_ORDER ASC")->fetchAll();
 
 // Role descriptions from SS_CONFIG (ROLE_DESC_* keys)
 $roleDescRows = $pdo->query("
