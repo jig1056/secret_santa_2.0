@@ -102,5 +102,15 @@ $timeout = isset($_GET['reason']) && $_GET['reason'] === 'timeout';
     </p>
 </div>
 <script src="<?= APP_URL ?>/assets/js/app.js"></script>
+<script>
+(function () {
+    const alert = document.querySelector('.alert-error');
+    if (alert) setTimeout(() => {
+        alert.style.transition = 'opacity 0.5s';
+        alert.style.opacity = '0';
+        setTimeout(() => alert.remove(), 500);
+    }, 10000);
+})();
+</script>
 </body>
 </html>
