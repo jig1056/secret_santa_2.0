@@ -86,12 +86,18 @@ body {
 .card-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; color: var(--red-dark); }
 
 /* -- Buttons -- */
-.btn { display: inline-flex; align-items: center; justify-content: center; height: 2.5rem; padding: 0 1.2rem; border: none; border-radius: var(--radius); font-size: 0.95rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: opacity 0.2s; box-sizing: border-box; line-height: 1; -webkit-appearance: none; appearance: none; }
+.btn { display: inline-flex; align-items: center; justify-content: center; height: 2.5rem; padding: 0 1.2rem; border: none; border-radius: var(--radius); font-size: 0.95rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: opacity 0.2s; box-sizing: border-box; line-height: 1; -webkit-appearance: none; appearance: none; vertical-align: middle; }
 .btn:hover { opacity: 0.85; }
 .btn-primary   { background: var(--red);   color: var(--white); }
 .btn-success   { background: var(--green); color: var(--white); }
 .btn-secondary { background: var(--gray);  color: var(--white); }
 .btn-sm        { height: 2rem; padding: 0 0.75rem; font-size: 0.85rem; }
+/* Explicit reset for <button> elements — UA stylesheet can override height/padding */
+button.btn { height: 2.5rem; padding: 0 1.2rem; font-size: 0.95rem; line-height: 1; }
+button.btn-sm { height: 2rem; padding: 0 0.75rem; font-size: 0.85rem; }
+
+/* -- Form Actions row -- */
+.form-actions { display: flex; gap: 0.75rem; margin-top: 0.5rem; flex-wrap: wrap; align-items: stretch; }
 
 /* -- Forms -- */
 .form-group { margin-bottom: 1rem; }

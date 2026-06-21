@@ -290,7 +290,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 .required { color: #c0392b; }
 .optional { color: #999; font-weight: 400; font-size: 0.85rem; }
-.form-actions { display: flex; gap: 0.75rem; margin-top: 0.5rem; flex-wrap: wrap; align-items: center; }
+.form-actions { margin-top: 0.5rem; }
 .form-actions .btn { min-width: 140px; text-align: center; }
 
 .input-disabled { background: #f4f6f8; color: #888; cursor: not-allowed; width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; }

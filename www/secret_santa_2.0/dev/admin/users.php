@@ -576,7 +576,7 @@ document.addEventListener('DOMContentLoaded', function () {
 .muted     { color:#aaa; }
 .nowrap    { white-space:nowrap; }
 
-.form-actions  { display:flex; gap:0.75rem; margin-top:0.5rem; flex-wrap:wrap; }
+.form-actions  { margin-top:0.5rem; }
 .user-id-note  { font-size:0.85rem; color:#666; background:#f4f6f8; padding:0.5rem 0.75rem; border-radius:6px; margin-bottom:1rem; }
 .user-id-small { font-size:0.75rem; color:#999; margin-top:0.15rem; }
 .field-hint    { font-size:0.82rem; color:#888; margin-top:0.3rem; }
