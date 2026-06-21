@@ -142,8 +142,8 @@ function sendPasswordReset(array $user, PDO $pdo): bool|string {
 
     if ($template) {
         $body = str_replace(
-            ['{FIRST_NAME}', '{LAST_NAME}', '{YEAR}', '{PASSWORD_RESET_LINK}', '{RESET_EXPIRY_MINS}', '{GIFT_DEADLINE}', '{SANTA_MATCH_DATE}'],
-            [$user['FIRST_NAME'], $user['LAST_NAME'], getConfig('XMAS_YEAR', date('Y')), $resetLink, $expiryMins, getConfig('GIFT_DEADLINE', 'TBD'), getConfig('SANTA_MATCH_DATE', 'TBD')],
+            ['{FIRST_NAME}', '{LAST_NAME}', '{YEAR}', '{PASSWORD_RESET_LINK}', '{RESET_EXPIRY_MINS}', '{RESET_TOKEN_EXPIRY_MINS}', '{GIFT_DEADLINE}', '{SANTA_MATCH_DATE}'],
+            [$user['FIRST_NAME'], $user['LAST_NAME'], getConfig('XMAS_YEAR', date('Y')), $resetLink, $expiryMins, $expiryMins, getConfig('GIFT_DEADLINE', 'TBD'), getConfig('SANTA_MATCH_DATE', 'TBD')],
             $template['MESSAGE_BODY']
         );
         $subject = $template['MESSAGE_NAME'] . ' — ' . getConfig('MAIL_SUBJECT', 'Secret Santa');
