@@ -16,7 +16,33 @@ require_once __DIR__ . '/../includes/header.php';
 
     <div class="cl-version">
         <div class="cl-version-header">
-            <span class="cl-badge">v2.6</span>
+            <span class="cl-badge">v2.6.1</span>
+            <span class="cl-version-title">UI Polish &amp; User Report</span>
+            <span class="cl-version-date">June 2026</span>
+        </div>
+        <ul class="cl-items">
+            <li>
+                <strong>User Report</strong> — A new User Report view in User Management lists every user with their first name, last name, email, phone, status, roles, and wishlist access assignments in one place. Return to List link at top and bottom.
+            </li>
+            <li>
+                <strong>Cleaner User List</strong> — The Roles column has been removed from the main user list to reduce clutter. Role filtering still works via the dropdown. Full role details are available in the User Report.
+            </li>
+            <li>
+                <strong>Internal System Use Flag</strong> — Message templates can now be marked as Internal System Use. When set, the Send button is hidden everywhere so system-only messages like Password Reset can't be triggered manually.
+            </li>
+            <li>
+                <strong>Message Center Navigation</strong> — Added a "← Return to List" back-link above the edit form, matching the style used on the Wishlists page. The Send button has been simplified to "Send Message."
+            </li>
+            <li>
+                <strong>Initialize New Season</strong> — The button label on the Config page has been cleaned up from "Show Initialize New Season" to just "Initialize New Season."
+            </li>
+        </ul>
+    </div>
+
+    <div class="cl-version cl-version-older">
+        <div class="cl-version-header">
+            <span class="cl-badge cl-badge-old">v2.6</span>
+
             <span class="cl-version-title">Polished Messaging &amp; Admin Tools</span>
             <span class="cl-version-date">June 2026</span>
         </div>
