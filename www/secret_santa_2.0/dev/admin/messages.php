@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'add') {
         $name            = trim($_POST['message_name'] ?? '');
         $body            = trim($_POST['message_body'] ?? '');
-        $selectedRoleIds = array_map('intval', (array)($_POST['allowed_roles'] ?? []));
+        $selectedRoleIds = (array)($_POST['allowed_roles'] ?? []);
 
         if (!$name || !$body) {
             $msg     = 'Message name and body are required.';
@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $messageId       = (int)($_POST['message_id']   ?? 0);
         $name            = trim($_POST['message_name']  ?? '');
         $body            = trim($_POST['message_body']  ?? '');
-        $selectedRoleIds = array_map('intval', (array)($_POST['allowed_roles'] ?? []));
+        $selectedRoleIds = (array)($_POST['allowed_roles'] ?? []);
 
         if (!$name || !$body) {
             $msg     = 'Message name and body are required.';
