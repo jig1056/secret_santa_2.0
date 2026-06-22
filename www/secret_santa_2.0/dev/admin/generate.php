@@ -24,7 +24,7 @@ $stmt  = $pdo->query("
     FROM SS_USERS u
     JOIN SS_USER_ROLES ur ON ur.USER_ID = u.USER_ID
     JOIN SS_ROLES r ON r.ROLE_ID = ur.ROLE_ID
-    WHERE u.STATUS = 'ACTIVE' AND r.ROLE_KEY = 'secret_santa'
+    WHERE u.STATUS = 'ACTIVE' AND r.ROLE_ID = 'secret_santa'
     ORDER BY u.FIRST_NAME ASC
 ");
 $users = $stmt->fetchAll();

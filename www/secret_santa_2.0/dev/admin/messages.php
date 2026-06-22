@@ -19,7 +19,7 @@ $addMode = isset($_GET['add']);
 // ------------------------------------------------------------
 // All roles (including all_roles for message targeting)
 // ------------------------------------------------------------
-$allRoles = $pdo->query("SELECT ROLE_ID, ROLE_KEY, ROLE_NAME FROM SS_ROLES WHERE ROLE_KEY != 'all_roles' ORDER BY SORT_ORDER ASC")->fetchAll();
+$allRoles = $pdo->query("SELECT ROLE_ID, ROLE_NAME FROM SS_ROLES WHERE ROLE_ID != 'all_roles' ORDER BY SORT_ORDER ASC")->fetchAll();
 
 // Role descriptions from SS_CONFIG (ROLE_DESC_* keys)
 $roleDescRows = $pdo->query("
@@ -39,7 +39,7 @@ function saveMessageRoles(int $messageId, array $selectedRoleIds, PDO $pdo): voi
     $pdo->prepare("DELETE FROM SS_MESSAGE_ROLES WHERE MESSAGE_ID = ?")->execute([$messageId]);
     $ins = $pdo->prepare("INSERT IGNORE INTO SS_MESSAGE_ROLES (MESSAGE_ID, ROLE_ID) VALUES (?, ?)");
     foreach ($selectedRoleIds as $roleId) {
-        $ins->execute([$messageId, (int)$roleId]);
+        $ins->execute([$messageId, $roleId]);
     }
 }
 
@@ -49,7 +49,7 @@ function saveMessageRoles(int $messageId, array $selectedRoleIds, PDO $pdo): voi
 // ------------------------------------------------------------
 function loadAllUserRoles(PDO $pdo): array {
     $stmt = $pdo->query("
-        SELECT ur.USER_ID, r.ROLE_KEY
+        SELECT ur.USER_ID, r.ROLE_ID
         FROM SS_USER_ROLES ur
         JOIN SS_ROLES r ON r.ROLE_ID = ur.ROLE_ID
         JOIN SS_USERS u ON u.USER_ID = ur.USER_ID
@@ -57,7 +57,7 @@ function loadAllUserRoles(PDO $pdo): array {
     ");
     $map = [];
     foreach ($stmt->fetchAll() as $row) {
-        $map[$row['USER_ID']][] = $row['ROLE_KEY'];
+        $map[$row['USER_ID']][] = $row['ROLE_ID'];
     }
     return $map;
 }
@@ -285,7 +285,7 @@ $editingAllowedRoleIds = [];
 if ($editing) {
     $stmt = $pdo->prepare("SELECT ROLE_ID FROM SS_MESSAGE_ROLES WHERE MESSAGE_ID = ?");
     $stmt->execute([$editing['MESSAGE_ID']]);
-    $editingAllowedRoleIds = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    $editingAllowedRoleIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
 }
 
 // All templates with their allowed roles
@@ -294,7 +294,7 @@ $templates = $pdo->query("SELECT * FROM SS_MESSAGES ORDER BY MESSAGE_NAME ASC")-
 // Allowed roles per template (for table display)
 $templateRolesMap = [];
 $trStmt = $pdo->query("
-    SELECT mr.MESSAGE_ID, r.ROLE_KEY, r.ROLE_NAME
+    SELECT mr.MESSAGE_ID, r.ROLE_ID, r.ROLE_NAME
     FROM SS_MESSAGE_ROLES mr
     JOIN SS_ROLES r ON r.ROLE_ID = mr.ROLE_ID
     ORDER BY r.SORT_ORDER ASC
@@ -452,7 +452,7 @@ document.addEventListener('DOMContentLoaded', function () {
 <?php
 // Get this message's allowed roles for display in the send panel
 $editingAllowedRoles = $templateRolesMap[$editing['MESSAGE_ID']] ?? [];
-$editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['ROLE_KEY'] === 'all_roles'));
+$editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['ROLE_ID'] === 'all_roles'));
 ?>
 <div class="card send-card" id="sendPanel" style="display:none;">
     <div class="card-title">📤 Send This Message</div>
@@ -461,7 +461,7 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
     <div class="allowed-roles-notice">
         <strong>Eligible roles:</strong>
         <?php foreach ($editingAllowedRoles as $r): ?>
-        <span class="badge badge-role-<?= h($r['ROLE_KEY']) ?>"><?= h($r['ROLE_NAME']) ?></span>
+        <span class="badge badge-role-<?= h($r['ROLE_ID']) ?>"><?= h($r['ROLE_NAME']) ?></span>
         <?php endforeach; ?>
     </div>
     <?php endif; ?>
@@ -565,7 +565,7 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
                         <?php else: ?>
                         <div class="role-badge-list">
                             <?php foreach ($tplRoles as $r): ?>
-                            <span class="badge badge-role-<?= h($r['ROLE_KEY']) ?>"><?= h($r['ROLE_NAME']) ?></span>
+                            <span class="badge badge-role-<?= h($r['ROLE_ID']) ?>"><?= h($r['ROLE_NAME']) ?></span>
                             <?php endforeach; ?>
                         </div>
                         <?php endif; ?>
@@ -805,7 +805,7 @@ function addAllowedRoleRow(gridKey, selectedValue) {
     const row = document.createElement('div');
     row.className = 'role-grid-row';
     if (selectedValue && ROLE_BY_ID[selectedValue]) {
-        row.dataset.role = ROLE_BY_ID[selectedValue].ROLE_KEY;
+        row.dataset.role = ROLE_BY_ID[selectedValue].ROLE_ID;
     }
 
     const sel = document.createElement('select');
@@ -823,7 +823,7 @@ function addAllowedRoleRow(gridKey, selectedValue) {
     });
     sel.addEventListener('change', function () {
         const role = ROLE_BY_ID[this.value];
-        const key  = role ? role.ROLE_KEY : '';
+        const key  = role ? role.ROLE_ID : '';
         row.dataset.role = key;
         descSpan.textContent = key && ROLE_DESCS[key] ? ROLE_DESCS[key] : '';
         refreshAllowedRoleDropdowns(gridKey);
@@ -833,8 +833,8 @@ function addAllowedRoleRow(gridKey, selectedValue) {
     const descSpan = document.createElement('span');
     descSpan.className = 'role-desc';
     const initRole = ROLE_BY_ID[selectedValue];
-    descSpan.textContent = initRole && ROLE_DESCS[initRole.ROLE_KEY]
-        ? ROLE_DESCS[initRole.ROLE_KEY] : '';
+    descSpan.textContent = initRole && ROLE_DESCS[initRole.ROLE_ID]
+        ? ROLE_DESCS[initRole.ROLE_ID] : '';
 
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button'; removeBtn.className = 'remove-role-btn';

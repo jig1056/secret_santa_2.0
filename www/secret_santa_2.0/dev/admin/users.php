@@ -19,9 +19,9 @@ $addMode = isset($_GET['add']);
 // All assignable roles (exclude all_roles — never for users)
 // ------------------------------------------------------------
 $allRoles = $pdo->query("
-    SELECT ROLE_ID, ROLE_KEY, ROLE_NAME
+    SELECT ROLE_ID, ROLE_NAME
     FROM SS_ROLES
-    WHERE ROLE_KEY != 'all_roles'
+    WHERE ROLE_ID != 'all_roles'
     ORDER BY SORT_ORDER ASC
 ")->fetchAll();
 
@@ -45,14 +45,14 @@ function saveUserRoles(string $userId, array $selectedRoleIds, PDO $pdo): void {
     $pdo->prepare("DELETE FROM SS_USER_ROLES WHERE USER_ID = ?")->execute([$userId]);
     $ins = $pdo->prepare("INSERT IGNORE INTO SS_USER_ROLES (USER_ID, ROLE_ID) VALUES (?, ?)");
     foreach ($selectedRoleIds as $roleId) {
-        $ins->execute([$userId, (int)$roleId]);
+        $ins->execute([$userId, $roleId]);
     }
 }
 
 // Helper: derive USER_TYPE from selected role IDs (keep legacy column in sync)
 function deriveUserType(array $selectedRoleIds, array $allRoles): string {
     foreach ($allRoles as $r) {
-        if ($r['ROLE_KEY'] === 'admin' && in_array($r['ROLE_ID'], $selectedRoleIds)) {
+        if ($r['ROLE_ID'] === 'admin' && in_array($r['ROLE_ID'], $selectedRoleIds)) {
             return 'ADMIN';
         }
     }
@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email           = trim($_POST['email']      ?? '');
         $phone           = trim($_POST['phone']      ?? '');
         $sex             = in_array($_POST['sex'] ?? '', ['MALE', 'FEMALE']) ? $_POST['sex'] : null;
-        $selectedRoleIds = array_map('intval', (array)($_POST['roles'] ?? []));
+        $selectedRoleIds = (array)($_POST['roles'] ?? []);
         $password        = trim($_POST['password']   ?? '');
 
         if (!$firstName || !$lastName || !$email || !$password) {
@@ -118,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email           = trim($_POST['email']      ?? '');
         $phone           = trim($_POST['phone']      ?? '');
         $sex             = in_array($_POST['sex'] ?? '', ['MALE', 'FEMALE']) ? $_POST['sex'] : null;
-        $selectedRoleIds = array_map('intval', (array)($_POST['roles'] ?? []));
+        $selectedRoleIds = (array)($_POST['roles'] ?? []);
         $newPass         = trim($_POST['password']   ?? '');
         $wishlistAccess  = (array)($_POST['wishlist_access'] ?? []);
 
@@ -152,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Save wishlist access if gifter role is selected
                 $hasGifterRole = false;
                 foreach ($allRoles as $r) {
-                    if ($r['ROLE_KEY'] === 'wishlist_gifter' && in_array($r['ROLE_ID'], $selectedRoleIds)) {
+                    if ($r['ROLE_ID'] === 'wishlist_gifter' && in_array($r['ROLE_ID'], $selectedRoleIds)) {
                         $hasGifterRole = true;
                         break;
                     }
@@ -213,7 +213,6 @@ if ($editing) {
     $stmt = $pdo->prepare("SELECT ROLE_ID FROM SS_USER_ROLES WHERE USER_ID = ?");
     $stmt->execute([$editing['USER_ID']]);
     $editingRoleIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
-    $editingRoleIds = array_map('intval', $editingRoleIds);
 }
 
 // Wishlist-only users (for gifter access assignment)
@@ -222,7 +221,7 @@ $wishlistOnlyUsers = $pdo->query("
     FROM SS_USERS u
     JOIN SS_USER_ROLES ur ON ur.USER_ID = u.USER_ID
     JOIN SS_ROLES r ON r.ROLE_ID = ur.ROLE_ID
-    WHERE r.ROLE_KEY = 'wishlist_only' AND u.STATUS = 'ACTIVE'
+    WHERE r.ROLE_ID = 'wishlist_only' AND u.STATUS = 'ACTIVE'
     ORDER BY u.FIRST_NAME ASC
 ")->fetchAll();
 
@@ -237,7 +236,7 @@ if ($editing) {
 // Check if editing user has gifter role
 $editingIsGifter = false;
 foreach ($allRoles as $r) {
-    if ($r['ROLE_KEY'] === 'wishlist_gifter' && in_array($r['ROLE_ID'], $editingRoleIds)) {
+    if ($r['ROLE_ID'] === 'wishlist_gifter' && in_array($r['ROLE_ID'], $editingRoleIds)) {
         $editingIsGifter = true;
         break;
     }
@@ -246,7 +245,7 @@ foreach ($allRoles as $r) {
 // Gifter role ID (needed in JS for both add and edit modes)
 $gifterRoleId = null;
 foreach ($allRoles as $r) {
-    if ($r['ROLE_KEY'] === 'wishlist_gifter') { $gifterRoleId = $r['ROLE_ID']; break; }
+    if ($r['ROLE_ID'] === 'wishlist_gifter') { $gifterRoleId = $r['ROLE_ID']; break; }
 }
 
 // Wishlist access map (gifter → list of wishlist user names)
@@ -267,10 +266,10 @@ $users = $pdo->query("SELECT * FROM SS_USERS ORDER BY STATUS ASC, LAST_NAME ASC,
 // Roles per user for table display
 $userRolesMap = [];
 $urStmt = $pdo->query("
-    SELECT ur.USER_ID, r.ROLE_KEY, r.ROLE_NAME
+    SELECT ur.USER_ID, r.ROLE_ID, r.ROLE_NAME
     FROM SS_USER_ROLES ur
     JOIN SS_ROLES r ON r.ROLE_ID = ur.ROLE_ID
-    WHERE r.ROLE_KEY != 'all_roles'
+    WHERE r.ROLE_ID != 'all_roles'
     ORDER BY r.SORT_ORDER ASC
 ");
 foreach ($urStmt->fetchAll() as $row) {
@@ -541,7 +540,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <?php else: ?>
                         <div class="role-badge-list">
                             <?php foreach ($roles as $r): ?>
-                            <span class="badge badge-role-<?= h($r['ROLE_KEY']) ?>"><?= h($r['ROLE_NAME']) ?></span>
+                            <span class="badge badge-role-<?= h($r['ROLE_ID']) ?>"><?= h($r['ROLE_NAME']) ?></span>
                             <?php endforeach; ?>
                         </div>
                         <?php endif; ?>
@@ -574,7 +573,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <select id="filterRole" onchange="applyFilters()">
             <option value="">All Roles</option>
             <?php foreach ($allRoles as $role): ?>
-            <option value="<?= h($role['ROLE_KEY']) ?>"><?= h($role['ROLE_NAME']) ?></option>
+            <option value="<?= h($role['ROLE_ID']) ?>"><?= h($role['ROLE_NAME']) ?></option>
             <?php endforeach; ?>
         </select>
         <select id="filterStatus" onchange="applyFilters()">
@@ -600,7 +599,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <?php foreach ($users as $user): ?>
                 <?php
                     $roles     = $userRolesMap[$user['USER_ID']] ?? [];
-                    $roleKeys  = implode(' ', array_column($roles, 'ROLE_KEY'));
+                    $roleKeys  = implode(' ', array_column($roles, 'ROLE_ID'));
                 ?>
                 <tr class="user-row <?= $user['STATUS'] === 'INACTIVE' ? 'row-inactive' : '' ?>"
                     data-name="<?= strtolower(h($user['FIRST_NAME'] . ' ' . $user['LAST_NAME'])) ?>"
@@ -761,7 +760,7 @@ function addRoleRow(gridKey, selectedValue) {
     const row = document.createElement('div');
     row.className = 'role-grid-row';
     if (selectedValue && ROLE_BY_ID[selectedValue]) {
-        row.dataset.role = ROLE_BY_ID[selectedValue].ROLE_KEY;
+        row.dataset.role = ROLE_BY_ID[selectedValue].ROLE_ID;
     }
 
     const sel = document.createElement('select');
@@ -779,7 +778,7 @@ function addRoleRow(gridKey, selectedValue) {
     });
     sel.addEventListener('change', function () {
         const role = ROLE_BY_ID[this.value];
-        const key  = role ? role.ROLE_KEY : '';
+        const key  = role ? role.ROLE_ID : '';
         row.dataset.role = key;
         descSpan.textContent = key && ROLE_DESCS[key] ? ROLE_DESCS[key] : '';
         refreshRoleDropdowns(gridKey);
@@ -790,8 +789,8 @@ function addRoleRow(gridKey, selectedValue) {
     const descSpan = document.createElement('span');
     descSpan.className = 'role-desc';
     const initRole = ROLE_BY_ID[selectedValue];
-    descSpan.textContent = initRole && ROLE_DESCS[initRole.ROLE_KEY]
-        ? ROLE_DESCS[initRole.ROLE_KEY] : '';
+    descSpan.textContent = initRole && ROLE_DESCS[initRole.ROLE_ID]
+        ? ROLE_DESCS[initRole.ROLE_ID] : '';
 
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button'; removeBtn.className = 'remove-role-btn';

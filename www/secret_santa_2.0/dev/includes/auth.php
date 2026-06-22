@@ -99,12 +99,12 @@ function isAdmin(): bool {
 }
 
 // ------------------------------------------------------------
-// Internal: fetch role keys for a user from SS_USER_ROLES.
-// Returns an array of ROLE_KEY strings e.g. ['admin','secret_santa']
+// Internal: fetch role IDs for a user from SS_USER_ROLES.
+// Returns an array of ROLE_ID strings e.g. ['admin','secret_santa']
 // ------------------------------------------------------------
 function _loadUserRoles(string $userId, PDO $pdo): array {
     $stmt = $pdo->prepare("
-        SELECT r.ROLE_KEY
+        SELECT r.ROLE_ID
         FROM SS_USER_ROLES ur
         JOIN SS_ROLES r ON r.ROLE_ID = ur.ROLE_ID
         WHERE ur.USER_ID = ?
