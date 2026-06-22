@@ -516,17 +516,24 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
         </div>
 
         <div class="form-actions" style="margin-top:1rem;">
-            <button type="submit" class="btn btn-success"
-                    onclick="return confirm('Send this message now?')">
+            <button type="submit" class="btn btn-success" id="sendSubmitBtn"
+                    onclick="return confirmAndSend(this)">
                 📤 Send Message
             </button>
             <?php if ($showSend): ?>
-            <a href="<?= APP_URL ?>/admin/messages.php" class="btn btn-secondary">↩ Return to List</a>
+            <a href="<?= APP_URL ?>/admin/messages.php" class="btn btn-secondary" id="sendReturnBtn">↩ Return to List</a>
             <?php else: ?>
-            <button type="button" class="btn btn-secondary" onclick="toggleSendPanel()">↩ Return to Edit</button>
+            <button type="button" class="btn btn-secondary" id="sendReturnBtn" onclick="toggleSendPanel()">↩ Return to Edit</button>
             <?php endif; ?>
         </div>
     </form>
+
+    <!-- Sending overlay — shown while the POST is in flight -->
+    <div id="sendingOverlay" style="display:none;">
+        <div class="sending-spinner"></div>
+        <div class="sending-title">Sending messages…</div>
+        <div class="sending-sub" id="sendingSubText">Please wait — do not close or refresh this page.</div>
+    </div>
 </div>
 <?php endif; ?>
 
@@ -709,7 +716,32 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 .role-grid-row[data-role="wishlist_gifter"] { border-left-color:#1e8449; }
 
 /* Send panel */
-.send-card { border-left:4px solid #1e8449; }
+.send-card { border-left:4px solid #1e8449; position:relative; }
+
+/* Sending overlay */
+#sendingOverlay {
+    position:absolute; inset:0;
+    background:rgba(255,255,255,0.93);
+    border-radius:inherit;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    gap:0.75rem; z-index:10;
+    padding:2rem;
+}
+.sending-spinner {
+    width:44px; height:44px;
+    border:4px solid #e0e0e0;
+    border-top-color:#1e8449;
+    border-radius:50%;
+    animation:spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+.sending-title {
+    font-size:1.1rem; font-weight:700; color:#1e8449;
+}
+.sending-sub {
+    font-size:0.88rem; color:#666; text-align:center; max-width:320px;
+}
 
 .allowed-roles-notice {
     background:#f0faf4;
@@ -896,6 +928,37 @@ function updateTargetUI() {
 }
 
 // ---- Send panel toggle ----
+function confirmAndSend(btn) {
+    // Count recipients for context in the status message
+    const targetType = document.getElementById('target_type');
+    const isIndividual = targetType && targetType.value === 'individual';
+    let recipientHint = 'all eligible users';
+    if (isIndividual) {
+        const multi = document.querySelector('select[name="target_users[]"]');
+        const count = multi ? multi.selectedOptions.length : 0;
+        if (count === 0) { alert('Please select at least one user.'); return false; }
+        recipientHint = count + (count === 1 ? ' user' : ' users');
+    }
+
+    if (!confirm('Send this message to ' + recipientHint + ' now?')) return false;
+
+    // Show the overlay
+    const overlay = document.getElementById('sendingOverlay');
+    const sub     = document.getElementById('sendingSubText');
+    if (overlay) {
+        sub.textContent = 'Sending to ' + recipientHint + ' — please wait, do not close or refresh this page.';
+        overlay.style.display = 'flex';
+    }
+
+    // Disable buttons so nothing can be double-clicked
+    const submitBtn   = document.getElementById('sendSubmitBtn');
+    const returnBtn   = document.getElementById('sendReturnBtn');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ Sending…'; }
+    if (returnBtn) returnBtn.style.pointerEvents = 'none';
+
+    return true; // allow the form to submit normally
+}
+
 function toggleSendPanel() {
     const panel    = document.getElementById('sendPanel');
     const editCard = document.getElementById('editFormCard');
