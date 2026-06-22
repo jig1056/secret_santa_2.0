@@ -249,6 +249,18 @@ foreach ($allRoles as $r) {
     if ($r['ROLE_KEY'] === 'wishlist_gifter') { $gifterRoleId = $r['ROLE_ID']; break; }
 }
 
+// Wishlist access map (gifter → list of wishlist user names)
+$wishlistAccessMap = [];
+$waStmt = $pdo->query("
+    SELECT wa.GIFTER_USER_ID, u.FIRST_NAME, u.LAST_NAME
+    FROM SS_WISHLIST_ACCESS wa
+    JOIN SS_USERS u ON u.USER_ID = wa.WISHLIST_USER_ID
+    ORDER BY u.FIRST_NAME ASC
+");
+foreach ($waStmt->fetchAll() as $row) {
+    $wishlistAccessMap[$row['GIFTER_USER_ID']][] = $row['FIRST_NAME'] . ' ' . $row['LAST_NAME'];
+}
+
 // All users for the table
 $users = $pdo->query("SELECT * FROM SS_USERS ORDER BY STATUS ASC, LAST_NAME ASC, FIRST_NAME ASC")->fetchAll();
 
@@ -279,7 +291,10 @@ require_once __DIR__ . '/../includes/header.php';
 
 <div class="page-header">
     <h1 class="page-title">👥 User Management</h1>
-    <a href="?add=1" class="btn btn-primary">➕ Add New User</a>
+    <div style="display:flex;gap:0.5rem;">
+        <a href="?report=1" class="btn btn-secondary">📋 User Report</a>
+        <a href="?add=1" class="btn btn-primary">➕ Add New User</a>
+    </div>
 </div>
 
 <?php if ($msg): ?>
@@ -485,9 +500,72 @@ document.addEventListener('DOMContentLoaded', function () {
 <?php endif; ?>
 
 <!-- ============================================================ -->
+<!-- USER REPORT                                                   -->
+<!-- ============================================================ -->
+<?php if (!$editing && !$addMode && isset($_GET['report'])): ?>
+<a href="<?= APP_URL ?>/admin/users.php" class="back-link">← Return to List</a>
+<div class="card">
+    <div class="card-title">📋 User Report (<?= count($users) ?> users)</div>
+    <div class="table-wrap">
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Status</th>
+                    <th>Roles</th>
+                    <th>Wishlist Access</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($users as $user): ?>
+                <?php
+                    $roles  = $userRolesMap[$user['USER_ID']] ?? [];
+                    $access = $wishlistAccessMap[$user['USER_ID']] ?? [];
+                ?>
+                <tr class="<?= $user['STATUS'] === 'INACTIVE' ? 'row-inactive' : '' ?>">
+                    <td><?= h($user['FIRST_NAME']) ?></td>
+                    <td><?= h($user['LAST_NAME']) ?></td>
+                    <td class="nowrap"><?= h($user['EMAIL']) ?></td>
+                    <td class="nowrap"><?= $user['PHONE'] ? h($user['PHONE']) : '<span class="muted">—</span>' ?></td>
+                    <td>
+                        <span class="badge <?= $user['STATUS'] === 'ACTIVE' ? 'badge-active' : 'badge-inactive' ?>">
+                            <?= h($user['STATUS']) ?>
+                        </span>
+                    </td>
+                    <td>
+                        <?php if (empty($roles)): ?>
+                        <span class="muted">—</span>
+                        <?php else: ?>
+                        <div class="role-badge-list">
+                            <?php foreach ($roles as $r): ?>
+                            <span class="badge badge-role-<?= h($r['ROLE_KEY']) ?>"><?= h($r['ROLE_NAME']) ?></span>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <?php if (empty($access)): ?>
+                        <span class="muted">—</span>
+                        <?php else: ?>
+                        <?= h(implode(', ', $access)) ?>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<a href="<?= APP_URL ?>/admin/users.php" class="back-link">← Return to List</a>
+<?php endif; ?>
+
+<!-- ============================================================ -->
 <!-- USERS TABLE (hidden while editing or adding)                  -->
 <!-- ============================================================ -->
-<?php if (!$editing && !$addMode): ?>
+<?php if (!$editing && !$addMode && !isset($_GET['report'])): ?>
 <div class="card">
     <div class="card-title">👥 All Users (<?= count($users) ?>)</div>
 
@@ -515,8 +593,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <th class="sortable" data-col="0" onclick="sortTable(0)">Name <span class="sort-icon">↕</span></th>
                     <th class="sortable" data-col="1" onclick="sortTable(1)">Email <span class="sort-icon">↕</span></th>
                     <th>Phone</th>
-                    <th>Roles</th>
-                    <th class="sortable" data-col="4" onclick="sortTable(4)">Status <span class="sort-icon">↕</span></th>
+                    <th class="sortable" data-col="3" onclick="sortTable(3)">Status <span class="sort-icon">↕</span></th>
                 </tr>
             </thead>
             <tbody>
@@ -539,17 +616,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     </td>
                     <td class="nowrap"><?= h($user['EMAIL']) ?></td>
                     <td class="nowrap"><?= $user['PHONE'] ? h($user['PHONE']) : '<span class="muted">—</span>' ?></td>
-                    <td>
-                        <?php if (empty($roles)): ?>
-                        <span class="muted">—</span>
-                        <?php else: ?>
-                        <div class="role-badge-list">
-                            <?php foreach ($roles as $r): ?>
-                            <span class="badge badge-role-<?= h($r['ROLE_KEY']) ?>"><?= h($r['ROLE_NAME']) ?></span>
-                            <?php endforeach; ?>
-                        </div>
-                        <?php endif; ?>
-                    </td>
                     <td>
                         <span class="badge <?= $user['STATUS'] === 'ACTIVE' ? 'badge-active' : 'badge-inactive' ?>">
                             <?= h($user['STATUS']) ?>
@@ -654,6 +720,17 @@ th.sortable { cursor:pointer; user-select:none; white-space:nowrap; }
 th.sortable:hover { background:#e8e8e8; }
 .sort-icon { font-size:0.75rem; color:#999; }
 th.sort-asc .sort-icon, th.sort-desc .sort-icon { color:#c0392b; }
+
+/* Back link */
+.back-link { display:inline-block; font-size:0.9rem; color:#c0392b; text-decoration:none; font-weight:600; margin-bottom:0.6rem; }
+.back-link:hover { text-decoration:underline; }
+
+/* Report table */
+.report-table { width:100%; border-collapse:collapse; font-size:0.9rem; }
+.report-table th { background:#f4f6f8; text-align:left; padding:0.5rem 0.75rem; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.04em; color:#666; border-bottom:2px solid #e0e0e0; white-space:nowrap; }
+.report-table td { padding:0.5rem 0.75rem; border-bottom:1px solid #f0f0f0; vertical-align:middle; }
+.report-table tr:last-child td { border-bottom:none; }
+.report-table tr.row-inactive td { opacity:0.55; }
 </style>
 
 <script>
