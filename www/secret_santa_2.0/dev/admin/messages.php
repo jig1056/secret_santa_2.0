@@ -965,13 +965,18 @@ function confirmAndSend(btn) {
         overlay.style.display = 'flex';
     }
 
-    // Disable buttons so nothing can be double-clicked
-    const submitBtn   = document.getElementById('sendSubmitBtn');
-    const returnBtn   = document.getElementById('sendReturnBtn');
+    // Disable buttons to prevent double-submit
+    const submitBtn = document.getElementById('sendSubmitBtn');
+    const returnBtn = document.getElementById('sendReturnBtn');
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ Sending…'; }
     if (returnBtn) returnBtn.style.pointerEvents = 'none';
 
-    return true; // allow the form to submit normally
+    // IMPORTANT: disabling the submit button inside its own onclick can silently cancel
+    // the form submission in Chrome. Submit programmatically after a short delay instead.
+    const form = btn.closest('form');
+    setTimeout(function () { form.submit(); }, 50);
+
+    return false; // prevent the button-click from submitting immediately
 }
 
 function toggleSendPanel() {
