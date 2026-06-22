@@ -176,11 +176,9 @@ function sendPasswordReset(array $user, PDO $pdo): bool|string {
 
 // ------------------------------------------------------------
 // sendMail()
-// $to      - recipient email address
-// $toName  - recipient display name
-// $subject - email subject line
-// $body    - email body (plain text or HTML)
-// $isHtml  - set true to send as HTML email (default: false)
+// Single-send helper. Opens and closes one SMTP connection.
+// Use for individual transactional emails (password reset, etc.)
+// For bulk sending use createBulkMailer() + sendMailBulk().
 //
 // Returns true on success, error string on failure.
 // ------------------------------------------------------------
@@ -188,7 +186,6 @@ function sendMail(string $to, string $toName, string $subject, string $body, boo
     $mail = new PHPMailer(true);
 
     try {
-        // -- Server settings --
         if (IS_DEV) {
             $mail->SMTPDebug = 0; // Set to 2 to see full SMTP debug output in dev
         }
@@ -202,7 +199,6 @@ function sendMail(string $to, string $toName, string $subject, string $body, boo
         $mail->Port       = (int) getConfig('MAIL_PORT', '587');
         $mail->Encoding   = '7bit';
 
-        // -- Recipients --
         $mail->setFrom(
             getConfig('MAIL_FROM_EMAIL', 'noreply@example.com'),
             getConfig('MAIL_FROM_NAME',  'Secret Santa Admin')
@@ -213,12 +209,11 @@ function sendMail(string $to, string $toName, string $subject, string $body, boo
             getConfig('MAIL_FROM_NAME', 'Secret Santa Admin')
         );
 
-        // -- Content --
         $mail->isHTML($isHtml);
         $mail->Subject = $subject;
         $mail->Body    = $body;
         if ($isHtml) {
-            $mail->AltBody = strip_tags($body); // plain-text fallback for non-HTML clients
+            $mail->AltBody = strip_tags($body);
         }
 
         $mail->send();
@@ -226,6 +221,72 @@ function sendMail(string $to, string $toName, string $subject, string $body, boo
 
     } catch (Exception $e) {
         error_log('PHPMailer error to ' . $to . ': ' . $mail->ErrorInfo);
+        return $mail->ErrorInfo;
+    }
+}
+
+// ------------------------------------------------------------
+// createBulkMailer()
+// Returns a pre-configured PHPMailer instance with SMTP
+// keepalive enabled. The SMTP connection is opened once and
+// reused for every message — call smtpClose() when done.
+// ------------------------------------------------------------
+function createBulkMailer(): PHPMailer {
+    $mail = new PHPMailer(true);
+
+    if (IS_DEV) {
+        $mail->SMTPDebug = 0;
+    }
+
+    $mail->isSMTP();
+    $mail->Host          = getConfig('MAIL_HOST',       'smtp.gmail.com');
+    $mail->SMTPAuth      = true;
+    $mail->Username      = getConfig('MAIL_USERNAME',   '');
+    $mail->Password      = defined('MAIL_PASSWORD_SECRET') && MAIL_PASSWORD_SECRET ? MAIL_PASSWORD_SECRET : getConfig('MAIL_PASSWORD', '');
+    $mail->SMTPSecure    = getConfig('MAIL_ENCRYPTION', 'tls');
+    $mail->Port          = (int) getConfig('MAIL_PORT', '587');
+    $mail->Encoding      = '7bit';
+    $mail->SMTPKeepAlive = true; // keep connection open across multiple sends
+
+    $mail->setFrom(
+        getConfig('MAIL_FROM_EMAIL', 'noreply@example.com'),
+        getConfig('MAIL_FROM_NAME',  'Secret Santa Admin')
+    );
+
+    return $mail;
+}
+
+// ------------------------------------------------------------
+// sendMailBulk()
+// Send one email using a keepalive mailer created by
+// createBulkMailer(). Clears addresses between calls so the
+// same instance can be reused in a loop.
+//
+// Returns true on success, error string on failure.
+// ------------------------------------------------------------
+function sendMailBulk(PHPMailer $mail, string $to, string $toName, string $subject, string $body, bool $isHtml = false): bool|string {
+    try {
+        $mail->clearAddresses();
+        $mail->clearReplyTos();
+
+        $mail->addAddress($to, $toName);
+        $mail->addReplyTo(
+            getConfig('MAIL_REPLY_TO', getConfig('MAIL_FROM_EMAIL', 'noreply@example.com')),
+            getConfig('MAIL_FROM_NAME', 'Secret Santa Admin')
+        );
+
+        $mail->isHTML($isHtml);
+        $mail->Subject = $subject;
+        $mail->Body    = $body;
+        if ($isHtml) {
+            $mail->AltBody = strip_tags($body);
+        }
+
+        $mail->send();
+        return true;
+
+    } catch (Exception $e) {
+        error_log('PHPMailer bulk error to ' . $to . ': ' . $mail->ErrorInfo);
         return $mail->ErrorInfo;
     }
 }

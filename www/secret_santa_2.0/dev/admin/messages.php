@@ -206,9 +206,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $uStmt->execute($uidList);
                 $recipients = $uStmt->fetchAll();
 
-                $sent   = 0;
-                $failed = 0;
+                $sent     = 0;
+                $failed   = 0;
                 $xmasYear = getConfig('XMAS_YEAR', date('Y'));
+
+                // Remove execution time limit and keep running even if browser disconnects
+                set_time_limit(0);
+                ignore_user_abort(true);
+
+                // Create one keepalive SMTP connection for the whole batch (email only)
+                $bulkMailer = null;
+                if ($channel === 'EMAIL' || $channel === 'BOTH') {
+                    $bulkMailer = createBulkMailer();
+                }
 
                 foreach ($recipients as $recipient) {
                     $expiryMins = (int) getConfig('RESET_TOKEN_EXPIRY_MINS', 30);
@@ -228,7 +238,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $plainBody,
                             $xmasYear
                         );
-                        $mailResult = sendMail($recipient['EMAIL'], $toName, $subject, $htmlBody, true);
+                        $mailResult = sendMailBulk($bulkMailer, $recipient['EMAIL'], $toName, $subject, $htmlBody, true);
                         if ($mailResult !== true) {
                             error_log("Mail failed to {$recipient['EMAIL']}: {$mailResult}");
                             $status = 'FAILED';
@@ -250,6 +260,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $pdo->prepare("INSERT INTO SS_MESSAGE_LOG (MESSAGE_ID, USER_ID, CHANNEL, STATUS, XMAS_YEAR, SENT_AT) VALUES (?, ?, ?, ?, ?, NOW())")
                         ->execute([$messageId, $recipient['USER_ID'], $channel, $status, $xmasYear]);
                     $sent++;
+                }
+
+                // Close the keepalive SMTP connection
+                if ($bulkMailer) {
+                    $bulkMailer->smtpClose();
                 }
 
                 $succeeded = $sent - $failed;
