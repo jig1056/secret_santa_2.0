@@ -502,7 +502,7 @@ $editingAllowedRoles = $templateRolesMap[$editing['MESSAGE_ID']] ?? [];
 $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['ROLE_ID'] === 'all_roles'));
 ?>
 <div class="card send-card" id="sendPanel" style="display:none;">
-    <div class="card-title">📤 Send This Message</div>
+    <div class="card-title">📤 Send This Message — <em><?= h($editing['MESSAGE_NAME']) ?></em></div>
 
     <?php if (!empty($editingAllowedRoles)): ?>
     <div class="allowed-roles-notice">
@@ -510,7 +510,21 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
         <?php foreach ($editingAllowedRoles as $r): ?>
         <span class="badge badge-role-<?= h($r['ROLE_ID']) ?>"><?= h($r['ROLE_NAME']) ?></span>
         <?php endforeach; ?>
+        <?php if (!empty($eligibleUsers)): ?>
+        <button type="button" class="eligible-users-toggle" onclick="toggleEligibleUsers()">
+            <?= count($eligibleUsers) ?> eligible user<?= count($eligibleUsers) !== 1 ? 's' : '' ?> ▾
+        </button>
+        <?php endif; ?>
     </div>
+    <?php if (!empty($eligibleUsers)): ?>
+    <div id="eligibleUsersList" style="display:none;">
+        <div class="eligible-users-grid">
+            <?php foreach ($eligibleUsers as $u): ?>
+            <div class="eligible-user-chip"><?= h($u['FIRST_NAME']) ?> <?= h($u['LAST_NAME']) ?></div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
     <?php endif; ?>
 
     <form method="POST" action="">
@@ -793,16 +807,45 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 .allowed-roles-notice {
     background:#f0faf4;
     border:1px solid #b2dfdb;
-    border-radius:6px;
+    border-radius:6px 6px 0 0;
     padding:0.6rem 0.9rem;
     font-size:0.88rem;
-    margin-bottom:1rem;
+    margin-bottom:0;
     display:flex;
     align-items:center;
     flex-wrap:wrap;
     gap:0.4rem;
 }
 .notice-hint { color:#666; font-style:italic; }
+
+.eligible-users-toggle {
+    background:none; border:none; cursor:pointer;
+    color:#1a5276; font-size:0.82rem; font-weight:600;
+    padding:0.1rem 0.4rem; border-radius:4px;
+    transition:background 0.15s;
+    margin-left:auto;
+}
+.eligible-users-toggle:hover { background:#d4e6f1; }
+
+#eligibleUsersList {
+    background:#e8f5e9;
+    border:1px solid #b2dfdb;
+    border-top:none;
+    border-radius:0 0 6px 6px;
+    padding:0.6rem 0.9rem;
+    margin-bottom:1rem;
+}
+.eligible-users-grid {
+    display:flex; flex-wrap:wrap; gap:0.35rem;
+}
+.eligible-user-chip {
+    background:#fff; border:1px solid #a9cfc3;
+    border-radius:20px; padding:0.2rem 0.65rem;
+    font-size:0.82rem; color:#1a5276;
+}
+
+/* When list is hidden, give the notice normal bottom radius */
+.allowed-roles-notice:last-of-type { border-radius:6px; margin-bottom:1rem; }
 
 .user-multiselect {
     width:100%;
@@ -1016,6 +1059,25 @@ document.querySelectorAll('form').forEach(form => {
 <?php if ($showSend): ?>
 document.addEventListener('DOMContentLoaded', function () { toggleSendPanel(); });
 <?php endif; ?>
+
+// ---- Eligible users toggle ----
+function toggleEligibleUsers() {
+    const list = document.getElementById('eligibleUsersList');
+    const btn  = document.querySelector('.eligible-users-toggle');
+    if (!list) return;
+    const open = list.style.display !== 'none';
+    list.style.display = open ? 'none' : '';
+    const notice = document.querySelector('.allowed-roles-notice');
+    if (notice) {
+        notice.style.borderRadius = open ? '6px 6px 0 0' : '6px';
+        notice.style.marginBottom = open ? '0' : '1rem';
+    }
+    if (btn) {
+        const count = btn.textContent.match(/\d+/)?.[0] ?? '';
+        const label = count + (count === '1' ? ' eligible user' : ' eligible users');
+        btn.textContent = open ? label + ' ▾' : label + ' ▴';
+    }
+}
 
 // ---- Send targeting UI ----
 function updateTargetUI() {
