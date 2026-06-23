@@ -678,9 +678,9 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 <!-- ============================================================ -->
 <?php if (!$editing): ?>
 <div id="logToggleRow" style="margin-bottom:1.25rem;">
-    <button type="button" class="btn btn-secondary" onclick="showLog()">
+    <a href="#" class="log-toggle-link" onclick="showLog(); return false;">
         📜 Show Send Log<?php if (!empty($logs)): ?> (<?= count($logs) ?>)<?php endif; ?>
-    </button>
+    </a>
 </div>
 
 <!-- ============================================================ -->
@@ -886,6 +886,9 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 /* Back link */
 .back-link { display:inline-block; font-size:0.9rem; color:#c0392b; text-decoration:none; font-weight:600; margin-bottom:0.6rem; }
 .back-link:hover { text-decoration:underline; }
+
+.log-toggle-link { font-size:0.9rem; color:#555; text-decoration:none; font-weight:600; }
+.log-toggle-link:hover { color:#c0392b; text-decoration:underline; }
 
 /* Message ID read-only display */
 .message-id-display {
