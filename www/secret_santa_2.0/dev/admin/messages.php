@@ -35,7 +35,7 @@ foreach ($roleDescRows as $rd) {
 // ------------------------------------------------------------
 // Helper: save allowed roles for a message
 // ------------------------------------------------------------
-function saveMessageRoles(int $messageId, array $selectedRoleIds, PDO $pdo): void {
+function saveMessageRoles(string $messageId, array $selectedRoleIds, PDO $pdo): void {
     $pdo->prepare("DELETE FROM SS_MESSAGE_ROLES WHERE MESSAGE_ID = ?")->execute([$messageId]);
     $ins = $pdo->prepare("INSERT IGNORE INTO SS_MESSAGE_ROLES (MESSAGE_ID, ROLE_ID) VALUES (?, ?)");
     foreach ($selectedRoleIds as $roleId) {
@@ -70,11 +70,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // -- ADD template --
     if ($action === 'add') {
+        $messageId       = trim(strtolower($_POST['message_id']   ?? ''));
         $name            = trim($_POST['message_name'] ?? '');
         $body            = trim($_POST['message_body'] ?? '');
         $selectedRoleIds = (array)($_POST['allowed_roles'] ?? []);
 
-        if (!$name || !$body) {
+        // Validate MESSAGE_ID format: lowercase letters, digits, underscores only
+        $idValid = $messageId && preg_match('/^[a-z0-9_]{1,50}$/', $messageId);
+
+        // Check uniqueness
+        $idTaken = false;
+        if ($idValid) {
+            $chk = $pdo->prepare("SELECT COUNT(*) FROM SS_MESSAGES WHERE MESSAGE_ID = ?");
+            $chk->execute([$messageId]);
+            $idTaken = $chk->fetchColumn() > 0;
+        }
+
+        if (!$idValid) {
+            $msg     = 'Message ID is required and may only contain lowercase letters, digits, and underscores (max 50 chars).';
+            $msgType = 'error';
+            $addMode = true;
+        } elseif ($idTaken) {
+            $msg     = "Message ID \"{$messageId}\" is already in use. Choose a different ID.";
+            $msgType = 'error';
+            $addMode = true;
+        } elseif (!$name || !$body) {
             $msg     = 'Message name and body are required.';
             $msgType = 'error';
             $addMode = true;
@@ -84,10 +104,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $addMode = true;
         } else {
             $isInternal = isset($_POST['is_internal']) ? 1 : 0;
-            $pdo->prepare("INSERT INTO SS_MESSAGES (MESSAGE_NAME, MESSAGE_BODY, IS_INTERNAL) VALUES (?, ?, ?)")
-                ->execute([$name, $body, $isInternal]);
-            $newId = (int)$pdo->lastInsertId();
-            saveMessageRoles($newId, $selectedRoleIds, $pdo);
+            $pdo->prepare("INSERT INTO SS_MESSAGES (MESSAGE_ID, MESSAGE_NAME, MESSAGE_BODY, IS_INTERNAL) VALUES (?, ?, ?, ?)")
+                ->execute([$messageId, $name, $body, $isInternal]);
+            saveMessageRoles($messageId, $selectedRoleIds, $pdo);
             $msg     = "Message template \"{$name}\" created.";
             $msgType = 'success';
             $addMode = false;
@@ -95,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // -- UPDATE template --
     } elseif ($action === 'update') {
-        $messageId       = (int)($_POST['message_id']   ?? 0);
+        $messageId       = trim($_POST['message_id'] ?? '');
         $name            = trim($_POST['message_name']  ?? '');
         $body            = trim($_POST['message_body']  ?? '');
         $selectedRoleIds = (array)($_POST['allowed_roles'] ?? []);
@@ -127,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // -- DELETE template --
     } elseif ($action === 'delete') {
-        $messageId = (int)($_POST['message_id'] ?? 0);
+        $messageId = trim($_POST['message_id'] ?? '');
         $row = $pdo->prepare("SELECT MESSAGE_NAME FROM SS_MESSAGES WHERE MESSAGE_ID = ?");
         $row->execute([$messageId]);
         $name = $row->fetchColumn();
@@ -143,7 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // -- SEND --
     } elseif ($action === 'send') {
-        $messageId     = (int)($_POST['message_id'] ?? 0);
+        $messageId     = trim($_POST['message_id'] ?? '');
         $channel       = $_POST['channel']           ?? 'EMAIL';
         $targetType    = $_POST['target_type']        ?? 'all';
         $targetUserIds = (array)($_POST['target_users'] ?? []);
@@ -288,7 +307,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Load edit target from GET
 if (!$editing && isset($_GET['edit']) && $msgType !== 'success') {
     $stmt = $pdo->prepare("SELECT * FROM SS_MESSAGES WHERE MESSAGE_ID = ?");
-    $stmt->execute([(int)$_GET['edit']]);
+    $stmt->execute([$_GET['edit']]);
     $editing = $stmt->fetch() ?: null;
 }
 
@@ -370,6 +389,14 @@ require_once __DIR__ . '/../includes/header.php';
                    value="<?= h($_POST['message_name'] ?? '') ?>">
         </div>
         <div class="form-group">
+            <label for="message_id">Message ID <span class="required">*</span></label>
+            <input type="text" id="message_id" name="message_id" required maxlength="50"
+                   pattern="[a-z0-9_]+" title="Lowercase letters, digits, and underscores only"
+                   placeholder="e.g. ss_welcome_message"
+                   value="<?= h($_POST['message_id'] ?? '') ?>">
+            <div class="field-hint">Lowercase letters, digits, and underscores only. <strong>Cannot be changed after saving.</strong></div>
+        </div>
+        <div class="form-group">
             <label for="message_body">Message Body <span class="required">*</span></label>
             <textarea id="message_body" name="message_body" required rows="5"
                       placeholder="Use {FIRST_NAME}, {LAST_NAME}, {YEAR} as placeholders."><?= h($_POST['message_body'] ?? '') ?></textarea>
@@ -398,7 +425,7 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    initAllowedRoleGrid('add', <?= json_encode(array_map('intval', (array)($_POST['allowed_roles'] ?? []))) ?>);
+    initAllowedRoleGrid('add', <?= json_encode((array)($_POST['allowed_roles'] ?? [])) ?>);
 });
 </script>
 <?php endif; ?>
@@ -412,11 +439,16 @@ document.addEventListener('DOMContentLoaded', function () {
     <div class="card-title">✏️ Edit Template: <em><?= h($editing['MESSAGE_NAME']) ?></em></div>
     <form method="POST" action="">
         <input type="hidden" name="action"     value="update">
-        <input type="hidden" name="message_id" value="<?= $editing['MESSAGE_ID'] ?>">
+        <input type="hidden" name="message_id" value="<?= h($editing['MESSAGE_ID']) ?>">
         <div class="form-group">
             <label for="message_name">Template Name <span class="required">*</span></label>
             <input type="text" id="message_name" name="message_name" required maxlength="150"
                    value="<?= h($editing['MESSAGE_NAME']) ?>">
+        </div>
+        <div class="form-group">
+            <label>Message ID</label>
+            <div class="message-id-display"><code><?= h($editing['MESSAGE_ID']) ?></code></div>
+            <div class="field-hint">Message ID cannot be changed after creation.</div>
         </div>
         <div class="form-group">
             <label for="message_body">Message Body <span class="required">*</span></label>
@@ -575,7 +607,7 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
             <tbody>
                 <?php foreach ($templates as $tpl): ?>
                 <?php $tplRoles = $templateRolesMap[$tpl['MESSAGE_ID']] ?? []; ?>
-                <tr class="<?= $editing && $editing['MESSAGE_ID'] == $tpl['MESSAGE_ID'] ? 'row-active' : '' ?>">
+                <tr class="<?= $editing && $editing['MESSAGE_ID'] === $tpl['MESSAGE_ID'] ? 'row-active' : '' ?>">
                     <td>
                         <a href="?edit=<?= $tpl['MESSAGE_ID'] ?>" class="name-link">
                             <?= h($tpl['MESSAGE_NAME']) ?>
@@ -796,6 +828,25 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 .back-link { display:inline-block; font-size:0.9rem; color:#c0392b; text-decoration:none; font-weight:600; margin-bottom:0.6rem; }
 .back-link:hover { text-decoration:underline; }
 
+/* Message ID read-only display */
+.message-id-display {
+    display:inline-block;
+    background:#f4f6f8;
+    border:1px solid #ddd;
+    border-radius:6px;
+    padding:0.35rem 0.65rem;
+    font-size:0.9rem;
+    color:#444;
+    margin-top:0.2rem;
+}
+.message-id-display code {
+    background:none;
+    padding:0;
+    font-size:inherit;
+    color:#1a5276;
+    font-weight:600;
+}
+
 /* Table */
 .name-link   { font-weight:600; color:#c0392b; text-decoration:none; }
 .name-link:hover { text-decoration:underline; }
@@ -829,6 +880,37 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 </style>
 
 <script>
+// ── Add form: auto-slug MESSAGE_ID from Template Name ────────
+(function () {
+    const nameInput = document.getElementById('message_name');
+    const idInput   = document.getElementById('message_id');
+    if (!nameInput || !idInput) return; // only runs on add form
+
+    let userEditedId = idInput.value.length > 0; // pre-filled on validation error
+
+    nameInput.addEventListener('input', function () {
+        if (userEditedId) return;
+        idInput.value = this.value
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '')
+            .substring(0, 50);
+    });
+
+    idInput.addEventListener('input', function () {
+        // Enforce format in real-time
+        const pos = this.selectionStart;
+        this.value = this.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+        this.setSelectionRange(pos, pos);
+        userEditedId = this.value.length > 0;
+    });
+
+    idInput.addEventListener('blur', function () {
+        // Trim trailing underscores on blur
+        this.value = this.value.replace(/^_+|_+$/g, '');
+    });
+})();
+
 // ── Shared role data ─────────────────────────────────────────
 const ALL_ROLES  = <?= json_encode(array_values($allRoles)) ?>;
 const ROLE_DESCS = <?= json_encode($roleDescs) ?>;
