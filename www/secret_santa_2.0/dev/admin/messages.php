@@ -605,7 +605,15 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 <div class="card">
     <div class="card-header-row">
         <div class="card-title" style="margin-bottom:0;">📋 Message Templates (<?= count($templates) ?>)</div>
-        <input type="text" id="tplSearch" placeholder="🔍 Search templates…" oninput="filterTemplates()" class="dash-search">
+        <div class="tpl-filters">
+            <input type="text" id="tplSearch" placeholder="🔍 Search…" oninput="filterTemplates()" class="dash-search">
+            <select id="tplRoleFilter" onchange="filterTemplates()" class="dash-search" style="min-width:160px;">
+                <option value="">All roles</option>
+                <?php foreach ($allRoles as $role): ?>
+                <option value="<?= h($role['ROLE_ID']) ?>"><?= h($role['ROLE_NAME']) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
     </div>
     <?php if (empty($templates)): ?>
     <div class="empty-state">No templates yet. Click "➕ New Template" to create one.</div>
@@ -626,8 +634,10 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
                 <?php foreach ($templates as $tpl): ?>
                 <?php $tplRoles = $templateRolesMap[$tpl['MESSAGE_ID']] ?? []; ?>
                 <?php $searchData = strtolower($tpl['MESSAGE_NAME'] . ' ' . $tpl['MESSAGE_ID'] . ' ' . implode(' ', array_column($tplRoles, 'ROLE_NAME')) . ' ' . $tpl['MESSAGE_BODY']); ?>
+                <?php $rowRoleIds = implode(',', array_column($tplRoles, 'ROLE_ID')); ?>
                 <tr class="tpl-row <?= $editing && $editing['MESSAGE_ID'] === $tpl['MESSAGE_ID'] ? 'row-active' : '' ?>"
-                    data-search="<?= h($searchData) ?>">
+                    data-search="<?= h($searchData) ?>"
+                    data-roles="<?= h($rowRoleIds) ?>">
                     <td>
                         <a href="?edit=<?= $tpl['MESSAGE_ID'] ?>" class="name-link">
                             <?= h($tpl['MESSAGE_NAME']) ?>
@@ -921,6 +931,9 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 .btn-danger  { background:#c0392b; color:#fff; }
 .btn-sm      { padding:0.3rem 0.7rem; font-size:0.85rem; }
 
+/* Template filters */
+.tpl-filters    { display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; }
+
 /* Log search + pagination */
 .dash-search    { padding:0.4rem 0.75rem; border:1px solid #ccc; border-radius:8px; font-size:0.9rem; min-width:180px; }
 .year-col       { font-size:0.85rem; color:#555; white-space:nowrap; }
@@ -1155,13 +1168,16 @@ function updateSendBtnVisibility() {
     }
 }
 
-// ---- Template search ----
+// ---- Template search + role filter ----
 function filterTemplates() {
-    const q    = document.getElementById('tplSearch').value.toLowerCase().trim();
-    const rows = document.querySelectorAll('.tpl-row');
-    let visible = 0;
+    const q      = document.getElementById('tplSearch').value.toLowerCase().trim();
+    const roleId = document.getElementById('tplRoleFilter').value;
+    const rows   = document.querySelectorAll('.tpl-row');
+    let visible  = 0;
     rows.forEach(row => {
-        const match = !q || row.dataset.search.includes(q);
+        const textMatch = !q || row.dataset.search.includes(q);
+        const roleMatch = !roleId || row.dataset.roles.split(',').includes(roleId);
+        const match = textMatch && roleMatch;
         row.style.display = match ? '' : 'none';
         if (match) visible++;
     });
