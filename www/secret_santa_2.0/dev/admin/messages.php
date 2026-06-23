@@ -603,12 +603,16 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 <!-- Templates Table                                               -->
 <!-- ============================================================ -->
 <div class="card">
-    <div class="card-title">📋 Message Templates (<?= count($templates) ?>)</div>
+    <div class="card-header-row">
+        <div class="card-title" style="margin-bottom:0;">📋 Message Templates (<?= count($templates) ?>)</div>
+        <input type="text" id="tplSearch" placeholder="🔍 Search templates…" oninput="filterTemplates()" class="dash-search">
+    </div>
     <?php if (empty($templates)): ?>
     <div class="empty-state">No templates yet. Click "➕ New Template" to create one.</div>
     <?php else: ?>
-    <div class="table-wrap">
-        <table>
+    <div id="tplNoResults" style="display:none;margin-top:1rem;" class="empty-state">No templates match your search.</div>
+    <div class="table-wrap" style="margin-top:1rem;">
+        <table id="tplTable">
             <thead>
                 <tr>
                     <th>Template Name</th>
@@ -621,7 +625,9 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
             <tbody>
                 <?php foreach ($templates as $tpl): ?>
                 <?php $tplRoles = $templateRolesMap[$tpl['MESSAGE_ID']] ?? []; ?>
-                <tr class="<?= $editing && $editing['MESSAGE_ID'] === $tpl['MESSAGE_ID'] ? 'row-active' : '' ?>">
+                <?php $searchData = strtolower($tpl['MESSAGE_NAME'] . ' ' . $tpl['MESSAGE_ID'] . ' ' . implode(' ', array_column($tplRoles, 'ROLE_NAME')) . ' ' . $tpl['MESSAGE_BODY']); ?>
+                <tr class="tpl-row <?= $editing && $editing['MESSAGE_ID'] === $tpl['MESSAGE_ID'] ? 'row-active' : '' ?>"
+                    data-search="<?= h($searchData) ?>">
                     <td>
                         <a href="?edit=<?= $tpl['MESSAGE_ID'] ?>" class="name-link">
                             <?= h($tpl['MESSAGE_NAME']) ?>
@@ -1147,6 +1153,22 @@ function updateSendBtnVisibility() {
             editCard.style.display = 'block';
         }
     }
+}
+
+// ---- Template search ----
+function filterTemplates() {
+    const q    = document.getElementById('tplSearch').value.toLowerCase().trim();
+    const rows = document.querySelectorAll('.tpl-row');
+    let visible = 0;
+    rows.forEach(row => {
+        const match = !q || row.dataset.search.includes(q);
+        row.style.display = match ? '' : 'none';
+        if (match) visible++;
+    });
+    const noRes = document.getElementById('tplNoResults');
+    const tbl   = document.getElementById('tplTable');
+    if (noRes) noRes.style.display = visible === 0 ? '' : 'none';
+    if (tbl)   tbl.style.display   = visible === 0 ? 'none' : '';
 }
 
 // ---- Log show/hide ----
