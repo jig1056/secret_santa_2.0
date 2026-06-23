@@ -383,18 +383,18 @@ require_once __DIR__ . '/../includes/header.php';
     <form method="POST" action="">
         <input type="hidden" name="action" value="add">
         <div class="form-group">
-            <label for="message_name">Template Name <span class="required">*</span></label>
-            <input type="text" id="message_name" name="message_name" required maxlength="150"
-                   placeholder="e.g. Welcome Message"
-                   value="<?= h($_POST['message_name'] ?? '') ?>">
-        </div>
-        <div class="form-group">
             <label for="message_id">Message ID <span class="required">*</span></label>
             <input type="text" id="message_id" name="message_id" required maxlength="50"
                    pattern="[a-z0-9_]+" title="Lowercase letters, digits, and underscores only"
                    placeholder="e.g. ss_welcome_message"
                    value="<?= h($_POST['message_id'] ?? '') ?>">
             <div class="field-hint">Lowercase letters, digits, and underscores only. <strong>Cannot be changed after saving.</strong></div>
+        </div>
+        <div class="form-group">
+            <label for="message_name">Template Name <span class="required">*</span></label>
+            <input type="text" id="message_name" name="message_name" required maxlength="150"
+                   placeholder="e.g. Welcome Message"
+                   value="<?= h($_POST['message_name'] ?? '') ?>">
         </div>
         <div class="form-group">
             <label for="message_body">Message Body <span class="required">*</span></label>
@@ -441,14 +441,14 @@ document.addEventListener('DOMContentLoaded', function () {
         <input type="hidden" name="action"     value="update">
         <input type="hidden" name="message_id" value="<?= h($editing['MESSAGE_ID']) ?>">
         <div class="form-group">
-            <label for="message_name">Template Name <span class="required">*</span></label>
-            <input type="text" id="message_name" name="message_name" required maxlength="150"
-                   value="<?= h($editing['MESSAGE_NAME']) ?>">
-        </div>
-        <div class="form-group">
             <label>Message ID</label>
             <div class="message-id-display"><code><?= h($editing['MESSAGE_ID']) ?></code></div>
             <div class="field-hint">Message ID cannot be changed after creation.</div>
+        </div>
+        <div class="form-group">
+            <label for="message_name">Template Name <span class="required">*</span></label>
+            <input type="text" id="message_name" name="message_name" required maxlength="150"
+                   value="<?= h($editing['MESSAGE_NAME']) ?>">
         </div>
         <div class="form-group">
             <label for="message_body">Message Body <span class="required">*</span></label>

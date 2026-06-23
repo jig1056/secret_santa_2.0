@@ -8,5 +8,5 @@ secret_santa_create_database.sql
 message_notes.md
 CONTEXT.md
 misc_docs
-sqls 
-sql
+sqls/* 
+sql/*
