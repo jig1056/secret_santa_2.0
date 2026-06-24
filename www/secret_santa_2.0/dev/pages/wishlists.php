@@ -242,7 +242,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <div class="page-header">
     <div>
-        <a href="<?= APP_URL ?>/pages/wishlists.php" class="back-link">← All Wishlists</a>
+        <a href="<?= APP_URL ?>/pages/wishlists.php" class="back-link">← Kid's Christmas List</a>
         <h1 class="page-title" style="margin-top:0.25rem;">
             🎀 <?= h($wishlistUser['FIRST_NAME']) ?> <?= h($wishlistUser['LAST_NAME']) ?>'s Wish List
         </h1>
@@ -366,7 +366,7 @@ require_once __DIR__ . '/../includes/header.php';
 <!-- LIST VIEW: all assigned wishlist users                        -->
 <!-- ============================================================ -->
 
-<h1 class="page-title">🎀 Wishlists</h1>
+<h1 class="page-title">🎄 Kid's Christmas List</h1>
 
 <?php if (empty($assignedUsers)): ?>
 <div class="card">

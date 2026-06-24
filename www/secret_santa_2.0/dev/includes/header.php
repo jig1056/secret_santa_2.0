@@ -54,7 +54,7 @@ if (hasRole('secret_santa') || hasRole('admin')) {
         <?php endif; ?>
 
         <?php if (hasRole('wishlist_gifter')): ?>
-        <li><a href="<?= APP_URL ?>/pages/wishlists.php">Wishlists</a></li>
+        <li><a href="<?= APP_URL ?>/pages/wishlists.php">Kid's Christmas List</a></li>
         <?php endif; ?>
 
         <?php if (isAdmin()): ?>
