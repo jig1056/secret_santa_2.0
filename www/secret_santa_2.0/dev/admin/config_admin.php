@@ -22,11 +22,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // -- UPDATE existing key --
     if ($action === 'update') {
-        $configId = (int)($_POST['config_id'] ?? 0);
-        $value    = trim($_POST['config_value']       ?? '');
-        $desc     = trim($_POST['config_description'] ?? '');
-        $stmt     = $pdo->prepare("UPDATE SS_CONFIG SET CONFIG_VALUE = ?, CONFIG_DESCRIPTION = ?, UPDATED_AT = NOW() WHERE CONFIG_ID = ?");
-        $stmt->execute([$value, $desc ?: null, $configId]);
+        $configKey = trim($_POST['config_key'] ?? '');
+        $value     = trim($_POST['config_value']       ?? '');
+        $desc      = trim($_POST['config_description'] ?? '');
+        $stmt      = $pdo->prepare("UPDATE SS_CONFIG SET CONFIG_VALUE = ?, CONFIG_DESCRIPTION = ?, UPDATED_AT = NOW() WHERE CONFIG_KEY = ?");
+        $stmt->execute([$value, $desc ?: null, $configKey]);
         $msg     = 'Configuration updated successfully.';
         $msgType = 'success';
         // form closes on success ($editing stays null)
@@ -59,11 +59,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // -- DELETE key --
     } elseif ($action === 'delete') {
-        $configId = (int)($_POST['config_id'] ?? 0);
-        $row = $pdo->prepare("SELECT CONFIG_KEY FROM SS_CONFIG WHERE CONFIG_ID = ?");
-        $row->execute([$configId]);
-        $keyName = $row->fetchColumn();
-        $pdo->prepare("DELETE FROM SS_CONFIG WHERE CONFIG_ID = ?")->execute([$configId]);
+        $configKey = trim($_POST['config_key'] ?? '');
+        $keyName   = $configKey;
+        $pdo->prepare("DELETE FROM SS_CONFIG WHERE CONFIG_KEY = ?")->execute([$configKey]);
         $msg     = "Config key \"{$keyName}\" deleted.";
         $msgType = 'success';
 
@@ -87,8 +85,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Load edit target from GET — but not after a successful POST
 if (!$editing && isset($_GET['edit']) && $msgType !== 'success') {
-    $stmt = $pdo->prepare("SELECT * FROM SS_CONFIG WHERE CONFIG_ID = ?");
-    $stmt->execute([(int)$_GET['edit']]);
+    $stmt = $pdo->prepare("SELECT * FROM SS_CONFIG WHERE CONFIG_KEY = ?");
+    $stmt->execute([$_GET['edit']]);
     $editing = $stmt->fetch() ?: null;
 }
 
@@ -116,8 +114,8 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="card" id="configForm">
     <div class="card-title">✏️ Edit Config: <code class="key-code"><?= h($editing['CONFIG_KEY']) ?></code></div>
     <form method="POST" action="">
-        <input type="hidden" name="action"    value="update">
-        <input type="hidden" name="config_id" value="<?= $editing['CONFIG_ID'] ?>">
+        <input type="hidden" name="action"     value="update">
+        <input type="hidden" name="config_key" value="<?= h($editing['CONFIG_KEY']) ?>">
 
         <div class="form-row">
             <div class="form-group">
@@ -142,15 +140,15 @@ require_once __DIR__ . '/../includes/header.php';
             <button type="submit" class="btn btn-primary">Save Changes</button>
             <a href="<?= APP_URL ?>/admin/config_admin.php" class="btn btn-secondary">Cancel</a>
             <button type="button" class="btn btn-danger"
-                    onclick="if(confirm('Delete config key &quot;<?= h($editing['CONFIG_KEY']) ?>&quot;? This cannot be undone.')) document.getElementById('delCfg<?= $editing['CONFIG_ID'] ?>').submit()">
+                    onclick="if(confirm('Delete config key &quot;<?= h($editing['CONFIG_KEY']) ?>&quot;? This cannot be undone.')) document.getElementById('delCfg<?= h($editing['CONFIG_KEY']) ?>').submit()">
                 Delete
             </button>
             <a href="<?= APP_URL ?>/admin/config_admin.php" class="btn btn-secondary">↩ Return to List</a>
         </div>
     </form>
-    <form id="delCfg<?= $editing['CONFIG_ID'] ?>" method="POST" action="" style="display:none;">
-        <input type="hidden" name="action"    value="delete">
-        <input type="hidden" name="config_id" value="<?= $editing['CONFIG_ID'] ?>">
+    <form id="delCfg<?= h($editing['CONFIG_KEY']) ?>" method="POST" action="" style="display:none;">
+        <input type="hidden" name="action"     value="delete">
+        <input type="hidden" name="config_key" value="<?= h($editing['CONFIG_KEY']) ?>">
     </form>
 </div>
 <?php endif; ?>
@@ -211,12 +209,12 @@ require_once __DIR__ . '/../includes/header.php';
             </thead>
             <tbody>
                 <?php foreach ($configs as $cfg): ?>
-                <tr class="config-row <?= $editing && $editing['CONFIG_ID'] == $cfg['CONFIG_ID'] ? 'row-active' : '' ?>"
+                <tr class="config-row <?= $editing && $editing['CONFIG_KEY'] === $cfg['CONFIG_KEY'] ? 'row-active' : '' ?>"
                     data-search="<?= strtolower(h($cfg['CONFIG_KEY'] . ' ' . $cfg['CONFIG_VALUE'] . ' ' . ($cfg['CONFIG_DESCRIPTION'] ?? ''))) ?>"
                     data-key="<?= strtolower(h($cfg['CONFIG_KEY'])) ?>"
                     data-value="<?= strtolower(h($cfg['CONFIG_VALUE'])) ?>">
                     <td>
-                        <a href="?edit=<?= $cfg['CONFIG_ID'] ?>" class="key-link">
+                        <a href="?edit=<?= h($cfg['CONFIG_KEY']) ?>" class="key-link">
                             <code class="key-code"><?= h($cfg['CONFIG_KEY']) ?></code>
                         </a>
                     </td>
