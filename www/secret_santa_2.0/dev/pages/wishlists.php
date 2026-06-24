@@ -178,8 +178,8 @@ if ($selectedUserId) {
             $emailBody = "
             <div style=\"font-family:Arial,sans-serif;max-width:680px;margin:0 auto;\">
                 <div style=\"background:#c0392b;color:#fff;padding:20px 24px;border-radius:8px 8px 0 0;\">
-                    <h2 style=\"margin:0;\">🎁 " . h($wishlistUser['FIRST_NAME']) . " " . h($wishlistUser['LAST_NAME']) . "'s Wish List</h2>
-                    <p style=\"margin:6px 0 0;opacity:0.85;\">" . h($xmasYear) . " Holiday Wish List</p>
+                    <h2 style=\"margin:0;\">🎁 " . h($wishlistUser['FIRST_NAME']) . " " . h($wishlistUser['LAST_NAME']) . "'s Christmas List</h2>
+                    <p style=\"margin:6px 0 0;opacity:0.85;\">" . h($xmasYear) . " Christmas List</p>
                 </div>
                 <div style=\"padding:20px 24px;background:#fff;\">
                     <p style=\"margin:0 0 20px;color:#444;\">" . nl2br($headerText) . "</p>
@@ -203,7 +203,7 @@ if ($selectedUserId) {
 
             $currentUserEmail = $_SESSION['EMAIL']      ?? '';
             $currentUserName  = ($_SESSION['FIRST_NAME'] ?? '') . ' ' . ($_SESSION['LAST_NAME'] ?? '');
-            $subject          = h($wishlistUser['FIRST_NAME']) . "'s " . h($xmasYear) . " Wish List";
+            $subject          = h($wishlistUser['FIRST_NAME']) . "'s " . h($xmasYear) . " Christmas List";
 
             $result = sendMail($currentUserEmail, trim($currentUserName), $subject, $emailBody, true);
             if ($result === true) {
@@ -244,7 +244,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div>
         <a href="<?= APP_URL ?>/pages/wishlists.php" class="back-link">← Kid's Christmas List</a>
         <h1 class="page-title" style="margin-top:0.25rem;">
-            🎀 <?= h($wishlistUser['FIRST_NAME']) ?> <?= h($wishlistUser['LAST_NAME']) ?>'s Wish List
+            🎄 <?= h($wishlistUser['FIRST_NAME']) ?> <?= h($wishlistUser['LAST_NAME']) ?>'s Christmas List
         </h1>
     </div>
     <div class="page-header-actions">
