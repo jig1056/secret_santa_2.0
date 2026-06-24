@@ -95,7 +95,7 @@ require_once __DIR__ . '/../includes/header.php';
     <?php if (hasRole('wishlist_gifter')): ?>
     <!-- Wishlists card -->
     <div class="card status-card">
-        <div class="status-icon green">🎀</div>
+        <div class="status-icon green"><span style="filter:hue-rotate(150deg) saturate(1.3);">🎀</span></div>
         <div class="status-body">
             <div class="status-title">Christmas Lists</div>
             <p>View and manage the Christmas lists of your loved ones — mark items as you purchase them.</p>
