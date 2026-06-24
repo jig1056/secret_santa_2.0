@@ -49,8 +49,8 @@ Desktop.ini
 *.yarn-error.log
 
 
-secret_santa_create_database.sql
 sqls/*
-sql/*
+sql/backups/
+sql/secret_santa_create_database.sql
 
 misc_docs/*

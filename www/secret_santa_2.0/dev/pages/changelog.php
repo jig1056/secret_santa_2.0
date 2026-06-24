@@ -16,7 +16,41 @@ require_once __DIR__ . '/../includes/header.php';
 
     <div class="cl-version">
         <div class="cl-version-header">
-            <span class="cl-badge">v2.6.1</span>
+            <span class="cl-badge">v2.7</span>
+            <span class="cl-version-title">Database Cleanup &amp; Message Center Upgrades</span>
+            <span class="cl-version-date">June 2026</span>
+        </div>
+        <ul class="cl-items">
+            <li>
+                <strong>Stable String IDs</strong> — Roles, message templates, and config keys now use their natural string identifiers as primary keys (e.g. <code>secret_santa</code>, <code>password_reset</code>, <code>XMAS_YEAR</code>) instead of auto-increment integers. This makes the database consistent across environments and eliminates sync issues between dev and production.
+            </li>
+            <li>
+                <strong>Message Template IDs</strong> — Each message template now has a permanent string ID (e.g. <code>ss_welcome_message</code>). When creating a new template, the ID is auto-suggested from the template name and can be customized before saving. The ID is shown read-only on the edit form and cannot be changed after creation.
+            </li>
+            <li>
+                <strong>Database Backup</strong> — A new Backup page under Admin tools generates a full SQL dump of all app tables, downloadable as a timestamped <code>.sql</code> file. Useful before running migrations or making bulk changes.
+            </li>
+            <li>
+                <strong>Send Loading Overlay</strong> — Clicking Send Message now shows a spinner overlay while the message is being delivered. The send button is disabled and the page shows a status message — especially helpful when sending to a large group.
+            </li>
+            <li>
+                <strong>Faster Bulk Sends</strong> — Bulk email sending now reuses a single SMTP connection across all recipients instead of reconnecting for each one, significantly reducing send time for large lists.
+            </li>
+            <li>
+                <strong>Message Center: Send Panel Improvements</strong> — The send panel now shows the template name in the heading and includes a toggleable list of all eligible users for that message. Click to expand or collapse.
+            </li>
+            <li>
+                <strong>Message Center: Search &amp; Role Filter</strong> — The template list now has a live search box and a role filter dropdown. Filter by text, by role, or both at once.
+            </li>
+            <li>
+                <strong>Message Center: Send Log Link</strong> — "Show Send Log" has been changed from a button to a plain hyperlink for a cleaner look.
+            </li>
+        </ul>
+    </div>
+
+    <div class="cl-version cl-version-older">
+        <div class="cl-version-header">
+            <span class="cl-badge cl-badge-old">v2.6.1</span>
             <span class="cl-version-title">UI Polish &amp; User Report</span>
             <span class="cl-version-date">June 2026</span>
         </div>
