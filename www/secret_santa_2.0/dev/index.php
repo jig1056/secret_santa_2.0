@@ -69,7 +69,7 @@ $timeout = isset($_GET['reason']) && $_GET['reason'] === 'timeout';
 <body>
 <canvas id="snowCanvas"></canvas>
 <div class="login-card">
-    <div class="login-title">🎅🏾 Secret Santa <?= h($xmasYear) ?></div>
+    <div class="login-title"><span style="font-size:175%;vertical-align:middle;line-height:1;">🎅🏾</span> Secret Santa <?= h($xmasYear) ?></div>
     <div class="login-sub">Sign in to get started</div>
 
     <?php if ($timeout): ?>
