@@ -82,8 +82,9 @@ $xmasYear = getConfig('XMAS_YEAR', date('Y'));
     <title>Reset Password — <?= h(APP_NAME) ?> <?= h($xmasYear) ?></title>
     <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css">
     <style>
-        body { justify-content: center; align-items: center; background: #b71c1c; }
-        .login-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.25); padding: 2rem; width: 100%; max-width: 400px; margin: 2rem auto; }
+        body { justify-content: center; align-items: center; background: #7b1212; overflow: hidden; }
+        #snowCanvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+        .login-card { position: relative; z-index: 1; background: #fff; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.35); padding: 2rem; width: 100%; max-width: 400px; margin: 2rem auto; }
         .login-title { text-align: center; font-size: 1.5rem; font-weight: 700; color: #922b21; margin-bottom: 0.25rem; }
         .login-sub   { text-align: center; color: #6c757d; margin-bottom: 1.5rem; font-size: 0.95rem; }
         .back-link   { text-align: center; margin-top: 1rem; font-size: 0.85rem; }
@@ -95,8 +96,9 @@ $xmasYear = getConfig('XMAS_YEAR', date('Y'));
     </style>
 </head>
 <body>
+<canvas id="snowCanvas"></canvas>
 <div class="login-card">
-    <div class="login-title">🎅🏾 Reset Password</div>
+    <div class="login-title"><span style="font-size:175%;vertical-align:middle;line-height:1;">🎅🏾</span> Reset Password</div>
 
     <?php if ($reset && $valid): ?>
     <div class="login-sub">Hi <?= h($reset['FIRST_NAME']) ?>, set your new password below.</div>
@@ -160,5 +162,97 @@ function checkMatch() {
 </script>
 
 <script src="<?= APP_URL ?>/assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
+<script>
+// ── Snow animation ────────────────────────────────────────────
+(function () {
+    const canvas = document.getElementById('snowCanvas');
+    const ctx    = canvas.getContext('2d');
+    const COUNT  = 60;
+    let W, H, flakes;
+
+    function resize() {
+        W = canvas.width  = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+    }
+
+    function randomFlake(scatterY) {
+        const size = Math.random() * 10 + 6;
+        return {
+            x:       Math.random() * W,
+            y:       scatterY ? Math.random() * H : -20,
+            size:    size,
+            speed:   Math.random() * 0.6 + 0.25,
+            drift:   Math.random() * 0.4 - 0.2,
+            sway:    Math.random() * Math.PI * 2,
+            swaySpd: Math.random() * 0.008 + 0.003,
+            rot:     Math.random() * Math.PI / 6,
+            rotSpd:  (Math.random() - 0.5) * 0.004,
+            opacity: Math.random() * 0.45 + 0.35,
+        };
+    }
+
+    function drawFlake(f) {
+        const { x, y, size, rot, opacity } = f;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rot);
+        ctx.strokeStyle = `rgba(255,255,255,${opacity})`;
+        ctx.lineWidth   = Math.max(0.8, size * 0.08);
+        ctx.lineCap     = 'round';
+
+        for (let i = 0; i < 6; i++) {
+            ctx.save();
+            ctx.rotate((Math.PI / 3) * i);
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, -size);
+            ctx.stroke();
+
+            [0.55, 0.78].forEach(pct => {
+                const bLen = size * 0.3;
+                const py   = -size * pct;
+                ctx.beginPath();
+                ctx.moveTo(0, py);
+                ctx.lineTo( bLen * 0.6, py - bLen * 0.6);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, py);
+                ctx.lineTo(-bLen * 0.6, py - bLen * 0.6);
+                ctx.stroke();
+            });
+
+            ctx.restore();
+        }
+        ctx.restore();
+    }
+
+    function init() {
+        resize();
+        flakes = Array.from({ length: COUNT }, () => randomFlake(true));
+    }
+
+    function tick() {
+        ctx.clearRect(0, 0, W, H);
+        flakes.forEach(f => {
+            drawFlake(f);
+
+            f.sway += f.swaySpd;
+            f.x    += Math.sin(f.sway) * 0.7 + f.drift;
+            f.y    += f.speed;
+            f.rot  += f.rotSpd;
+
+            if (f.y > H + 20) Object.assign(f, randomFlake(false));
+            if (f.x > W + 20) f.x = -20;
+            if (f.x < -20)    f.x = W + 20;
+        });
+        requestAnimationFrame(tick);
+    }
+
+    window.addEventListener('resize', resize);
+    init();
+    tick();
+})();
+</script>
 </body>
 </html>
