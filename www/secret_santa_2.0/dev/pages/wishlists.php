@@ -178,7 +178,7 @@ if ($selectedUserId) {
             $emailBody = "
             <div style=\"font-family:Arial,sans-serif;max-width:680px;margin:0 auto;\">
                 <div style=\"background:#c0392b;color:#fff;padding:20px 24px;border-radius:8px 8px 0 0;\">
-                    <h2 style=\"margin:0;\">🎁 " . h($wishlistUser['FIRST_NAME']) . " " . h($wishlistUser['LAST_NAME']) . "'s Christmas List</h2>
+                    <h2 style=\"margin:0;\">🎁 " . h($wishlistUser['FIRST_NAME']) . "'s Christmas List</h2>
                     <p style=\"margin:6px 0 0;opacity:0.85;\">" . h($xmasYear) . " Christmas List</p>
                 </div>
                 <div style=\"padding:20px 24px;background:#fff;\">
@@ -244,7 +244,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div>
         <a href="<?= APP_URL ?>/pages/wishlists.php" class="back-link">← Kid's Christmas List</a>
         <h1 class="page-title" style="margin-top:0.25rem;">
-            🎄 <?= h($wishlistUser['FIRST_NAME']) ?> <?= h($wishlistUser['LAST_NAME']) ?>'s Christmas List
+            🎄 <?= h($wishlistUser['FIRST_NAME']) ?>'s Christmas List
         </h1>
     </div>
     <div class="page-header-actions">
@@ -388,7 +388,7 @@ require_once __DIR__ . '/../includes/header.php';
     <a href="?user=<?= h($wu['USER_ID']) ?>" class="wishlist-user-card">
         <div class="wuc-avatar">🎁</div>
         <div class="wuc-body">
-            <div class="wuc-name"><?= h($wu['FIRST_NAME']) ?> <?= h($wu['LAST_NAME']) ?></div>
+            <div class="wuc-name"><?= h($wu['FIRST_NAME']) ?></div>
             <?php if ($total > 0): ?>
             <div class="wuc-meta">
                 <?= $total ?> gift<?= $total !== 1 ? 's' : '' ?>
