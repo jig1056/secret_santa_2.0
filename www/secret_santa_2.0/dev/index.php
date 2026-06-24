@@ -56,8 +56,9 @@ $timeout = isset($_GET['reason']) && $_GET['reason'] === 'timeout';
     <title>Welcome to Secret Santa <?= h($xmasYear) ?></title>
     <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css">
     <style>
-        body { justify-content: center; align-items: center; background: #b71c1c; }
-        .login-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.25); padding: 2rem; width: 100%; max-width: 400px; margin: 2rem auto; }
+        body { justify-content: center; align-items: center; background: #7b1212; overflow: hidden; }
+        #snowCanvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+        .login-card { position: relative; z-index: 1; background: #fff; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.35); padding: 2rem; width: 100%; max-width: 400px; margin: 2rem auto; }
         .login-title { text-align: center; font-size: 1.5rem; font-weight: 700; color: #922b21; margin-bottom: 0.25rem; }
         .login-sub   { text-align: center; color: #6c757d; margin-bottom: 1.5rem; font-size: 0.95rem; }
         .remember-row   { margin: 0.75rem 0 0.25rem; }
@@ -66,6 +67,7 @@ $timeout = isset($_GET['reason']) && $_GET['reason'] === 'timeout';
     </style>
 </head>
 <body>
+<canvas id="snowCanvas"></canvas>
 <div class="login-card">
     <div class="login-title">🎅🏾 Secret Santa <?= h($xmasYear) ?></div>
     <div class="login-sub">Sign in to get started</div>
@@ -103,6 +105,69 @@ $timeout = isset($_GET['reason']) && $_GET['reason'] === 'timeout';
 </div>
 <script src="<?= APP_URL ?>/assets/js/app.js"></script>
 <script>
+// ── Snow animation ────────────────────────────────────────────
+(function () {
+    const canvas = document.getElementById('snowCanvas');
+    const ctx    = canvas.getContext('2d');
+    const COUNT  = 160;
+    let W, H, flakes;
+
+    function resize() {
+        W = canvas.width  = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+    }
+
+    function randomFlake() {
+        return {
+            x:       Math.random() * W,
+            y:       Math.random() * H - H,        // start above viewport
+            r:       Math.random() * 3.5 + 0.5,    // radius 0.5–4px
+            speed:   Math.random() * 1.2 + 0.4,    // fall speed
+            drift:   Math.random() * 0.6 - 0.3,    // horizontal sway
+            sway:    Math.random() * Math.PI * 2,  // sway phase offset
+            swaySpd: Math.random() * 0.012 + 0.004,
+            opacity: Math.random() * 0.55 + 0.3,
+        };
+    }
+
+    function init() {
+        resize();
+        flakes = Array.from({ length: COUNT }, randomFlake);
+        // Scatter initial positions throughout the screen, not all above
+        flakes.forEach(f => { f.y = Math.random() * H; });
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, W, H);
+        flakes.forEach(f => {
+            ctx.beginPath();
+            ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255,255,255,${f.opacity})`;
+            ctx.fill();
+
+            // Move
+            f.sway += f.swaySpd;
+            f.x    += Math.sin(f.sway) * 0.8 + f.drift;
+            f.y    += f.speed;
+
+            // Wrap — reset to top when past bottom, randomise x
+            if (f.y > H + 10) {
+                f.y = -10;
+                f.x = Math.random() * W;
+            }
+            // Wrap sides
+            if (f.x > W + 10) f.x = -10;
+            if (f.x < -10)    f.x = W + 10;
+        });
+        requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('resize', resize);
+    init();
+    draw();
+})();
+
+// ── Auto-dismiss error alerts ─────────────────────────────────
 (function () {
     const alert = document.querySelector('.alert-error');
     if (alert) setTimeout(() => {
