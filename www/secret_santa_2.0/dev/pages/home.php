@@ -81,7 +81,7 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="status-body">
             <div class="status-title">Your Secret Santa Match</div>
             <?php if ($match): ?>
-                <p>You are gifting <strong><?= h($match['FIRST_NAME']) ?> <?= h($match['LAST_NAME']) ?></strong> this year!</p>
+                <p>You are gifting <strong><?= h($match['FIRST_NAME']) ?></strong> this year!</p>
                 <a href="<?= APP_URL ?>/pages/giftee_list.php" class="btn btn-success btn-sm" style="margin-top:0.75rem;">
                     View <?= ucfirst(pronoun($match['SEX'] ?? null, 'possessive')) ?> Wish List
                 </a>
