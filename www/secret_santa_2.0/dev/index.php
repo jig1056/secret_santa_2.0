@@ -109,7 +109,7 @@ $timeout = isset($_GET['reason']) && $_GET['reason'] === 'timeout';
 (function () {
     const canvas = document.getElementById('snowCanvas');
     const ctx    = canvas.getContext('2d');
-    const COUNT  = 160;
+    const COUNT  = 60;
     let W, H, flakes;
 
     function resize() {
@@ -117,54 +117,88 @@ $timeout = isset($_GET['reason']) && $_GET['reason'] === 'timeout';
         H = canvas.height = window.innerHeight;
     }
 
-    function randomFlake() {
+    function randomFlake(scatterY) {
+        const size = Math.random() * 10 + 6; // 6–16px arm length
         return {
             x:       Math.random() * W,
-            y:       Math.random() * H - H,        // start above viewport
-            r:       Math.random() * 3.5 + 0.5,    // radius 0.5–4px
-            speed:   Math.random() * 1.2 + 0.4,    // fall speed
-            drift:   Math.random() * 0.6 - 0.3,    // horizontal sway
-            sway:    Math.random() * Math.PI * 2,  // sway phase offset
-            swaySpd: Math.random() * 0.012 + 0.004,
-            opacity: Math.random() * 0.55 + 0.3,
+            y:       scatterY ? Math.random() * H : -20,
+            size:    size,
+            speed:   Math.random() * 0.6 + 0.25,
+            drift:   Math.random() * 0.4 - 0.2,
+            sway:    Math.random() * Math.PI * 2,
+            swaySpd: Math.random() * 0.008 + 0.003,
+            rot:     Math.random() * Math.PI / 6, // slight initial rotation
+            rotSpd:  (Math.random() - 0.5) * 0.004,
+            opacity: Math.random() * 0.45 + 0.35,
         };
+    }
+
+    // Draw a 6-armed snowflake with small branch ticks
+    function drawFlake(f) {
+        const { x, y, size, rot, opacity } = f;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rot);
+        ctx.strokeStyle = `rgba(255,255,255,${opacity})`;
+        ctx.lineWidth   = Math.max(0.8, size * 0.08);
+        ctx.lineCap     = 'round';
+
+        for (let i = 0; i < 6; i++) {
+            ctx.save();
+            ctx.rotate((Math.PI / 3) * i);
+
+            // Main arm
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, -size);
+            ctx.stroke();
+
+            // Two branch ticks at ~55% and ~80% of the arm
+            [0.55, 0.78].forEach(pct => {
+                const bLen = size * 0.3;
+                const py   = -size * pct;
+                ctx.beginPath();
+                ctx.moveTo(0, py);
+                ctx.lineTo( bLen * 0.6, py - bLen * 0.6);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, py);
+                ctx.lineTo(-bLen * 0.6, py - bLen * 0.6);
+                ctx.stroke();
+            });
+
+            ctx.restore();
+        }
+        ctx.restore();
     }
 
     function init() {
         resize();
-        flakes = Array.from({ length: COUNT }, randomFlake);
-        // Scatter initial positions throughout the screen, not all above
-        flakes.forEach(f => { f.y = Math.random() * H; });
+        flakes = Array.from({ length: COUNT }, () => randomFlake(true));
     }
 
-    function draw() {
+    function tick() {
         ctx.clearRect(0, 0, W, H);
         flakes.forEach(f => {
-            ctx.beginPath();
-            ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(255,255,255,${f.opacity})`;
-            ctx.fill();
+            drawFlake(f);
 
-            // Move
             f.sway += f.swaySpd;
-            f.x    += Math.sin(f.sway) * 0.8 + f.drift;
+            f.x    += Math.sin(f.sway) * 0.7 + f.drift;
             f.y    += f.speed;
+            f.rot  += f.rotSpd;
 
-            // Wrap — reset to top when past bottom, randomise x
-            if (f.y > H + 10) {
-                f.y = -10;
-                f.x = Math.random() * W;
+            if (f.y > H + 20) {
+                Object.assign(f, randomFlake(false));
             }
-            // Wrap sides
-            if (f.x > W + 10) f.x = -10;
-            if (f.x < -10)    f.x = W + 10;
+            if (f.x > W + 20) f.x = -20;
+            if (f.x < -20)    f.x = W + 20;
         });
-        requestAnimationFrame(draw);
+        requestAnimationFrame(tick);
     }
 
     window.addEventListener('resize', resize);
     init();
-    draw();
+    tick();
 })();
 
 // ── Auto-dismiss error alerts ─────────────────────────────────
