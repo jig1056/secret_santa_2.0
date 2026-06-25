@@ -117,7 +117,6 @@ require_once __DIR__ . '/../includes/header.php';
         <input type="hidden" name="action"     value="update">
         <input type="hidden" name="config_key" value="<?= h($editing['CONFIG_KEY']) ?>">
 
-<<<<<<< HEAD
         <div class="form-group">
             <label>Key</label>
             <input type="text" value="<?= h($editing['CONFIG_KEY']) ?>" disabled class="input-disabled">
@@ -126,25 +125,12 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="form-group">
             <label for="config_value">Value <span class="required">*</span></label>
             <textarea id="config_value" name="config_value" required rows="3"><?= h($editing['CONFIG_VALUE']) ?></textarea>
-=======
-        <div class="form-row">
-            <div class="form-group">
-                <label>Key</label>
-                <input type="text" value="<?= h($editing['CONFIG_KEY']) ?>" disabled class="input-disabled">
-            </div>
-            <div class="form-group">
-                <label for="config_value">Value <span class="required">*</span></label>
-                <input type="text" id="config_value" name="config_value" required maxlength="500"
-                       value="<?= h($editing['CONFIG_VALUE']) ?>">
-            </div>
->>>>>>> parent of 643a5d8 (ux: convert config Value and Description fields to textarea inputs)
         </div>
 
         <div class="form-group">
             <label for="config_description">Description <span class="optional">(optional)</span></label>
-            <input type="text" id="config_description" name="config_description" maxlength="500"
-                   placeholder="What does this config key do?"
-                   value="<?= h($editing['CONFIG_DESCRIPTION'] ?? '') ?>">
+            <textarea id="config_description" name="config_description" rows="3"
+                      placeholder="What does this config key do?"><?= h($editing['CONFIG_DESCRIPTION'] ?? '') ?></textarea>
         </div>
 
         <div class="form-actions">
@@ -171,7 +157,6 @@ require_once __DIR__ . '/../includes/header.php';
     <form method="POST" action="">
         <input type="hidden" name="action" value="add">
 
-<<<<<<< HEAD
         <div class="form-group">
             <label for="config_key">Key <span class="required">*</span></label>
             <input type="text" id="config_key" name="config_key" required maxlength="100"
@@ -183,28 +168,12 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="form-group">
             <label for="config_value">Value <span class="required">*</span></label>
             <textarea id="config_value" name="config_value" required rows="3"><?= h($_POST['config_value'] ?? '') ?></textarea>
-=======
-        <div class="form-row">
-            <div class="form-group">
-                <label for="config_key">Key <span class="required">*</span></label>
-                <input type="text" id="config_key" name="config_key" required maxlength="100"
-                       placeholder="e.g. GIFT_BUDGET"
-                       value="<?= h($_POST['config_key'] ?? '') ?>">
-                <div class="field-hint">Uppercase letters and underscores only.</div>
-            </div>
-            <div class="form-group">
-                <label for="config_value">Value <span class="required">*</span></label>
-                <input type="text" id="config_value" name="config_value" required maxlength="500"
-                       value="<?= h($_POST['config_value'] ?? '') ?>">
-            </div>
->>>>>>> parent of 643a5d8 (ux: convert config Value and Description fields to textarea inputs)
         </div>
 
         <div class="form-group">
             <label for="config_description">Description <span class="optional">(optional)</span></label>
-            <input type="text" id="config_description" name="config_description" maxlength="500"
-                   placeholder="What does this config key do?"
-                   value="<?= h($_POST['config_description'] ?? '') ?>">
+            <textarea id="config_description" name="config_description" rows="3"
+                      placeholder="What does this config key do?"><?= h($_POST['config_description'] ?? '') ?></textarea>
         </div>
 
         <div class="form-actions">
