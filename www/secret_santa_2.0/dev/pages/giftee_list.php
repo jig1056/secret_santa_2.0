@@ -178,16 +178,17 @@ require_once __DIR__ . '/../includes/header.php';
 </style>
 
 <script>
+const GL_KEY = 'gl_view_<?= h($xmasYear) ?>';
 function setView(v) {
     document.getElementById('viewList').style.display = v === 'list' ? '' : 'none';
     document.getElementById('viewGrid').style.display = v === 'grid' ? '' : 'none';
     document.getElementById('btnList').classList.toggle('active', v === 'list');
     document.getElementById('btnGrid').classList.toggle('active', v === 'grid');
-    localStorage.setItem('gl_view', v);
+    localStorage.setItem(GL_KEY, v);
 }
 (function () {
-    const saved = localStorage.getItem('gl_view');
-    if (saved === 'grid') setView('grid');
+    const saved = localStorage.getItem(GL_KEY) ?? 'grid';
+    setView(saved);
 })();
 </script>
 

@@ -322,16 +322,17 @@ require_once __DIR__ . '/../includes/header.php';
 </style>
 
 <script>
+const WL_KEY = 'wl_view_<?= h($xmasYear) ?>';
 function setView(v) {
     document.getElementById('viewList').style.display = v === 'list' ? '' : 'none';
     document.getElementById('viewGrid').style.display = v === 'grid' ? '' : 'none';
     document.getElementById('btnList').classList.toggle('active', v === 'list');
     document.getElementById('btnGrid').classList.toggle('active', v === 'grid');
-    localStorage.setItem('wl_view', v);
+    localStorage.setItem(WL_KEY, v);
 }
 (function () {
-    const saved = localStorage.getItem('wl_view');
-    if (saved === 'grid') setView('grid');
+    const saved = localStorage.getItem(WL_KEY) ?? 'grid';
+    setView(saved);
 })();
 </script>
 

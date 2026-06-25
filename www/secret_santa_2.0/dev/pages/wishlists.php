@@ -598,6 +598,7 @@ require_once __DIR__ . '/../includes/header.php';
 </style>
 
 <script>
+const CL_KEY = 'cl_view_<?= h($xmasYear) ?>';
 function setView(v) {
     const list = document.getElementById('viewList');
     const grid = document.getElementById('viewGrid');
@@ -607,11 +608,11 @@ function setView(v) {
     const btnGrid = document.getElementById('btnGrid');
     if (btnList) btnList.classList.toggle('active', v === 'list');
     if (btnGrid) btnGrid.classList.toggle('active', v === 'grid');
-    localStorage.setItem('cl_view', v);
+    localStorage.setItem(CL_KEY, v);
 }
 (function () {
-    const saved = localStorage.getItem('cl_view');
-    if (saved === 'grid') setView('grid');
+    const saved = localStorage.getItem(CL_KEY) ?? 'grid';
+    setView(saved);
 })();
 
 function submitEmailList() {
