@@ -249,11 +249,18 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
     <div class="page-header-actions">
         <a href="?user=<?= h($selectedUserId) ?>&add=1" class="btn btn-secondary">➕ Add Gift</a>
-        <form method="POST" action="?user=<?= h($selectedUserId) ?>" style="display:inline;">
+        <form id="emailListForm" method="POST" action="?user=<?= h($selectedUserId) ?>" style="display:inline;">
             <input type="hidden" name="action" value="email_list">
-            <button type="submit" class="btn btn-primary">📧 Email This List</button>
+            <button type="button" class="btn btn-primary" onclick="submitEmailList()">📧 Email This List</button>
         </form>
     </div>
+</div>
+
+<!-- Sending overlay -->
+<div id="emailOverlay" style="display:none;">
+    <div class="sending-spinner"></div>
+    <div class="sending-title">Sending email…</div>
+    <div class="sending-sub">Please wait — do not close or refresh this page.</div>
 </div>
 
 <?php if ($msg): ?>
@@ -509,6 +516,34 @@ require_once __DIR__ . '/../includes/header.php';
     .page-header { flex-direction:column; }
     .page-header-actions { width:100%; }
 }
+
+/* ---- Email sending overlay ---- */
+#emailOverlay {
+    position:fixed; inset:0;
+    background:rgba(255,255,255,0.93);
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    gap:0.75rem; z-index:999;
+    padding:2rem;
+}
+.sending-spinner {
+    width:44px; height:44px;
+    border:4px solid #e0e0e0;
+    border-top-color:#1e8449;
+    border-radius:50%;
+    animation:spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+.sending-title { font-size:1.1rem; font-weight:700; color:#1e8449; }
+.sending-sub   { font-size:0.88rem; color:#666; text-align:center; max-width:320px; }
 </style>
+
+<script>
+function submitEmailList() {
+    const overlay = document.getElementById('emailOverlay');
+    overlay.style.display = 'flex';
+    document.getElementById('emailListForm').submit();
+}
+</script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
