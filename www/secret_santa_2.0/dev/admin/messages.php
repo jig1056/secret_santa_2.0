@@ -628,7 +628,6 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
                 <tr>
                     <th>Template Name</th>
                     <th>Eligible Roles</th>
-                    <th>Preview</th>
                     <th></th>
                 </tr>
             </thead>
@@ -656,7 +655,6 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
                         </div>
                         <?php endif; ?>
                     </td>
-                    <td class="preview-col"><?= h(mb_substr($tpl['MESSAGE_BODY'], 0, 80)) ?>...</td>
                     <td class="nowrap">
                         <?php if (empty($tpl['IS_INTERNAL'])): ?>
                         <a href="?edit=<?= $tpl['MESSAGE_ID'] ?>&show_send=1" class="btn btn-success btn-sm">
@@ -913,10 +911,6 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 /* Table */
 .name-link   { font-weight:600; color:#c0392b; text-decoration:none; }
 .name-link:hover { text-decoration:underline; }
-#tplTable th:nth-child(1), #tplTable td:nth-child(1) { width:22%; }
-#tplTable th:nth-child(2), #tplTable td:nth-child(2) { width:18%; }
-#tplTable th:nth-child(3), #tplTable td:nth-child(3) { width:auto; }
-.preview-col { font-size:0.85rem; color:#777; }
 .date-col    { font-size:0.82rem; color:#999; white-space:nowrap; }
 .empty-state { color:#999; padding:1rem 0; }
 .row-active td { background:#fff8f0; }
