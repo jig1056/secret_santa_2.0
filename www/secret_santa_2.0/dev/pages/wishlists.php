@@ -256,13 +256,6 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<!-- Sending overlay -->
-<div id="emailOverlay" style="display:none;">
-    <div class="sending-spinner"></div>
-    <div class="sending-title">Sending email…</div>
-    <div class="sending-sub">Please wait — do not close or refresh this page.</div>
-</div>
-
 <?php if ($msg): ?>
 <div class="alert alert-<?= $msgType === 'success' ? 'success' : 'error' ?>"><?= $msg ?></div>
 <?php endif; ?>
@@ -301,7 +294,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <?php if (!$addMode): ?>
 <!-- Gift List -->
-<div class="card">
+<div class="card" style="position:relative;">
     <div class="card-title">
         🎄 <?= h($wishlistUser['FIRST_NAME']) ?>'s Gifts
         (<?= count($gifts) ?> item<?= count($gifts) !== 1 ? 's' : '' ?>)
@@ -365,6 +358,13 @@ require_once __DIR__ . '/../includes/header.php';
         <?php endforeach; ?>
     </div>
     <?php endif; ?>
+
+    <!-- Email sending overlay -->
+    <div id="emailOverlay" style="display:none;">
+        <div class="sending-spinner"></div>
+        <div class="sending-title">Sending email…</div>
+        <div class="sending-sub">Please wait — do not close or refresh this page.</div>
+    </div>
 </div>
 <?php endif; // end !$addMode ?>
 
@@ -519,11 +519,12 @@ require_once __DIR__ . '/../includes/header.php';
 
 /* ---- Email sending overlay ---- */
 #emailOverlay {
-    position:fixed; inset:0;
+    position:absolute; inset:0;
     background:rgba(255,255,255,0.93);
+    border-radius:inherit;
     display:flex; flex-direction:column;
     align-items:center; justify-content:center;
-    gap:0.75rem; z-index:999;
+    gap:0.75rem; z-index:10;
     padding:2rem;
 }
 .sending-spinner {
