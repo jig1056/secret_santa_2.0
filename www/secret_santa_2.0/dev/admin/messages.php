@@ -913,7 +913,10 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 /* Table */
 .name-link   { font-weight:600; color:#c0392b; text-decoration:none; }
 .name-link:hover { text-decoration:underline; }
-.preview-col { font-size:0.85rem; color:#777; max-width:260px; }
+#tplTable th:nth-child(1), #tplTable td:nth-child(1) { width:22%; }
+#tplTable th:nth-child(2), #tplTable td:nth-child(2) { width:18%; }
+#tplTable th:nth-child(3), #tplTable td:nth-child(3) { width:auto; }
+.preview-col { font-size:0.85rem; color:#777; }
 .date-col    { font-size:0.82rem; color:#999; white-space:nowrap; }
 .empty-state { color:#999; padding:1rem 0; }
 .row-active td { background:#fff8f0; }
