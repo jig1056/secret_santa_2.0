@@ -295,9 +295,17 @@ require_once __DIR__ . '/../includes/header.php';
 <?php if (!$addMode): ?>
 <!-- Gift List -->
 <div class="card" style="position:relative;">
-    <div class="card-title">
-        🎄 <?= h($wishlistUser['FIRST_NAME']) ?>'s Gifts
-        (<?= count($gifts) ?> item<?= count($gifts) !== 1 ? 's' : '' ?>)
+    <div class="card-header-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+        <div class="card-title" style="margin-bottom:0;">
+            🎄 <?= h($wishlistUser['FIRST_NAME']) ?>'s Gifts
+            (<?= count($gifts) ?> item<?= count($gifts) !== 1 ? 's' : '' ?>)
+        </div>
+        <?php if (!empty($gifts)): ?>
+        <div class="view-toggle">
+            <button id="btnList" class="toggle-btn active" onclick="setView('list')" title="List view">☰ List</button>
+            <button id="btnGrid" class="toggle-btn"        onclick="setView('grid')" title="Grid view">⊞ Grid</button>
+        </div>
+        <?php endif; ?>
     </div>
 
     <?php if (empty($gifts)): ?>
@@ -307,7 +315,60 @@ require_once __DIR__ . '/../includes/header.php';
         <p style="margin-top:0.5rem;">You can add something for <?= pronoun($wishlistUser['SEX'] ?? null, 'object') ?> using the button above!</p>
     </div>
     <?php else: ?>
-    <div class="gift-grid">
+
+    <!-- TABLE VIEW -->
+    <div id="viewList" class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Gift</th>
+                    <th>Description</th>
+                    <th>Link</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($gifts as $gift): ?>
+                <?php $isPurchased = !empty($gift['PURCHASED_BY']); ?>
+                <?php $isMine      = $gift['PURCHASED_BY'] === $gifterUserId; ?>
+                <tr>
+                    <td style="font-weight:600;"><?= h($gift['NAME']) ?></td>
+                    <td><?= $gift['DESCRIPTION'] ? h($gift['DESCRIPTION']) : '<span class="muted">—</span>' ?></td>
+                    <td>
+                        <?php if ($gift['URL']): ?>
+                        <a href="<?= h($gift['URL']) ?>" target="_blank" rel="noopener" class="tbl-view-link">View Online ↗</a>
+                        <?php else: ?>
+                        <span class="muted">—</span>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <?php if ($isPurchased): ?>
+                            <span class="purchased-badge">✓ <?= h($gift['PURCHASED_BY_NAME']) ?></span>
+                            <?php if ($isMine || isAdmin()): ?>
+                            <form method="POST" action="?user=<?= h($selectedUserId) ?>" style="display:inline;margin-left:6px;">
+                                <input type="hidden" name="action"  value="unmark_purchased">
+                                <input type="hidden" name="gift_id" value="<?= $gift['GIFT_ID'] ?>">
+                                <button type="submit" class="btn btn-sm btn-ghost"
+                                        onclick="return confirm('Unmark this item as purchased?')">Unmark</button>
+                            </form>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <form method="POST" action="?user=<?= h($selectedUserId) ?>">
+                                <input type="hidden" name="action"  value="mark_purchased">
+                                <input type="hidden" name="gift_id" value="<?= $gift['GIFT_ID'] ?>">
+                                <button type="submit" class="btn btn-sm btn-success"
+                                        onclick="return confirm('Mark this item as purchased by you?')">Mark as Purchased</button>
+                            </form>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- GRID VIEW -->
+    <div id="viewGrid" class="gift-grid" style="display:none;">
         <?php foreach ($gifts as $gift): ?>
         <?php $isPurchased = !empty($gift['PURCHASED_BY']); ?>
         <?php $isMine      = $gift['PURCHASED_BY'] === $gifterUserId; ?>
@@ -347,6 +408,7 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
         <?php endforeach; ?>
     </div>
+
     <?php endif; ?>
 
     <!-- Email sending overlay -->
@@ -496,6 +558,22 @@ require_once __DIR__ . '/../includes/header.php';
     .page-header-actions { width:100%; }
 }
 
+/* ---- View toggle ---- */
+.view-toggle { display:flex; gap:4px; }
+.toggle-btn {
+    background:transparent; border:1px solid #ddd; border-radius:6px;
+    padding:0.3rem 0.7rem; font-size:0.85rem; cursor:pointer; color:#555;
+    transition:background 0.15s, color 0.15s;
+}
+.toggle-btn:hover { background:#f5f5f5; }
+.toggle-btn.active { background:#c0392b; color:#fff; border-color:#c0392b; }
+
+/* ---- Table view ---- */
+.table-wrap { overflow-x:auto; }
+.tbl-view-link { color:#1e8449; font-weight:600; text-decoration:none; font-size:0.88rem; }
+.tbl-view-link:hover { text-decoration:underline; }
+.muted { color:#aaa; }
+
 /* ---- Email sending overlay ---- */
 #emailOverlay {
     position:absolute; inset:0;
@@ -519,6 +597,22 @@ require_once __DIR__ . '/../includes/header.php';
 </style>
 
 <script>
+function setView(v) {
+    const list = document.getElementById('viewList');
+    const grid = document.getElementById('viewGrid');
+    if (list) list.style.display = v === 'list' ? '' : 'none';
+    if (grid) grid.style.display = v === 'grid' ? '' : 'none';
+    const btnList = document.getElementById('btnList');
+    const btnGrid = document.getElementById('btnGrid');
+    if (btnList) btnList.classList.toggle('active', v === 'list');
+    if (btnGrid) btnGrid.classList.toggle('active', v === 'grid');
+    localStorage.setItem('cl_view', v);
+}
+(function () {
+    const saved = localStorage.getItem('cl_view');
+    if (saved === 'grid') setView('grid');
+})();
+
 function submitEmailList() {
     const overlay = document.getElementById('emailOverlay');
     overlay.style.display = 'flex';
