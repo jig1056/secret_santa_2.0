@@ -312,47 +312,37 @@ require_once __DIR__ . '/../includes/header.php';
         <?php $isPurchased = !empty($gift['PURCHASED_BY']); ?>
         <?php $isMine      = $gift['PURCHASED_BY'] === $gifterUserId; ?>
         <div class="gift-card <?= $isPurchased ? 'gift-purchased' : '' ?>">
-            <div class="gift-top">
-                <div class="gift-icon">
-                    <img src="<?= APP_URL ?>/assets/images/img_gift01.png" alt="gift" />
-                </div>
-                <div class="gift-body">
-                    <div class="gift-name"><?= h($gift['NAME']) ?></div>
-                    <?php if ($gift['DESCRIPTION']): ?>
-                    <div class="gift-desc"><?= h($gift['DESCRIPTION']) ?></div>
-                    <?php endif; ?>
-                    <?php if ($gift['URL']): ?>
-                    <a href="<?= h($gift['URL']) ?>" target="_blank" rel="noopener" class="gift-link">View Online ↗</a>
-                    <?php endif; ?>
-                </div>
+            <div class="gift-icon">
+                <img src="<?= APP_URL ?>/assets/images/img_gift01.png" alt="gift" />
             </div>
-
-            <div class="gift-footer">
-                <?php if ($isPurchased): ?>
-                    <div class="purchased-badge">
-                        ✓ Purchased by <strong><?= h($gift['PURCHASED_BY_NAME']) ?></strong>
-                    </div>
-                    <?php if ($isMine || isAdmin()): ?>
-                    <form method="POST" action="?user=<?= h($selectedUserId) ?>" style="display:inline;">
-                        <input type="hidden" name="action"  value="unmark_purchased">
-                        <input type="hidden" name="gift_id" value="<?= $gift['GIFT_ID'] ?>">
-                        <button type="submit" class="btn btn-sm btn-ghost"
-                                onclick="return confirm('Unmark this item as purchased?')">
-                            Unmark
-                        </button>
-                    </form>
-                    <?php endif; ?>
-                <?php else: ?>
-                    <div class="available-badge">Available</div>
-                    <form method="POST" action="?user=<?= h($selectedUserId) ?>">
-                        <input type="hidden" name="action"  value="mark_purchased">
-                        <input type="hidden" name="gift_id" value="<?= $gift['GIFT_ID'] ?>">
-                        <button type="submit" class="btn btn-sm btn-success"
-                                onclick="return confirm('Mark this item as purchased by you?')">
-                            Mark as Purchased
-                        </button>
-                    </form>
+            <div class="gift-body">
+                <div class="gift-name"><?= h($gift['NAME']) ?></div>
+                <?php if ($gift['DESCRIPTION']): ?>
+                <div class="gift-desc"><?= h($gift['DESCRIPTION']) ?></div>
                 <?php endif; ?>
+                <?php if ($gift['URL']): ?>
+                <a href="<?= h($gift['URL']) ?>" target="_blank" rel="noopener" class="gift-link">View Online ↗</a>
+                <?php endif; ?>
+                <div class="gift-status-row">
+                    <?php if ($isPurchased): ?>
+                        <span class="purchased-badge">✓ Purchased by <strong><?= h($gift['PURCHASED_BY_NAME']) ?></strong></span>
+                        <?php if ($isMine || isAdmin()): ?>
+                        <form method="POST" action="?user=<?= h($selectedUserId) ?>" style="display:inline;">
+                            <input type="hidden" name="action"  value="unmark_purchased">
+                            <input type="hidden" name="gift_id" value="<?= $gift['GIFT_ID'] ?>">
+                            <button type="submit" class="btn btn-sm btn-ghost"
+                                    onclick="return confirm('Unmark this item as purchased?')">Unmark</button>
+                        </form>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <form method="POST" action="?user=<?= h($selectedUserId) ?>">
+                            <input type="hidden" name="action"  value="mark_purchased">
+                            <input type="hidden" name="gift_id" value="<?= $gift['GIFT_ID'] ?>">
+                            <button type="submit" class="btn btn-sm btn-success"
+                                    onclick="return confirm('Mark this item as purchased by you?')">Mark as Purchased</button>
+                        </form>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
         <?php endforeach; ?>
@@ -435,42 +425,31 @@ require_once __DIR__ . '/../includes/header.php';
 .form-actions { display:flex; gap:0.75rem; align-items:center; margin-top:0.5rem; flex-wrap:wrap; }
 
 /* ---- Gift grid (detail view) ---- */
-.gift-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(290px, 1fr)); gap:1rem; margin-bottom:1.25rem; }
+.gift-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:1rem; margin-bottom:1.25rem; }
 
 .gift-card {
     background:#fff;
     border-radius:8px;
     box-shadow:0 2px 8px rgba(0,0,0,0.08);
-    border-left:4px solid #c0392b;
+    padding:1.1rem 1.25rem;
     display:flex;
-    flex-direction:column;
-    overflow:hidden;
+    gap:1rem;
+    align-items:flex-start;
+    border-left:4px solid #c0392b;
 }
-.gift-card.gift-purchased { border-left-color:#1e8449; opacity:0.85; }
+.gift-card.gift-purchased { border-left-color:#1e8449; }
 
-.gift-top  { display:flex; gap:1rem; align-items:flex-start; padding:1rem 1.1rem; flex:1; }
 .gift-icon { flex-shrink:0; }
-.gift-icon img { width:44px; height:44px; object-fit:contain; }
+.gift-icon img { width:48px; height:48px; object-fit:contain; }
 
 .gift-body  { flex:1; }
 .gift-name  { font-weight:700; font-size:1rem; color:#212529; margin-bottom:0.3rem; }
-.gift-desc  { font-size:0.88rem; color:#555; margin-bottom:0.35rem; line-height:1.5; }
-.gift-link  { font-size:0.85rem; color:#1e8449; font-weight:600; text-decoration:none; }
+.gift-desc  { font-size:0.9rem; color:#555; margin-bottom:0.4rem; line-height:1.5; }
+.gift-link  { font-size:0.88rem; color:#1e8449; font-weight:600; text-decoration:none; display:block; margin-bottom:0.5rem; }
 .gift-link:hover { text-decoration:underline; }
 
-.gift-footer {
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:0.6rem 1.1rem;
-    background:#f8f8f8;
-    border-top:1px solid #eee;
-    flex-wrap:wrap;
-    gap:0.5rem;
-}
-
-.purchased-badge { color:#1e8449; font-size:0.88rem; }
-.available-badge { color:#999; font-size:0.88rem; }
+.gift-status-row { display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; margin-top:0.5rem; }
+.purchased-badge { color:#1e8449; font-size:0.85rem; }
 
 .btn-ghost   { background:transparent; color:#c0392b; border:1px solid #c0392b; padding:0.3rem 0.7rem; border-radius:5px; cursor:pointer; font-size:0.82rem; }
 .btn-ghost:hover { background:#fdf0ef; }
