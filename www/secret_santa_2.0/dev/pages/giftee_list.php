@@ -59,31 +59,64 @@ require_once __DIR__ . '/../includes/header.php';
 
 <?php else: ?>
 
-<!-- Gift count summary -->
-<div class="gift-summary">
-    <?= h($match['FIRST_NAME']) ?> has <strong><?= count($gifts) ?></strong> gift<?= count($gifts) !== 1 ? 's' : '' ?> on <?= pronoun($match['SEX'] ?? null, 'possessive') ?> list.
-</div>
-
-<!-- Gift cards -->
-<div class="gift-grid">
-    <?php foreach ($gifts as $gift): ?>
-    <div class="gift-card">
-        <div class="gift-icon">
-            <img src="<?= APP_URL ?>/assets/images/img_gift01.png" alt="gift" />
+<div class="card">
+    <div class="card-header-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+        <div class="gift-summary" style="margin:0;">
+            <?= h($match['FIRST_NAME']) ?> has <strong><?= count($gifts) ?></strong> gift<?= count($gifts) !== 1 ? 's' : '' ?> on <?= pronoun($match['SEX'] ?? null, 'possessive') ?> list.
         </div>
-        <div class="gift-body">
-            <div class="gift-name"><?= h($gift['NAME']) ?></div>
-            <?php if ($gift['DESCRIPTION']): ?>
-            <div class="gift-desc"><?= h($gift['DESCRIPTION']) ?></div>
-            <?php endif; ?>
-            <?php if ($gift['URL']): ?>
-            <a href="<?= h($gift['URL']) ?>" target="_blank" rel="noopener" class="gift-link">
-                View Online ↗
-            </a>
-            <?php endif; ?>
+        <div class="view-toggle">
+            <button id="btnList" class="toggle-btn active" onclick="setView('list')" title="List view">☰ List</button>
+            <button id="btnGrid" class="toggle-btn"        onclick="setView('grid')" title="Grid view">⊞ Grid</button>
         </div>
     </div>
-    <?php endforeach; ?>
+
+    <!-- TABLE VIEW -->
+    <div id="viewList" class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Gift</th>
+                    <th>Description</th>
+                    <th>Link</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($gifts as $gift): ?>
+                <tr>
+                    <td style="font-weight:600;"><?= h($gift['NAME']) ?></td>
+                    <td><?= $gift['DESCRIPTION'] ? h($gift['DESCRIPTION']) : '<span class="muted">—</span>' ?></td>
+                    <td>
+                        <?php if ($gift['URL']): ?>
+                        <a href="<?= h($gift['URL']) ?>" target="_blank" rel="noopener" class="gift-link">View Online ↗</a>
+                        <?php else: ?>
+                        <span class="muted">—</span>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- GRID VIEW -->
+    <div id="viewGrid" class="gift-grid" style="display:none;">
+        <?php foreach ($gifts as $gift): ?>
+        <div class="gift-card">
+            <div class="gift-icon">
+                <img src="<?= APP_URL ?>/assets/images/img_gift01.png" alt="gift" />
+            </div>
+            <div class="gift-body">
+                <div class="gift-name"><?= h($gift['NAME']) ?></div>
+                <?php if ($gift['DESCRIPTION']): ?>
+                <div class="gift-desc"><?= h($gift['DESCRIPTION']) ?></div>
+                <?php endif; ?>
+                <?php if ($gift['URL']): ?>
+                <a href="<?= h($gift['URL']) ?>" target="_blank" rel="noopener" class="gift-link">View Online ↗</a>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
 </div>
 
 <?php endif; ?>
@@ -121,11 +154,40 @@ require_once __DIR__ . '/../includes/header.php';
 
 .empty-state { text-align: center; padding: 2rem 1rem; color: #777; }
 .empty-icon  { font-size: 3rem; margin-bottom: 0.75rem; }
+.muted { color: #aaa; }
+
+/* ---- View toggle ---- */
+.view-toggle { display: flex; gap: 4px; }
+.toggle-btn {
+    background: transparent; border: 1px solid #ddd; border-radius: 6px;
+    padding: 0.3rem 0.7rem; font-size: 0.85rem; cursor: pointer; color: #555;
+    transition: background 0.15s, color 0.15s;
+}
+.toggle-btn:hover { background: #f5f5f5; }
+.toggle-btn.active { background: #c0392b; color: #fff; border-color: #c0392b; }
+
+/* ---- Table view ---- */
+.table-wrap { overflow-x: auto; }
+.gift-summary { color: #555; font-size: 0.95rem; }
 
 @media (max-width: 480px) {
     .gift-grid { grid-template-columns: 1fr; }
     .match-inner { flex-direction: column; text-align: center; }
 }
 </style>
+
+<script>
+function setView(v) {
+    document.getElementById('viewList').style.display = v === 'list' ? '' : 'none';
+    document.getElementById('viewGrid').style.display = v === 'grid' ? '' : 'none';
+    document.getElementById('btnList').classList.toggle('active', v === 'list');
+    document.getElementById('btnGrid').classList.toggle('active', v === 'grid');
+    localStorage.setItem('gl_view', v);
+}
+(function () {
+    const saved = localStorage.getItem('gl_view');
+    if (saved === 'grid') setView('grid');
+})();
+</script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
