@@ -97,10 +97,10 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="card status-card">
         <div class="status-icon green">🦌</div>
         <div class="status-body">
-            <div class="status-title">Christmas Lists</div>
+            <div class="status-title">Kids's Christmas Lists</div>
             <p>View and manage the Christmas lists of your loved ones — mark items as you purchase them.</p>
             <a href="<?= APP_URL ?>/pages/wishlists.php" class="btn btn-primary btn-sm" style="margin-top:0.75rem;">
-                View Christmas Lists
+                View Kids's Christmas Lists
             </a>
         </div>
     </div>
