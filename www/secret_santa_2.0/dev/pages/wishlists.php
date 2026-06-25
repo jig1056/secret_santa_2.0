@@ -232,6 +232,8 @@ if (isset($_GET['add'])) {
     $addMode = true;
 }
 
+$viewPref = getUserPref($gifterUserId, 'cl_view', $xmasYear);
+
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
@@ -302,8 +304,8 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
         <?php if (!empty($gifts)): ?>
         <div class="view-toggle">
-            <button id="btnList" class="toggle-btn active" onclick="setView('list')" title="List view">☰ List</button>
-            <button id="btnGrid" class="toggle-btn"        onclick="setView('grid')" title="Grid view">⊞ Grid</button>
+            <button id="btnList" class="toggle-btn <?= $viewPref === 'list' ? 'active' : '' ?>" onclick="setView('list')" title="List view">☰ List</button>
+            <button id="btnGrid" class="toggle-btn <?= $viewPref === 'grid' ? 'active' : '' ?>" onclick="setView('grid')" title="Grid view">⊞ Grid</button>
         </div>
         <?php endif; ?>
     </div>
@@ -317,7 +319,7 @@ require_once __DIR__ . '/../includes/header.php';
     <?php else: ?>
 
     <!-- TABLE VIEW -->
-    <div id="viewList" class="table-wrap">
+    <div id="viewList" class="table-wrap" <?= $viewPref === 'grid' ? 'style="display:none;"' : '' ?>>
         <table>
             <thead>
                 <tr>
@@ -368,7 +370,7 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 
     <!-- GRID VIEW -->
-    <div id="viewGrid" class="gift-grid" style="display:none;">
+    <div id="viewGrid" class="gift-grid" <?= $viewPref === 'list' ? 'style="display:none;"' : '' ?>>
         <?php foreach ($gifts as $gift): ?>
         <?php $isPurchased = !empty($gift['PURCHASED_BY']); ?>
         <?php $isMine      = $gift['PURCHASED_BY'] === $gifterUserId; ?>
@@ -598,7 +600,6 @@ require_once __DIR__ . '/../includes/header.php';
 </style>
 
 <script>
-const CL_KEY = 'cl_view_<?= h($xmasYear) ?>';
 function setView(v) {
     const list = document.getElementById('viewList');
     const grid = document.getElementById('viewGrid');
@@ -608,12 +609,12 @@ function setView(v) {
     const btnGrid = document.getElementById('btnGrid');
     if (btnList) btnList.classList.toggle('active', v === 'list');
     if (btnGrid) btnGrid.classList.toggle('active', v === 'grid');
-    localStorage.setItem(CL_KEY, v);
+    fetch('<?= APP_URL ?>/pages/set_pref.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'pref_key=cl_view&pref_value=' + v + '&xmas_year=<?= h($xmasYear) ?>'
+    });
 }
-(function () {
-    const saved = localStorage.getItem(CL_KEY) ?? 'grid';
-    setView(saved);
-})();
 
 function submitEmailList() {
     const overlay = document.getElementById('emailOverlay');

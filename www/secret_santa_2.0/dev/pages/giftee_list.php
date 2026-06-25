@@ -33,6 +33,8 @@ $stmt = $pdo->prepare("
 $stmt->execute([$match['USER_ID'], $xmasYear]);
 $gifts = $stmt->fetchAll();
 
+$viewPref = getUserPref($userId, 'gl_view', $xmasYear);
+
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
@@ -65,13 +67,13 @@ require_once __DIR__ . '/../includes/header.php';
             <?= h($match['FIRST_NAME']) ?> has <strong><?= count($gifts) ?></strong> gift<?= count($gifts) !== 1 ? 's' : '' ?> on <?= pronoun($match['SEX'] ?? null, 'possessive') ?> list.
         </div>
         <div class="view-toggle">
-            <button id="btnList" class="toggle-btn active" onclick="setView('list')" title="List view">☰ List</button>
-            <button id="btnGrid" class="toggle-btn"        onclick="setView('grid')" title="Grid view">⊞ Grid</button>
+            <button id="btnList" class="toggle-btn <?= $viewPref === 'list' ? 'active' : '' ?>" onclick="setView('list')" title="List view">☰ List</button>
+            <button id="btnGrid" class="toggle-btn <?= $viewPref === 'grid' ? 'active' : '' ?>" onclick="setView('grid')" title="Grid view">⊞ Grid</button>
         </div>
     </div>
 
     <!-- TABLE VIEW -->
-    <div id="viewList" class="table-wrap">
+    <div id="viewList" class="table-wrap" <?= $viewPref === 'grid' ? 'style="display:none;"' : '' ?>>
         <table>
             <thead>
                 <tr>
@@ -99,7 +101,7 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 
     <!-- GRID VIEW -->
-    <div id="viewGrid" class="gift-grid" style="display:none;">
+    <div id="viewGrid" class="gift-grid" <?= $viewPref === 'list' ? 'style="display:none;"' : '' ?>>
         <?php foreach ($gifts as $gift): ?>
         <div class="gift-card">
             <div class="gift-icon">
@@ -178,18 +180,17 @@ require_once __DIR__ . '/../includes/header.php';
 </style>
 
 <script>
-const GL_KEY = 'gl_view_<?= h($xmasYear) ?>';
 function setView(v) {
     document.getElementById('viewList').style.display = v === 'list' ? '' : 'none';
     document.getElementById('viewGrid').style.display = v === 'grid' ? '' : 'none';
     document.getElementById('btnList').classList.toggle('active', v === 'list');
     document.getElementById('btnGrid').classList.toggle('active', v === 'grid');
-    localStorage.setItem(GL_KEY, v);
+    fetch('<?= APP_URL ?>/pages/set_pref.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'pref_key=gl_view&pref_value=' + v + '&xmas_year=<?= h($xmasYear) ?>'
+    });
 }
-(function () {
-    const saved = localStorage.getItem(GL_KEY) ?? 'grid';
-    setView(saved);
-})();
 </script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

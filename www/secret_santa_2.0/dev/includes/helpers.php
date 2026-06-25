@@ -44,6 +44,27 @@ function getConfig(string $key, string $default = ''): string {
 }
 
 // ------------------------------------------------------------
+// Get / set a per-user, per-season UI preference from SS_USER_PREFS.
+// Default is 'grid' so new users / new seasons start in grid view.
+// ------------------------------------------------------------
+function getUserPref(string $userId, string $prefKey, string $xmasYear, string $default = 'grid'): string {
+    $pdo  = getDB();
+    $stmt = $pdo->prepare("SELECT PREF_VALUE FROM SS_USER_PREFS WHERE USER_ID = ? AND PREF_KEY = ? AND XMAS_YEAR = ?");
+    $stmt->execute([$userId, $prefKey, $xmasYear]);
+    $val  = $stmt->fetchColumn();
+    return $val !== false ? $val : $default;
+}
+
+function setUserPref(string $userId, string $prefKey, string $xmasYear, string $value): void {
+    $pdo = getDB();
+    $pdo->prepare("
+        INSERT INTO SS_USER_PREFS (USER_ID, PREF_KEY, XMAS_YEAR, PREF_VALUE)
+        VALUES (?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE PREF_VALUE = VALUES(PREF_VALUE), UPDATED_AT = NOW()
+    ")->execute([$userId, $prefKey, $xmasYear, $value]);
+}
+
+// ------------------------------------------------------------
 // Check whether Secret Santa matches have been generated
 // for the current year.
 // ------------------------------------------------------------

@@ -101,6 +101,8 @@ $stmt = $pdo->prepare("SELECT * FROM SS_GIFTS WHERE USER_ID = ? AND YEAR = ? ORD
 $stmt->execute([$userId, $xmasYear]);
 $gifts = $stmt->fetchAll();
 
+$viewPref = getUserPref($userId, 'wl_view', $xmasYear);
+
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
@@ -191,8 +193,8 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="card-title" style="margin-bottom:0;">🎄 Your Wish List (<?= count($gifts) ?> gift<?= count($gifts) !== 1 ? 's' : '' ?>)</div>
         <?php if (!empty($gifts)): ?>
         <div class="view-toggle">
-            <button id="btnList" class="toggle-btn active" onclick="setView('list')" title="List view">☰ List</button>
-            <button id="btnGrid" class="toggle-btn"        onclick="setView('grid')" title="Grid view">⊞ Grid</button>
+            <button id="btnList" class="toggle-btn <?= $viewPref === 'list' ? 'active' : '' ?>" onclick="setView('list')" title="List view">☰ List</button>
+            <button id="btnGrid" class="toggle-btn <?= $viewPref === 'grid' ? 'active' : '' ?>" onclick="setView('grid')" title="Grid view">⊞ Grid</button>
         </div>
         <?php endif; ?>
     </div>
@@ -205,7 +207,7 @@ require_once __DIR__ . '/../includes/header.php';
     <?php else: ?>
 
     <!-- TABLE VIEW -->
-    <div id="viewList" class="table-wrap">
+    <div id="viewList" class="table-wrap" <?= $viewPref === 'grid' ? 'style="display:none;"' : '' ?>>
         <table>
             <thead>
                 <tr>
@@ -237,7 +239,7 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 
     <!-- GRID VIEW -->
-    <div id="viewGrid" class="wl-gift-grid" style="display:none;">
+    <div id="viewGrid" class="wl-gift-grid" <?= $viewPref === 'list' ? 'style="display:none;"' : '' ?>>
         <?php foreach ($gifts as $gift): ?>
         <div class="wl-gift-card">
             <div class="wl-gift-icon">
@@ -322,18 +324,17 @@ require_once __DIR__ . '/../includes/header.php';
 </style>
 
 <script>
-const WL_KEY = 'wl_view_<?= h($xmasYear) ?>';
 function setView(v) {
     document.getElementById('viewList').style.display = v === 'list' ? '' : 'none';
     document.getElementById('viewGrid').style.display = v === 'grid' ? '' : 'none';
     document.getElementById('btnList').classList.toggle('active', v === 'list');
     document.getElementById('btnGrid').classList.toggle('active', v === 'grid');
-    localStorage.setItem(WL_KEY, v);
+    fetch('<?= APP_URL ?>/pages/set_pref.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'pref_key=wl_view&pref_value=' + v + '&xmas_year=<?= h($xmasYear) ?>'
+    });
 }
-(function () {
-    const saved = localStorage.getItem(WL_KEY) ?? 'grid';
-    setView(saved);
-})();
 </script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
