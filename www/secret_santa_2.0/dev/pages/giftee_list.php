@@ -173,6 +173,7 @@ require_once __DIR__ . '/../includes/header.php';
 @media (max-width: 480px) {
     .gift-grid { grid-template-columns: 1fr; }
     .match-inner { flex-direction: column; text-align: center; }
+    .toggle-btn { font-size: 0.75rem; padding: 0.2rem 0.45rem; }
 }
 </style>
 

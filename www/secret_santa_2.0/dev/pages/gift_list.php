@@ -317,6 +317,7 @@ require_once __DIR__ . '/../includes/header.php';
     tr { border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 0.75rem; padding: 0.75rem; }
     td { border: none; padding: 0.25rem 0; }
     .wl-gift-grid { grid-template-columns: 1fr; }
+    .toggle-btn { font-size: 0.75rem; padding: 0.2rem 0.45rem; }
 }
 </style>
 

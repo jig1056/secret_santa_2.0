@@ -556,6 +556,7 @@ require_once __DIR__ . '/../includes/header.php';
     .gift-grid, .wishlist-user-grid { grid-template-columns:1fr; }
     .page-header { flex-direction:column; }
     .page-header-actions { width:100%; }
+    .toggle-btn { font-size:0.75rem; padding:0.2rem 0.45rem; }
 }
 
 /* ---- View toggle ---- */
