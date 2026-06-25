@@ -552,13 +552,6 @@ require_once __DIR__ . '/../includes/header.php';
 .empty-state { text-align:center; padding:2rem 1rem; color:#777; }
 .empty-icon  { font-size:3rem; margin-bottom:0.75rem; }
 
-@media (max-width:600px) {
-    .gift-grid, .wishlist-user-grid { grid-template-columns:1fr; }
-    .page-header { flex-direction:column; }
-    .page-header-actions { width:100%; }
-    .toggle-btn { font-size:0.75rem; padding:0.2rem 0.45rem; }
-}
-
 /* ---- View toggle ---- */
 .view-toggle { display:flex; gap:4px; }
 .toggle-btn {
@@ -568,6 +561,13 @@ require_once __DIR__ . '/../includes/header.php';
 }
 .toggle-btn:hover { background:#f5f5f5; }
 .toggle-btn.active { background:#c0392b; color:#fff; border-color:#c0392b; }
+
+@media (max-width:600px) {
+    .gift-grid, .wishlist-user-grid { grid-template-columns:1fr; }
+    .page-header { flex-direction:column; }
+    .page-header-actions { width:100%; }
+    .toggle-btn { font-size:0.75rem; padding:0.2rem 0.45rem; }
+}
 
 /* ---- Table view ---- */
 .table-wrap { overflow-x:auto; }
