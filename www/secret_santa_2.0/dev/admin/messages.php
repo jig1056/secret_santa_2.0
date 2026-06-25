@@ -436,7 +436,10 @@ document.addEventListener('DOMContentLoaded', function () {
 <?php if ($editing): ?>
 <a href="<?= APP_URL ?>/admin/messages.php" class="back-link">← Return to List</a>
 <div class="card" id="editFormCard">
-    <div class="card-title">✏️ Edit Template: <em><?= h($editing['MESSAGE_NAME']) ?></em></div>
+    <div class="card-title-row" style="display:flex;align-items:baseline;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+        <div class="card-title" style="margin-bottom:0;">✏️ Edit Template: <em><?= h($editing['MESSAGE_NAME']) ?></em></div>
+        <div style="font-size:0.8rem;color:#999;white-space:nowrap;">Last updated: <?= date('M j, Y g:ia', strtotime($editing['UPDATED_AT'])) ?></div>
+    </div>
     <form method="POST" action="">
         <input type="hidden" name="action"     value="update">
         <input type="hidden" name="message_id" value="<?= h($editing['MESSAGE_ID']) ?>">
@@ -626,7 +629,6 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
                     <th>Template Name</th>
                     <th>Eligible Roles</th>
                     <th>Preview</th>
-                    <th>Last Updated</th>
                     <th></th>
                 </tr>
             </thead>
@@ -655,7 +657,6 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
                         <?php endif; ?>
                     </td>
                     <td class="preview-col"><?= h(mb_substr($tpl['MESSAGE_BODY'], 0, 80)) ?>...</td>
-                    <td class="nowrap date-col"><?= date('M j, Y g:ia', strtotime($tpl['UPDATED_AT'])) ?></td>
                     <td class="nowrap">
                         <?php if (empty($tpl['IS_INTERNAL'])): ?>
                         <a href="?edit=<?= $tpl['MESSAGE_ID'] ?>&show_send=1" class="btn btn-success btn-sm">
