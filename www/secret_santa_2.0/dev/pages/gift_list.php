@@ -185,9 +185,17 @@ require_once __DIR__ . '/../includes/header.php';
 <?php endif; ?>
 
 <?php if (!$editing && !$addMode): ?>
-<!-- Gift List Table -->
+<!-- Gift List -->
 <div class="card">
-    <div class="card-title">🎄 Your Wish List (<?= count($gifts) ?> gift<?= count($gifts) !== 1 ? 's' : '' ?>)</div>
+    <div class="card-header-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+        <div class="card-title" style="margin-bottom:0;">🎄 Your Wish List (<?= count($gifts) ?> gift<?= count($gifts) !== 1 ? 's' : '' ?>)</div>
+        <?php if (!empty($gifts)): ?>
+        <div class="view-toggle">
+            <button id="btnList" class="toggle-btn active" onclick="setView('list')" title="List view">☰ List</button>
+            <button id="btnGrid" class="toggle-btn"        onclick="setView('grid')" title="Grid view">⊞ Grid</button>
+        </div>
+        <?php endif; ?>
+    </div>
 
     <?php if (empty($gifts)): ?>
     <div class="empty-state">
@@ -195,7 +203,9 @@ require_once __DIR__ . '/../includes/header.php';
         <p>Your list is empty! Click <strong>➕ Add Gift</strong> to get started.</p>
     </div>
     <?php else: ?>
-    <div class="table-wrap">
+
+    <!-- TABLE VIEW -->
+    <div id="viewList" class="table-wrap">
         <table>
             <thead>
                 <tr>
@@ -225,6 +235,29 @@ require_once __DIR__ . '/../includes/header.php';
             </tbody>
         </table>
     </div>
+
+    <!-- GRID VIEW -->
+    <div id="viewGrid" class="wl-gift-grid" style="display:none;">
+        <?php foreach ($gifts as $gift): ?>
+        <div class="wl-gift-card">
+            <div class="wl-gift-icon">
+                <img src="<?= APP_URL ?>/assets/images/img_gift01.png" alt="gift" />
+            </div>
+            <div class="wl-gift-body">
+                <div class="wl-gift-name">
+                    <a href="?edit=<?= $gift['GIFT_ID'] ?>" class="gift-link"><?= h($gift['NAME']) ?></a>
+                </div>
+                <?php if ($gift['DESCRIPTION']): ?>
+                <div class="wl-gift-desc"><?= h($gift['DESCRIPTION']) ?></div>
+                <?php endif; ?>
+                <?php if ($gift['URL']): ?>
+                <a href="<?= h($gift['URL']) ?>" target="_blank" rel="noopener" class="view-link" style="font-size:0.88rem;">View Online ↗</a>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+
     <?php endif; ?>
 </div>
 <?php endif; // end !$editing && !$addMode ?>
@@ -253,12 +286,52 @@ require_once __DIR__ . '/../includes/header.php';
 .btn-danger { background: #c0392b; color: #fff; }
 .btn-danger:hover { opacity: 0.85; }
 
+/* ---- View toggle ---- */
+.view-toggle { display:flex; gap:4px; }
+.toggle-btn {
+    background:transparent; border:1px solid #ddd; border-radius:6px;
+    padding:0.3rem 0.7rem; font-size:0.85rem; cursor:pointer; color:#555;
+    transition:background 0.15s, color 0.15s;
+}
+.toggle-btn:hover { background:#f5f5f5; }
+.toggle-btn.active { background:#c0392b; color:#fff; border-color:#c0392b; }
+
+/* ---- Grid view ---- */
+.wl-gift-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:1rem; }
+.wl-gift-card {
+    background:#fff; border-radius:8px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    padding:1.1rem 1.25rem;
+    display:flex; gap:1rem; align-items:flex-start;
+    border-left:4px solid #c0392b;
+}
+.wl-gift-icon { flex-shrink:0; }
+.wl-gift-icon img { width:48px; height:48px; object-fit:contain; }
+.wl-gift-body { flex:1; }
+.wl-gift-name { margin-bottom:0.3rem; }
+.wl-gift-desc { font-size:0.9rem; color:#555; margin-bottom:0.4rem; line-height:1.5; }
+
 @media (max-width: 600px) {
     table, thead, tbody, th, td, tr { display: block; }
     thead { display: none; }
     tr { border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 0.75rem; padding: 0.75rem; }
     td { border: none; padding: 0.25rem 0; }
+    .wl-gift-grid { grid-template-columns: 1fr; }
 }
 </style>
+
+<script>
+function setView(v) {
+    document.getElementById('viewList').style.display = v === 'list' ? '' : 'none';
+    document.getElementById('viewGrid').style.display = v === 'grid' ? '' : 'none';
+    document.getElementById('btnList').classList.toggle('active', v === 'list');
+    document.getElementById('btnGrid').classList.toggle('active', v === 'grid');
+    localStorage.setItem('wl_view', v);
+}
+(function () {
+    const saved = localStorage.getItem('wl_view');
+    if (saved === 'grid') setView('grid');
+})();
+</script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
