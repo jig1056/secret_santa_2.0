@@ -601,7 +601,7 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 </div>
 <?php endif; ?>
 
-<?php if (!$editing): ?>
+<?php if (!$editing && !$addMode): ?>
 <!-- ============================================================ -->
 <!-- Templates Table                                               -->
 <!-- ============================================================ -->
@@ -675,7 +675,7 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 <!-- ============================================================ -->
 <!-- Send Log Toggle                                               -->
 <!-- ============================================================ -->
-<?php if (!$editing): ?>
+<?php if (!$editing && !$addMode): ?>
 <div id="logToggleRow" style="margin-bottom:1.25rem;">
     <a href="#" class="log-toggle-link" onclick="showLog(); return false;">
         📜 Show Send Log<?php if (!empty($logs)): ?> (<?= count($logs) ?>)<?php endif; ?>
