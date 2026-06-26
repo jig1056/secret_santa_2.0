@@ -33,7 +33,9 @@ if (hasRole('secret_santa') || hasRole('admin')) {
 
 <nav class="navbar">
     <div class="nav-brand">
-        <span class="santa-emoji">🎅🏾</span> <?= h(APP_NAME) ?> <?= h($xmasYear) ?>
+        <a href="<?= APP_URL ?>/pages/home.php" class="nav-brand-link">
+            <span class="santa-emoji">🎅🏾</span> <?= h(APP_NAME) ?> <?= h($xmasYear) ?>
+        </a>
     </div>
 
     <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">&#9776;</button>
