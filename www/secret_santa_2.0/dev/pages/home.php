@@ -40,9 +40,8 @@ require_once __DIR__ . '/../includes/header.php';
 <h1 class="page-title">🎄 Welcome, <?= h($_SESSION['FIRST_NAME']) ?>!</h1>
 
 <!-- Season banner -->
-<div class="card banner-card" style="position:relative;overflow:hidden;">
-    <canvas id="bannerSnow" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></canvas>
-    <div class="banner-inner" style="position:relative;z-index:1;">
+<div class="card banner-card">
+    <div class="banner-inner">
         <div class="banner-icon">🎅🏾</div>
         <div>
             <div class="banner-title">Secret Santa <?= h($xmasYear) ?></div>
@@ -50,81 +49,6 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
     </div>
 </div>
-<script>
-(function () {
-    const canvas = document.getElementById('bannerSnow');
-    const ctx    = canvas.getContext('2d');
-    const COUNT  = 35;
-    let W, H, flakes;
-
-    function resize() {
-        W = canvas.width  = canvas.offsetWidth;
-        H = canvas.height = canvas.offsetHeight;
-    }
-
-    function randomFlake(scatter) {
-        const size = Math.random() * 10 + 6;
-        return {
-            x:       Math.pow(Math.random(), 0.5) * W,
-            y:       scatter ? Math.random() * H : -20,
-            size:    size,
-            speed:   Math.random() * 0.5 + 0.2,
-            drift:   Math.random() * 0.4 - 0.2,
-            sway:    Math.random() * Math.PI * 2,
-            swaySpd: Math.random() * 0.008 + 0.003,
-            rot:     Math.random() * Math.PI / 6,
-            rotSpd:  (Math.random() - 0.5) * 0.004,
-            opacity: Math.random() * 0.35 + 0.25,
-        };
-    }
-
-    function drawFlake(f) {
-        ctx.save();
-        ctx.translate(f.x, f.y);
-        ctx.rotate(f.rot);
-        ctx.strokeStyle = 'rgba(255,255,255,' + f.opacity + ')';
-        ctx.lineWidth   = Math.max(0.8, f.size * 0.08);
-        ctx.lineCap     = 'round';
-        for (let i = 0; i < 6; i++) {
-            ctx.save();
-            ctx.rotate((Math.PI / 3) * i);
-            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -f.size); ctx.stroke();
-            [0.55, 0.78].forEach(function(pct) {
-                const bLen = f.size * 0.3;
-                const py   = -f.size * pct;
-                ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo( bLen * 0.6, py - bLen * 0.6); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(-bLen * 0.6, py - bLen * 0.6); ctx.stroke();
-            });
-            ctx.restore();
-        }
-        ctx.restore();
-    }
-
-    function init() {
-        resize();
-        flakes = Array.from({ length: COUNT }, function() { return randomFlake(true); });
-    }
-
-    function tick() {
-        ctx.clearRect(0, 0, W, H);
-        flakes.forEach(function(f) {
-            drawFlake(f);
-            f.sway += f.swaySpd;
-            f.x    += Math.sin(f.sway) * 0.7 + f.drift;
-            f.y    += f.speed;
-            f.rot  += f.rotSpd;
-            if (f.y > H + 20) Object.assign(f, randomFlake(false));
-            if (f.x > W + 20) f.x = -20;
-            if (f.x < -20)    f.x = W + 20;
-        });
-        requestAnimationFrame(tick);
-    }
-
-    window.addEventListener('resize', resize);
-    init();
-    tick();
-})();
-</script>
 
 <div class="home-grid">
 
