@@ -115,7 +115,7 @@ require_once __DIR__ . '/../includes/header.php';
                 ?>
                 <tr data-name="<?= strtolower(h($user['FIRST_NAME'] . ' ' . $user['LAST_NAME'])) ?>">
                     <td>
-                        <a href="<?= APP_URL ?>/admin/users.php?edit=<?= urlencode($user['USER_ID']) ?>" class="user-name-link">
+                        <a href="<?= APP_URL ?>/admin/users.php?edit=<?= urlencode($user['USER_ID']) ?>&from=dashboard" class="user-name-link">
                             <?= h($user['FIRST_NAME']) ?> <?= h($user['LAST_NAME']) ?>
                         </a>
                         <div class="user-id-small"><?= h($user['USER_ID']) ?></div>

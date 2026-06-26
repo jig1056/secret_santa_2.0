@@ -207,6 +207,9 @@ if (!$editing && isset($_GET['edit']) && $msgType !== 'success') {
     $editing = $stmt->fetch() ?: null;
 }
 
+// Track where the user came from for the back button
+$fromPage = $_GET['from'] ?? $_POST['from'] ?? 'list';
+
 // Current roles for the user being edited
 $editingRoleIds = [];
 if ($editing) {
@@ -289,7 +292,7 @@ require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="page-header">
-    <h1 class="page-title">👥 User Management</h1>
+    <h1 class="page-title">👥 Users</h1>
     <div style="display:flex;gap:0.5rem;">
         <a href="?report=1" class="btn btn-secondary">📋 User Report</a>
         <a href="?add=1" class="btn btn-primary">➕ Add New User</a>
@@ -311,6 +314,7 @@ if ($editing):
     <form method="POST" action="">
         <input type="hidden" name="action"  value="update">
         <input type="hidden" name="user_id" value="<?= h($editing['USER_ID']) ?>">
+        <input type="hidden" name="from"    value="<?= h($fromPage) ?>">
 
         <div class="form-row">
             <div class="form-group">
@@ -389,7 +393,13 @@ if ($editing):
 
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save Changes</button>
-            <a href="<?= APP_URL ?>/admin/users.php" class="btn btn-secondary">Cancel</a>
+            <?php
+            $backUrl  = $fromPage === 'dashboard'
+                ? APP_URL . '/admin/dashboard.php'
+                : APP_URL . '/admin/users.php';
+            $backLabel = $fromPage === 'dashboard' ? '↩ Return to Dashboard' : '↩ Return to List';
+            ?>
+            <a href="<?= $backUrl ?>" class="btn btn-secondary">Cancel</a>
             <button type="button"
                     class="btn <?= $editing['STATUS'] === 'ACTIVE' ? 'btn-warning' : 'btn-success' ?>"
                     onclick="if(confirm('<?= $editing['STATUS'] === 'ACTIVE' ? 'Deactivate' : 'Activate' ?> <?= h($editing['FIRST_NAME']) ?>?')) document.getElementById('frmToggle').submit()">
@@ -399,7 +409,7 @@ if ($editing):
                     onclick="if(confirm('Send a password reset email to <?= h($editing['FIRST_NAME']) ?>?')) document.getElementById('frmReset').submit()">
                 Reset Password
             </button>
-            <a href="<?= APP_URL ?>/admin/users.php" class="btn btn-secondary">↩ Return to List</a>
+            <a href="<?= $backUrl ?>" class="btn btn-secondary"><?= $backLabel ?></a>
         </div>
     </form>
 </div>
