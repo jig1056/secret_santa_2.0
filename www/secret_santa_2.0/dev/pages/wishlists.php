@@ -196,7 +196,8 @@ if ($selectedUserId) {
                 h($xmasYear) . ' Christmas List',
                 $innerBody,
                 $xmasYear,
-                true   // $bodyIsHtml — inner body is already HTML
+                true,                              // $bodyIsHtml — inner body is already HTML
+                $_SESSION['FIRST_NAME'] ?? ''      // greeting for the logged-in user receiving the email
             );
 
             $currentUserEmail = $_SESSION['EMAIL']      ?? '';

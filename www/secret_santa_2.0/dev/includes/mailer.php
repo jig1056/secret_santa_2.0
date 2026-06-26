@@ -71,45 +71,92 @@ function sendSMS(string $to, string $body): bool|string {
 
 // ------------------------------------------------------------
 // wrapHtmlEmail()
-// Wraps a plain-text message body in the standard Secret Santa
-// HTML email chrome (red header, white body, grey footer).
+// Wraps email content in the Secret Santa chrome:
+//   dark-red header → warm-cream body → near-black footer.
 //
-// $title    - heading text shown in the red banner
-// $subtitle - smaller line below the heading
-// $bodyText - raw plain text; will be HTML-escaped and nl2br'd
-// $year     - year shown in the footer
+// $title      - main heading shown in the cream body
+// $subtitle   - gold label shown above the app name in the red header
+//               (e.g. "MATCH NOTIFICATION", "PASSWORD RESET")
+// $bodyText   - message body; plain text unless $bodyIsHtml = true
+// $year       - year shown in the footer
+// $bodyIsHtml - set true when $bodyText is pre-built HTML
+// $firstName  - when provided, adds a "HELLO, {NAME}!" greeting
+//
+// Spark/iOS-Mail rules applied here:
+//   • always set bgcolor attribute alongside style background-color
+//   • no opacity (Spark silently drops the element)
+//   • no border-radius
+//   • no CSS background shorthand — use background-color
 // ------------------------------------------------------------
-function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string $year, bool $bodyIsHtml = false): string {
+function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string $year, bool $bodyIsHtml = false, string $firstName = ''): string {
     $appName   = defined('APP_NAME') ? APP_NAME : 'Secret Santa';
-    $safeTitle = htmlspecialchars($title,    ENT_QUOTES, 'UTF-8');
-    $safeSub   = htmlspecialchars($subtitle, ENT_QUOTES, 'UTF-8');
+    $safeApp   = htmlspecialchars($appName,               ENT_QUOTES, 'UTF-8');
+    $safeTitle = htmlspecialchars($title,                 ENT_QUOTES, 'UTF-8');
+    $safeSub   = htmlspecialchars(strtoupper($subtitle),  ENT_QUOTES, 'UTF-8');
+    $safeYear  = htmlspecialchars($year,                  ENT_QUOTES, 'UTF-8');
     $safeBody  = $bodyIsHtml ? $bodyText : nl2br(htmlspecialchars($bodyText, ENT_QUOTES, 'UTF-8'));
-    $safeApp   = htmlspecialchars($appName,  ENT_QUOTES, 'UTF-8');
-    $safeYear  = htmlspecialchars($year,     ENT_QUOTES, 'UTF-8');
 
-    // Use table-based layout — div backgrounds are stripped by Spark/iOS Mail
+    // Optional supertitle in red header (e.g. "✦ MATCH NOTIFICATION ✦")
+    $supertitleHtml = $safeSub ? "
+            <p style=\"margin:0 0 10px 0;color:#d4a843;font-family:Arial,Helvetica,sans-serif;font-size:10px;letter-spacing:4px;text-align:center;\">
+              &#10022; &nbsp; {$safeSub} &nbsp; &#10022;
+            </p>" : '';
+
+    // Optional personalised greeting ("HELLO, MARK!")
+    $greetingHtml = $firstName ? "
+            <p style=\"margin:0 0 14px 0;color:#c9a227;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;text-align:center;\">
+              HELLO, " . htmlspecialchars(strtoupper($firstName), ENT_QUOTES, 'UTF-8') . "!
+            </p>" : '';
+
     return "
-<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"
-       style=\"font-family:Arial,sans-serif;max-width:680px;margin:0 auto;\">
-    <!-- Header -->
-    <tr>
-        <td bgcolor=\"#c0392b\" style=\"background:#c0392b;padding:20px 24px;border-radius:8px 8px 0 0;\">
-            <h2 style=\"margin:0;color:#ffffff;font-size:1.2rem;\">🎁 {$safeTitle}</h2>
-            <p style=\"margin:6px 0 0;color:#ffffff;opacity:0.85;font-size:0.9rem;\">{$safeSub}</p>
-        </td>
-    </tr>
-    <!-- Body -->
-    <tr>
-        <td bgcolor=\"#ffffff\" style=\"background:#ffffff;padding:24px;color:#333333;font-size:0.97rem;line-height:1.7;\">
-            {$safeBody}
-        </td>
-    </tr>
-    <!-- Footer -->
-    <tr>
-        <td bgcolor=\"#f5f5f5\" style=\"background:#f5f5f5;padding:14px 24px;border-radius:0 0 8px 8px;font-size:0.82rem;color:#888888;\">
-            Sent from {$safeApp} &bull; {$safeYear}
-        </td>
-    </tr>
+<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" bgcolor=\"#f0e9d8\"
+       style=\"background-color:#f0e9d8;font-family:Arial,Helvetica,sans-serif;\">
+  <tr>
+    <td align=\"center\" style=\"padding:24px 16px;\">
+
+      <table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"
+             style=\"width:100%;max-width:600px;\">
+
+        <!-- ── RED HEADER ── -->
+        <tr>
+          <td bgcolor=\"#b22020\" align=\"center\"
+              style=\"background-color:#b22020;padding:28px 32px 24px 32px;\">{$supertitleHtml}
+            <h1 style=\"margin:0;color:#ffffff;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:bold;line-height:1.2;\">
+              &#127873; {$safeApp}
+            </h1>
+          </td>
+        </tr>
+
+        <!-- ── CREAM BODY ── -->
+        <tr>
+          <td bgcolor=\"#f0e9d8\" align=\"center\"
+              style=\"background-color:#f0e9d8;padding:36px 40px 32px 40px;\">
+            <p style=\"margin:0 0 20px 0;color:#c9a227;font-size:20px;text-align:center;letter-spacing:10px;\">&#10052; &#10052; &#10052;</p>
+            {$greetingHtml}
+            <h2 style=\"margin:0 0 24px 0;color:#1c0f0c;font-family:Georgia,'Times New Roman',serif;font-size:24px;line-height:1.3;text-align:center;\">{$safeTitle}</h2>
+            <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">
+              <tr>
+                <td style=\"border-top:1px solid #d9ceb8;padding-top:24px;color:#444444;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.7;text-align:left;\">
+                  {$safeBody}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ── DARK FOOTER ── -->
+        <tr>
+          <td bgcolor=\"#1c0f0c\" align=\"center\"
+              style=\"background-color:#1c0f0c;padding:18px 32px;\">
+            <p style=\"margin:0;color:#d4a843;font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:1px;\">
+              Sent from {$safeApp} &bull; {$safeYear}
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
 </table>";
 }
 
@@ -168,7 +215,8 @@ function sendPasswordReset(array $user, PDO $pdo): bool|string {
         $template['MESSAGE_NAME'] ?? 'Password Reset',
         $htmlBody,
         $xmasYear,
-        true  // body is already HTML
+        true,               // body is already HTML
+        $user['FIRST_NAME']
     );
 
     return sendMail($user['EMAIL'], $user['FIRST_NAME'] . ' ' . $user['LAST_NAME'], $subject, $wrappedBody, true);

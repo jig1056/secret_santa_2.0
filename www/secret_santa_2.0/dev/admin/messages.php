@@ -255,7 +255,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             getConfig('MAIL_SUBJECT', 'Secret Santa'),
                             $template['MESSAGE_NAME'],
                             $plainBody,
-                            $xmasYear
+                            $xmasYear,
+                            false,
+                            $recipient['FIRST_NAME']
                         );
                         $mailResult = sendMailBulk($bulkMailer, $recipient['EMAIL'], $toName, $subject, $htmlBody, true);
                         if ($mailResult !== true) {
