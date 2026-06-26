@@ -71,93 +71,90 @@ function sendSMS(string $to, string $body): bool|string {
 
 // ------------------------------------------------------------
 // wrapHtmlEmail()
-// Wraps email content in the Secret Santa chrome:
-//   dark-red header → warm-cream body → near-black footer.
+// Wraps email content in the Secret Santa chrome.
+// Design mirrors the Claude Design sample (sample_chrstmasEmail.php):
+//   warm-cream outer → gold-bordered inner → dark-red header
+//   → light-cream body → near-black footer.
 //
-// $title      - main heading shown in the cream body
-// $subtitle   - gold label shown above the app name in the red header
-//               (e.g. "MATCH NOTIFICATION", "PASSWORD RESET")
+// $title      - main heading shown in the cream body (Georgia serif)
+// $subtitle   - small gold label in the red header above the app name
+//               (e.g. "Match Notification", "Password Reset")
 // $bodyText   - message body; plain text unless $bodyIsHtml = true
 // $year       - year shown in the footer
 // $bodyIsHtml - set true when $bodyText is pre-built HTML
-// $firstName  - when provided, adds a "HELLO, {NAME}!" greeting
-//
-// Spark/iOS-Mail rules applied here:
-//   • always set bgcolor attribute alongside style background-color
-//   • no opacity (Spark silently drops the element)
-//   • no border-radius
-//   • no CSS background shorthand — use background-color
+// $firstName  - when provided, adds a "Hello, {Name}!" greeting
 // ------------------------------------------------------------
 function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string $year, bool $bodyIsHtml = false, string $firstName = ''): string {
     $appName   = defined('APP_NAME') ? APP_NAME : 'Secret Santa';
-    $safeApp   = htmlspecialchars($appName,               ENT_QUOTES, 'UTF-8');
-    $safeTitle = htmlspecialchars($title,                 ENT_QUOTES, 'UTF-8');
-    $safeSub   = htmlspecialchars(strtoupper($subtitle),  ENT_QUOTES, 'UTF-8');
-    $safeYear  = htmlspecialchars($year,                  ENT_QUOTES, 'UTF-8');
+    $safeApp   = htmlspecialchars($appName,  ENT_QUOTES, 'UTF-8');
+    $safeTitle = htmlspecialchars($title,    ENT_QUOTES, 'UTF-8');
+    $safeSub   = htmlspecialchars($subtitle, ENT_QUOTES, 'UTF-8');  // CSS handles uppercase
+    $safeYear  = htmlspecialchars($year,     ENT_QUOTES, 'UTF-8');
     $safeBody  = $bodyIsHtml ? $bodyText : nl2br(htmlspecialchars($bodyText, ENT_QUOTES, 'UTF-8'));
+    $safeName  = htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8');
 
-    // Optional supertitle in red header (e.g. "✦ MATCH NOTIFICATION ✦")
-    $supertitleHtml = $safeSub ? "
-            <p style=\"margin:0 0 10px 0;color:#d4a843;font-family:Arial,Helvetica,sans-serif;font-size:10px;letter-spacing:4px;text-align:center;\">
-              &#10022; &nbsp; {$safeSub} &nbsp; &#10022;
-            </p>" : '';
+    // Optional supertitle: "✦  Match Notification  ✦"
+    $supertitleHtml = $safeSub
+        ? '<p style="margin:0 0 12px 0;font-size:12px;color:#C9922A;font-family:Arial,sans-serif;letter-spacing:2px;text-transform:uppercase;">&#10022; &nbsp; ' . $safeSub . ' &nbsp; &#10022;</p>'
+        : '';
 
-    // Optional personalised greeting ("HELLO, MARK!")
-    $greetingHtml = $firstName ? "
-            <p style=\"margin:0 0 14px 0;color:#c9a227;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;text-align:center;\">
-              HELLO, " . htmlspecialchars(strtoupper($firstName), ENT_QUOTES, 'UTF-8') . "!
-            </p>" : '';
+    // Optional greeting: "Hello, Mark!"
+    $greetingHtml = $safeName
+        ? '<p style="margin:0 0 8px 0;font-size:12px;color:#C9922A;font-family:Arial,sans-serif;letter-spacing:1.5px;text-transform:uppercase;">Hello, ' . $safeName . '!</p>'
+        : '';
 
-    return "
-<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" bgcolor=\"#f0e9d8\"
-       style=\"background-color:#f0e9d8;font-family:Arial,Helvetica,sans-serif;\">
-  <tr>
-    <td align=\"center\" style=\"padding:24px 16px;\">
+    return '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!--[if mso]><style>body,table,td,p,a{font-family:Arial,sans-serif!important;}</style><![endif]-->
+</head>
+<body style="margin:0;padding:0;background-color:#F0E8DA;">
+<table border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#F0E8DA">
+  <tr><td align="center" style="padding:30px 10px;">
+  <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;border-top:4px solid #C9922A;">
 
-      <table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"
-             style=\"width:100%;max-width:600px;\">
+    <!-- Header -->
+    <tr>
+      <td align="center" bgcolor="#B5271C" style="background-color:#B5271C;padding:34px 40px 28px;">
+        ' . $supertitleHtml . '
+        <p style="margin:0;font-size:30px;color:#ffffff;font-family:Georgia,\'Times New Roman\',serif;font-weight:normal;">&#127873; ' . $safeApp . '</p>
+      </td>
+    </tr>
 
-        <!-- ── RED HEADER ── -->
-        <tr>
-          <td bgcolor=\"#b22020\" align=\"center\"
-              style=\"background-color:#b22020;padding:28px 32px 24px 32px;\">{$supertitleHtml}
-            <h1 style=\"margin:0;color:#ffffff;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:bold;line-height:1.2;\">
-              &#127873; {$safeApp}
-            </h1>
-          </td>
-        </tr>
+    <!-- Snowflakes -->
+    <tr>
+      <td align="center" bgcolor="#FDF8F0" style="background-color:#FDF8F0;padding:14px 40px 2px;">
+        <p style="margin:0;font-size:15px;color:#C9922A;letter-spacing:10px;">&#10052; &#10052; &#10052;</p>
+      </td>
+    </tr>
 
-        <!-- ── CREAM BODY ── -->
-        <tr>
-          <td bgcolor=\"#f0e9d8\" align=\"center\"
-              style=\"background-color:#f0e9d8;padding:36px 40px 32px 40px;\">
-            <p style=\"margin:0 0 20px 0;color:#c9a227;font-size:20px;text-align:center;letter-spacing:10px;\">&#10052; &#10052; &#10052;</p>
-            {$greetingHtml}
-            <h2 style=\"margin:0 0 24px 0;color:#1c0f0c;font-family:Georgia,'Times New Roman',serif;font-size:24px;line-height:1.3;text-align:center;\">{$safeTitle}</h2>
-            <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">
-              <tr>
-                <td style=\"border-top:1px solid #d9ceb8;padding-top:24px;color:#444444;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.7;text-align:left;\">
-                  {$safeBody}
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
+    <!-- Body -->
+    <tr>
+      <td align="center" bgcolor="#FDF8F0" style="background-color:#FDF8F0;padding:24px 48px 36px;">
+        ' . $greetingHtml . '
+        <p style="margin:0 0 20px 0;font-size:27px;color:#2C1A0E;font-family:Georgia,serif;font-weight:normal;line-height:1.35;">' . $safeTitle . '</p>
+        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+          <tr><td style="border-top:1px solid #E8D8C0;padding-top:20px;font-size:15px;color:#5A4030;font-family:Arial,sans-serif;line-height:1.75;text-align:left;">
+            ' . $safeBody . '
+          </td></tr>
+        </table>
+      </td>
+    </tr>
 
-        <!-- ── DARK FOOTER ── -->
-        <tr>
-          <td bgcolor=\"#1c0f0c\" align=\"center\"
-              style=\"background-color:#1c0f0c;padding:18px 32px;\">
-            <p style=\"margin:0;color:#d4a843;font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:1px;\">
-              Sent from {$safeApp} &bull; {$safeYear}
-            </p>
-          </td>
-        </tr>
+    <!-- Footer -->
+    <tr>
+      <td align="center" bgcolor="#2C1A0E" style="background-color:#2C1A0E;padding:22px 40px;">
+        <p style="margin:0;font-size:12px;color:#C9922A;font-family:Arial,sans-serif;letter-spacing:1px;">Sent from ' . $safeApp . ' &bull; ' . $safeYear . '</p>
+      </td>
+    </tr>
 
-      </table>
-    </td>
-  </tr>
-</table>";
+  </table>
+  </td></tr>
+</table>
+</body>
+</html>';
 }
 
 // ------------------------------------------------------------
