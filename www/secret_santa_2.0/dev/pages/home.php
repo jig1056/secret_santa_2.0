@@ -63,14 +63,17 @@ require_once __DIR__ . '/../includes/header.php';
         canvas.width  = w;
         canvas.height = h;
         dots = [];
-        const count = Math.floor((w * h) / 2800);
+        const count = Math.floor((w * h) / 1400);
         for (let i = 0; i < count; i++) {
+            // Bias x toward the right: square root of a uniform random
+            // pushes most values into the upper half of the range
+            const xRand = Math.pow(Math.random(), 0.5);
             dots.push({
-                x:    Math.random() * w,
+                x:    xRand * w,
                 y:    Math.random() * h,
                 glyph: flakes[Math.floor(Math.random() * flakes.length)],
-                size: 9 + Math.random() * 10,
-                alpha: 0.06 + Math.random() * 0.10
+                size: 9 + Math.random() * 13,
+                alpha: 0.06 + Math.random() * 0.13
             });
         }
         ctx.clearRect(0, 0, w, h);
