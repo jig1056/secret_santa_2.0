@@ -402,7 +402,7 @@ require_once __DIR__ . '/../includes/header.php';
             <label for="message_body">Message Body <span class="required">*</span></label>
             <textarea id="message_body" name="message_body" required rows="5"
                       placeholder="Use {FIRST_NAME}, {LAST_NAME}, {YEAR} as placeholders."><?= h($_POST['message_body'] ?? '') ?></textarea>
-            <div class="field-hint">Placeholders: <code>{FIRST_NAME}</code> <code>{LAST_NAME}</code> <code>{YEAR}</code> <code>{GIFT_DEADLINE}</code> <code>{SANTA_MATCH_DATE}</code> <code>{PASSWORD_RESET_LINK}</code> <code>{RESET_TOKEN_EXPIRY_MINS}</code></div>
+            <div class="field-hint">Placeholders: <code>{FIRST_NAME}</code> <code>{LAST_NAME}</code> <code>{YEAR}</code> <code>{GIFT_DEADLINE}</code> <code>{SANTA_MATCH_DATE}</code> <code>{PASSWORD_RESET_LINK}</code> <code>{RESET_TOKEN_EXPIRY_MINS}</code> <code>{WEB_SITE_URL}</code></div>
         </div>
         <div class="form-group">
             <label>Eligible Roles <span class="required">*</span></label>
@@ -458,7 +458,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <div class="form-group">
             <label for="message_body">Message Body <span class="required">*</span></label>
             <textarea id="message_body" name="message_body" required rows="5"><?= h($editing['MESSAGE_BODY']) ?></textarea>
-            <div class="field-hint">Placeholders: <code>{FIRST_NAME}</code> <code>{LAST_NAME}</code> <code>{YEAR}</code> <code>{GIFT_DEADLINE}</code> <code>{SANTA_MATCH_DATE}</code> <code>{PASSWORD_RESET_LINK}</code> <code>{RESET_TOKEN_EXPIRY_MINS}</code></div>
+            <div class="field-hint">Placeholders: <code>{FIRST_NAME}</code> <code>{LAST_NAME}</code> <code>{YEAR}</code> <code>{GIFT_DEADLINE}</code> <code>{SANTA_MATCH_DATE}</code> <code>{PASSWORD_RESET_LINK}</code> <code>{RESET_TOKEN_EXPIRY_MINS}</code> <code>{WEB_SITE_URL}</code></div>
         </div>
         <div class="form-group">
             <label>Eligible Roles <span class="required">*</span></label>
@@ -575,8 +575,8 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
         <div class="preview-box">
             <div class="preview-label">Preview <span class="preview-note">(shown with placeholder values)</span></div>
             <div class="preview-body"><?= nl2br(h(str_replace(
-                ['{FIRST_NAME}', '{LAST_NAME}', '{YEAR}', '{GIFT_DEADLINE}', '{SANTA_MATCH_DATE}', '{PASSWORD_RESET_LINK}', '{RESET_EXPIRY_MINS}', '{RESET_TOKEN_EXPIRY_MINS}'],
-                ['Chanda', 'Williams', getConfig('XMAS_YEAR', date('Y')), getConfig('GIFT_DEADLINE', 'TBD'), getConfig('SANTA_MATCH_DATE', 'TBD'), APP_URL . '/reset_password.php', getConfig('RESET_TOKEN_EXPIRY_MINS', '30'), getConfig('RESET_TOKEN_EXPIRY_MINS', '30')],
+                ['{FIRST_NAME}', '{LAST_NAME}', '{YEAR}', '{GIFT_DEADLINE}', '{SANTA_MATCH_DATE}', '{PASSWORD_RESET_LINK}', '{RESET_EXPIRY_MINS}', '{RESET_TOKEN_EXPIRY_MINS}', '{WEB_SITE_URL}'],
+                ['Chanda', 'Williams', getConfig('XMAS_YEAR', date('Y')), getConfig('GIFT_DEADLINE', 'TBD'), getConfig('SANTA_MATCH_DATE', 'TBD'), APP_URL . '/reset_password.php', getConfig('RESET_TOKEN_EXPIRY_MINS', '30'), getConfig('RESET_TOKEN_EXPIRY_MINS', '30'), APP_URL],
                 $editing['MESSAGE_BODY']
             ))) ?></div>
         </div>
