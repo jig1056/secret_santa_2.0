@@ -31,16 +31,17 @@ if (hasRole('secret_santa') || hasRole('admin')) {
 </head>
 <body>
 
-<nav class="navbar">
-    <div class="nav-brand">
+<nav class="navbar" style="position:relative;overflow:hidden;">
+    <canvas id="navSnow" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
+    <div class="nav-brand" style="position:relative;z-index:1;">
         <a href="<?= APP_URL ?>/pages/home.php" class="nav-brand-link">
             <span class="santa-emoji">🎅🏾</span> <?= h(APP_NAME) ?> <?= h($xmasYear) ?>
         </a>
     </div>
 
-    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">&#9776;</button>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" style="position:relative;z-index:1;">&#9776;</button>
 
-    <ul class="nav-links" id="navLinks">
+    <ul class="nav-links" id="navLinks" style="position:relative;z-index:1;">
         <li><a href="<?= APP_URL ?>/pages/home.php">Home</a></li>
 
         <?php if (hasRole('secret_santa') || hasRole('admin') || hasRole('wishlist_only')): ?>
@@ -73,5 +74,79 @@ if (hasRole('secret_santa') || hasRole('admin')) {
         <li><a href="<?= APP_URL ?>/logout.php">Logout</a></li>
     </ul>
 </nav>
+<script>
+(function () {
+    const canvas = document.getElementById('navSnow');
+    const ctx    = canvas.getContext('2d');
+    const COUNT  = 30;
+    let W, H, flakes;
+
+    function resize() {
+        W = canvas.width  = canvas.offsetWidth;
+        H = canvas.height = canvas.offsetHeight;
+    }
+
+    function randomFlake(scatter) {
+        const size = Math.random() * 8 + 4;
+        return {
+            x:       Math.random() * W,
+            y:       scatter ? Math.random() * H : -20,
+            size:    size,
+            speed:   Math.random() * 0.4 + 0.15,
+            drift:   Math.random() * 0.4 - 0.2,
+            sway:    Math.random() * Math.PI * 2,
+            swaySpd: Math.random() * 0.008 + 0.003,
+            rot:     Math.random() * Math.PI / 6,
+            rotSpd:  (Math.random() - 0.5) * 0.004,
+            opacity: Math.random() * 0.3 + 0.15,
+        };
+    }
+
+    function drawFlake(f) {
+        ctx.save();
+        ctx.translate(f.x, f.y);
+        ctx.rotate(f.rot);
+        ctx.strokeStyle = 'rgba(255,255,255,' + f.opacity + ')';
+        ctx.lineWidth   = Math.max(0.7, f.size * 0.08);
+        ctx.lineCap     = 'round';
+        for (let i = 0; i < 6; i++) {
+            ctx.save();
+            ctx.rotate((Math.PI / 3) * i);
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -f.size); ctx.stroke();
+            [0.55, 0.78].forEach(function(pct) {
+                const bLen = f.size * 0.3, py = -f.size * pct;
+                ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo( bLen * 0.6, py - bLen * 0.6); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(-bLen * 0.6, py - bLen * 0.6); ctx.stroke();
+            });
+            ctx.restore();
+        }
+        ctx.restore();
+    }
+
+    function init() {
+        resize();
+        flakes = Array.from({ length: COUNT }, function() { return randomFlake(true); });
+    }
+
+    function tick() {
+        ctx.clearRect(0, 0, W, H);
+        flakes.forEach(function(f) {
+            drawFlake(f);
+            f.sway += f.swaySpd;
+            f.x    += Math.sin(f.sway) * 0.7 + f.drift;
+            f.y    += f.speed;
+            f.rot  += f.rotSpd;
+            if (f.y > H + 20) Object.assign(f, randomFlake(false));
+            if (f.x > W + 20) f.x = -20;
+            if (f.x < -20)    f.x = W + 20;
+        });
+        requestAnimationFrame(tick);
+    }
+
+    window.addEventListener('resize', resize);
+    init();
+    tick();
+})();
+</script>
 
 <main class="container">
