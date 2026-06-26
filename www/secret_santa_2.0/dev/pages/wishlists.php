@@ -156,50 +156,48 @@ if ($selectedUserId) {
             $emailStmt->execute([$selectedUserId, $xmasYear]);
             $emailGifts = $emailStmt->fetchAll();
 
-            // Build HTML email body
+            // Build gift table rows
             $rows = '';
             foreach ($emailGifts as $i => $g) {
                 $purchased = $g['PURCHASED_BY']
-                    ? '<span style="color:#1e8449;font-weight:bold;">✓ Purchased by ' . h($g['PURCHASED_BY_NAME']) . '</span>'
+                    ? '<span style="color:#1e8449;font-weight:bold;">&#10003; Purchased by ' . h($g['PURCHASED_BY_NAME']) . '</span>'
                     : '<span style="color:#999;">Available</span>';
                 $link = $g['URL']
                     ? '<a href="' . h($g['URL']) . '" style="color:#c0392b;">View Online</a>'
-                    : '—';
+                    : '&mdash;';
                 $bg   = ($i % 2 === 0) ? '#f9f9f9' : '#ffffff';
                 $rows .= "
                 <tr style=\"background:{$bg};\">
                     <td style=\"padding:10px 12px;font-weight:600;\">" . h($g['NAME']) . "</td>
-                    <td style=\"padding:10px 12px;color:#555;\">" . ($g['DESCRIPTION'] ? h($g['DESCRIPTION']) : '—') . "</td>
+                    <td style=\"padding:10px 12px;color:#555;\">" . ($g['DESCRIPTION'] ? h($g['DESCRIPTION']) : '&mdash;') . "</td>
                     <td style=\"padding:10px 12px;\">{$link}</td>
                     <td style=\"padding:10px 12px;\">{$purchased}</td>
                 </tr>";
             }
 
-            $emailBody = "
-            <div style=\"font-family:Arial,sans-serif;max-width:680px;margin:0 auto;\">
-                <div style=\"background:#c0392b;color:#fff;padding:20px 24px;border-radius:8px 8px 0 0;\">
-                    <h2 style=\"margin:0;\">🎁 " . h($wishlistUser['FIRST_NAME']) . "'s Christmas List</h2>
-                    <p style=\"margin:6px 0 0;opacity:0.85;\">" . h($xmasYear) . " Christmas List</p>
-                </div>
-                <div style=\"padding:20px 24px;background:#fff;\">
-                    <p style=\"margin:0 0 20px;color:#444;\">" . nl2br($headerText) . "</p>
-                    <table style=\"width:100%;border-collapse:collapse;font-size:0.95rem;\">
-                        <thead>
-                            <tr style=\"background:#922b21;color:#fff;\">
-                                <th style=\"padding:10px 12px;text-align:left;\">Gift</th>
-                                <th style=\"padding:10px 12px;text-align:left;\">Details</th>
-                                <th style=\"padding:10px 12px;text-align:left;\">Link</th>
-                                <th style=\"padding:10px 12px;text-align:left;\">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>{$rows}</tbody>
-                    </table>
-                    " . (empty($emailGifts) ? '<p style="color:#999;text-align:center;padding:20px 0;">No gifts on this list yet.</p>' : '') . "
-                </div>
-                <div style=\"background:#f5f5f5;padding:14px 24px;border-radius:0 0 8px 8px;font-size:0.85rem;color:#888;\">
-                    Sent from " . h(APP_NAME) . " &bull; " . h($xmasYear) . "
-                </div>
-            </div>";
+            // Build inner body HTML (passed to wrapHtmlEmail as pre-built HTML)
+            $innerBody =
+                '<p style="margin:0 0 20px;color:#444;">' . nl2br(htmlspecialchars($headerText, ENT_QUOTES, 'UTF-8')) . '</p>' .
+                '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:0.95rem;">' .
+                    '<thead>' .
+                        '<tr style="background:#922b21;color:#ffffff;">' .
+                            '<th style="padding:10px 12px;text-align:left;">Gift</th>' .
+                            '<th style="padding:10px 12px;text-align:left;">Details</th>' .
+                            '<th style="padding:10px 12px;text-align:left;">Link</th>' .
+                            '<th style="padding:10px 12px;text-align:left;">Status</th>' .
+                        '</tr>' .
+                    '</thead>' .
+                    '<tbody>' . $rows . '</tbody>' .
+                '</table>' .
+                (empty($emailGifts) ? '<p style="color:#999;text-align:center;padding:20px 0;">No gifts on this list yet.</p>' : '');
+
+            $emailBody = wrapHtmlEmail(
+                h($wishlistUser['FIRST_NAME']) . "'s Christmas List",
+                h($xmasYear) . ' Christmas List',
+                $innerBody,
+                $xmasYear,
+                true   // $bodyIsHtml — inner body is already HTML
+            );
 
             $currentUserEmail = $_SESSION['EMAIL']      ?? '';
             $currentUserName  = ($_SESSION['FIRST_NAME'] ?? '') . ' ' . ($_SESSION['LAST_NAME'] ?? '');
