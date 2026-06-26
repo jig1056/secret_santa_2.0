@@ -163,12 +163,12 @@ if ($selectedUserId) {
                     ? '<span style="color:#1e8449;font-weight:bold;">Yes</span>'
                     : '<span style="color:#999;">No</span>';
                 $link = $g['URL']
-                    ? '<a href="' . h($g['URL']) . '" style="color:#B5271C;">View Online</a>'
+                    ? '<a href="' . h($g['URL']) . '" style="color:#B5271C;">View</a>'
                     : '&mdash;';
                 $bg = '#FDF8F0'; // match email body background
                 $rows .= "
                 <tr style=\"background-color:{$bg};\">
-                    <td style=\"padding:10px 12px;font-weight:600;\">" . h($g['NAME']) . "</td>
+                    <td style=\"padding:10px 12px;font-weight:600;text-align:left;\">" . h($g['NAME']) . "</td>
                     <td style=\"padding:10px 12px;color:#5A4030;\">" . ($g['DESCRIPTION'] ? h($g['DESCRIPTION']) : '&mdash;') . "</td>
                     <td style=\"padding:10px 12px;\">{$link}</td>
                     <td style=\"padding:10px 12px;\">{$purchased}</td>
