@@ -40,15 +40,6 @@ require_once __DIR__ . '/../includes/header.php';
 
 <h1 class="page-title">🎁 <?= h($match['FIRST_NAME']) ?>'s Wish List</h1>
 
-<div class="card match-banner">
-    <div class="match-inner">
-        <div class="match-icon">🤫</div>
-        <div>
-            <div class="match-title">You are <strong><?= h($match['FIRST_NAME']) ?>'s</strong> Secret Santa this year!</div>
-            <div class="match-sub">Remember — $50 budget. Keep it a secret! 🎄</div>
-        </div>
-    </div>
-</div>
 
 <?php if (empty($gifts)): ?>
 <div class="card">
