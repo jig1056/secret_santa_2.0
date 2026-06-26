@@ -242,8 +242,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 foreach ($recipients as $recipient) {
                     $expiryMins = (int) getConfig('RESET_TOKEN_EXPIRY_MINS', 30);
                     $plainBody = str_replace(
-                        ['{FIRST_NAME}', '{LAST_NAME}', '{YEAR}', '{GIFT_DEADLINE}', '{SANTA_MATCH_DATE}', '{PASSWORD_RESET_LINK}', '{RESET_EXPIRY_MINS}', '{RESET_TOKEN_EXPIRY_MINS}'],
-                        [$recipient['FIRST_NAME'], $recipient['LAST_NAME'], $xmasYear, getConfig('GIFT_DEADLINE', 'TBD'), getConfig('SANTA_MATCH_DATE', 'TBD'), APP_URL . '/reset_password.php', $expiryMins, $expiryMins],
+                        ['{FIRST_NAME}', '{LAST_NAME}', '{YEAR}', '{GIFT_DEADLINE}', '{SANTA_MATCH_DATE}', '{PASSWORD_RESET_LINK}', '{RESET_EXPIRY_MINS}', '{RESET_TOKEN_EXPIRY_MINS}', '{WEB_SITE_URL}'],
+                        [$recipient['FIRST_NAME'], $recipient['LAST_NAME'], $xmasYear, getConfig('GIFT_DEADLINE', 'TBD'), getConfig('SANTA_MATCH_DATE', 'TBD'), APP_URL . '/reset_password.php', $expiryMins, $expiryMins, APP_URL],
                         $template['MESSAGE_BODY']
                     );
                     $toName = $recipient['FIRST_NAME'] . ' ' . $recipient['LAST_NAME'];
