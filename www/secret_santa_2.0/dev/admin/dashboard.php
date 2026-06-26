@@ -63,23 +63,19 @@ require_once __DIR__ . '/../includes/header.php';
 <!-- Summary stat cards -->
 <div class="stat-grid">
     <div class="stat-card">
-        <div class="stat-icon">👥</div>
-        <div class="stat-value"><?= $totalUsers ?></div>
+        <div class="stat-main"><span class="stat-icon">👥</span><span class="stat-value"><?= $totalUsers ?></span></div>
         <div class="stat-label">Participants</div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon">🎁</div>
-        <div class="stat-value"><?= $totalGifts ?></div>
+        <div class="stat-main"><span class="stat-icon">🎁</span><span class="stat-value"><?= $totalGifts ?></span></div>
         <div class="stat-label">Total Gifts Added</div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon">📋</div>
-        <div class="stat-value"><?= $avgGifts ?></div>
+        <div class="stat-main"><span class="stat-icon">📋</span><span class="stat-value"><?= $avgGifts ?></span></div>
         <div class="stat-label">Avg Gifts / User</div>
     </div>
     <div class="stat-card <?= $matchesDone ? 'stat-card-green' : 'stat-card-gold' ?>">
-        <div class="stat-icon"><?= $matchesDone ? '✅' : '⏳' ?></div>
-        <div class="stat-value"><?= $matchesDone ? $totalMatches : '—' ?></div>
+        <div class="stat-main"><span class="stat-icon"><?= $matchesDone ? '✅' : '⏳' ?></span><span class="stat-value"><?= $matchesDone ? $totalMatches : '—' ?></span></div>
         <div class="stat-label"><?= $matchesDone ? 'Matches Made' : 'Matches Pending' ?></div>
     </div>
 </div>
@@ -150,15 +146,16 @@ require_once __DIR__ . '/../includes/header.php';
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    padding: 0.65rem 1rem;
+    padding: 0.5rem 0.9rem;
     text-align: center;
     border-top: 4px solid #c0392b;
 }
 .stat-card-green { border-top-color: #1e8449; }
 .stat-card-gold  { border-top-color: #d4ac0d; }
-.stat-icon  { font-size: 1.3rem; margin-bottom: 0.2rem; }
+.stat-main  { display: flex; align-items: center; justify-content: center; gap: 0.4rem; }
+.stat-icon  { font-size: 1.2rem; }
 .stat-value { font-size: 1.4rem; font-weight: 700; color: #212529; line-height: 1; }
-.stat-label { font-size: 0.8rem; color: #777; margin-top: 0.2rem; }
+.stat-label { font-size: 0.78rem; color: #777; margin-top: 0.15rem; }
 
 /* Dashboard table */
 .card-header-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; }
