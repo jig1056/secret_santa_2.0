@@ -95,12 +95,12 @@ function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string
 
     // Optional supertitle: "✦  Match Notification  ✦"
     $supertitleHtml = $safeSub
-        ? '<p style="margin:0 0 12px 0;font-size:12px;color:#C9922A;font-family:Arial,sans-serif;letter-spacing:2px;text-transform:uppercase;">&#10022; &nbsp; ' . $safeSub . ' &nbsp; &#10022;</p>'
+        ? '<p class="supertitle" style="margin:0 0 12px 0;font-size:13px;color:#C9922A;font-family:Arial,sans-serif;letter-spacing:2px;text-transform:uppercase;">&#10022; &nbsp; ' . $safeSub . ' &nbsp; &#10022;</p>'
         : '';
 
     // Optional greeting: "Hello, Mark!"
     $greetingHtml = $safeName
-        ? '<p style="margin:0 0 8px 0;font-size:12px;color:#C9922A;font-family:Arial,sans-serif;letter-spacing:1.5px;text-transform:uppercase;">Hello, ' . $safeName . '!</p>'
+        ? '<p class="greeting" style="margin:0 0 8px 0;font-size:13px;color:#C9922A;font-family:Arial,sans-serif;letter-spacing:1.5px;text-transform:uppercase;">Hello, ' . $safeName . '!</p>'
         : '';
 
     return '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -109,34 +109,48 @@ function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <!--[if mso]><style>body,table,td,p,a{font-family:Arial,sans-serif!important;}</style><![endif]-->
+  <style type="text/css">
+    @media (max-width:620px) {
+      .inner-table  { width:100% !important; }
+      .hdr-td       { padding:24px 20px 20px !important; }
+      .hdr-title    { font-size:24px !important; }
+      .snow-td      { padding:12px 20px 2px !important; }
+      .body-td      { padding:20px 24px 28px !important; }
+      .body-heading { font-size:22px !important; }
+      .body-text    { font-size:16px !important; }
+      .foot-td      { padding:18px 20px !important; }
+      .greeting     { font-size:13px !important; }
+      .supertitle   { font-size:12px !important; }
+    }
+  </style>
 </head>
 <body style="margin:0;padding:0;background-color:#F0E8DA;">
 <table border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#F0E8DA">
-  <tr><td align="center" style="padding:30px 10px;">
-  <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;border-top:4px solid #C9922A;border-radius:8px;">
+  <tr><td align="center" style="padding:20px 10px;">
+  <table class="inner-table" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;border-top:4px solid #C9922A;border-radius:8px;">
 
     <!-- Header -->
     <tr>
-      <td align="center" bgcolor="#B5271C" style="background-color:#B5271C;padding:34px 40px 28px;border-radius:8px 8px 0 0;">
+      <td class="hdr-td" align="center" bgcolor="#B5271C" style="background-color:#B5271C;padding:34px 40px 28px;border-radius:8px 8px 0 0;">
         ' . $supertitleHtml . '
-        <p style="margin:0;font-size:30px;color:#ffffff;font-family:Georgia,\'Times New Roman\',serif;font-weight:normal;">&#127873; ' . $safeApp . '</p>
+        <p class="hdr-title" style="margin:0;font-size:30px;color:#ffffff;font-family:Georgia,\'Times New Roman\',serif;font-weight:normal;">&#127873; ' . $safeApp . '</p>
       </td>
     </tr>
 
     <!-- Snowflakes -->
     <tr>
-      <td align="center" bgcolor="#FDF8F0" style="background-color:#FDF8F0;padding:14px 40px 2px;">
+      <td class="snow-td" align="center" bgcolor="#FDF8F0" style="background-color:#FDF8F0;padding:14px 40px 2px;">
         <p style="margin:0;font-size:15px;color:#C9922A;letter-spacing:10px;">&#10052; &#10052; &#10052;</p>
       </td>
     </tr>
 
     <!-- Body -->
     <tr>
-      <td align="center" bgcolor="#FDF8F0" style="background-color:#FDF8F0;padding:24px 48px 36px;">
+      <td class="body-td" align="center" bgcolor="#FDF8F0" style="background-color:#FDF8F0;padding:24px 48px 36px;">
         ' . $greetingHtml . '
-        <p style="margin:0 0 20px 0;font-size:27px;color:#2C1A0E;font-family:Georgia,serif;font-weight:normal;line-height:1.35;">' . $safeTitle . '</p>
+        <p class="body-heading" style="margin:0 0 20px 0;font-size:27px;color:#2C1A0E;font-family:Georgia,serif;font-weight:normal;line-height:1.35;">' . $safeTitle . '</p>
         <table border="0" cellpadding="0" cellspacing="0" width="100%">
-          <tr><td style="border-top:1px solid #E8D8C0;padding-top:20px;font-size:15px;color:#5A4030;font-family:Arial,sans-serif;line-height:1.75;text-align:left;">
+          <tr><td class="body-text" style="border-top:1px solid #E8D8C0;padding-top:20px;font-size:16px;color:#5A4030;font-family:Arial,sans-serif;line-height:1.75;text-align:left;">
             ' . $safeBody . '
           </td></tr>
         </table>
@@ -145,8 +159,8 @@ function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string
 
     <!-- Footer -->
     <tr>
-      <td align="center" bgcolor="#2C1A0E" style="background-color:#2C1A0E;padding:22px 40px;border-radius:0 0 8px 8px;">
-        <p style="margin:0;font-size:12px;color:#C9922A;font-family:Arial,sans-serif;letter-spacing:1px;">Sent from ' . $safeApp . ' &bull; ' . $safeYear . '</p>
+      <td class="foot-td" align="center" bgcolor="#2C1A0E" style="background-color:#2C1A0E;padding:22px 40px;border-radius:0 0 8px 8px;">
+        <p style="margin:0;font-size:13px;color:#C9922A;font-family:Arial,sans-serif;letter-spacing:1px;">Sent from ' . $safeApp . ' &bull; ' . $safeYear . '</p>
       </td>
     </tr>
 
