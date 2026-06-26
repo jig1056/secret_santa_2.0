@@ -150,15 +150,15 @@ require_once __DIR__ . '/../includes/header.php';
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    padding: 1.25rem;
+    padding: 0.65rem 1rem;
     text-align: center;
     border-top: 4px solid #c0392b;
 }
 .stat-card-green { border-top-color: #1e8449; }
 .stat-card-gold  { border-top-color: #d4ac0d; }
-.stat-icon  { font-size: 1.8rem; margin-bottom: 0.4rem; }
-.stat-value { font-size: 2rem; font-weight: 700; color: #212529; line-height: 1; }
-.stat-label { font-size: 0.85rem; color: #777; margin-top: 0.3rem; }
+.stat-icon  { font-size: 1.3rem; margin-bottom: 0.2rem; }
+.stat-value { font-size: 1.4rem; font-weight: 700; color: #212529; line-height: 1; }
+.stat-label { font-size: 0.8rem; color: #777; margin-top: 0.2rem; }
 
 /* Dashboard table */
 .card-header-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; }
