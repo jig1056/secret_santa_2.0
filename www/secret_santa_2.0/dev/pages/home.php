@@ -54,21 +54,44 @@ require_once __DIR__ . '/../includes/header.php';
 (function () {
     const canvas = document.getElementById('bannerSnow');
     const ctx    = canvas.getContext('2d');
+    const COUNT  = 35;
+    let W, H, flakes;
 
-    function drawFlake(x, y, size, rot, opacity) {
+    function resize() {
+        W = canvas.width  = canvas.offsetWidth;
+        H = canvas.height = canvas.offsetHeight;
+    }
+
+    function randomFlake(scatter) {
+        const size = Math.random() * 10 + 6;
+        return {
+            x:       Math.pow(Math.random(), 0.5) * W,
+            y:       scatter ? Math.random() * H : -20,
+            size:    size,
+            speed:   Math.random() * 0.5 + 0.2,
+            drift:   Math.random() * 0.4 - 0.2,
+            sway:    Math.random() * Math.PI * 2,
+            swaySpd: Math.random() * 0.008 + 0.003,
+            rot:     Math.random() * Math.PI / 6,
+            rotSpd:  (Math.random() - 0.5) * 0.004,
+            opacity: Math.random() * 0.35 + 0.25,
+        };
+    }
+
+    function drawFlake(f) {
         ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(rot);
-        ctx.strokeStyle = 'rgba(255,255,255,' + opacity + ')';
-        ctx.lineWidth   = Math.max(0.8, size * 0.08);
+        ctx.translate(f.x, f.y);
+        ctx.rotate(f.rot);
+        ctx.strokeStyle = 'rgba(255,255,255,' + f.opacity + ')';
+        ctx.lineWidth   = Math.max(0.8, f.size * 0.08);
         ctx.lineCap     = 'round';
         for (let i = 0; i < 6; i++) {
             ctx.save();
             ctx.rotate((Math.PI / 3) * i);
-            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -size); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -f.size); ctx.stroke();
             [0.55, 0.78].forEach(function(pct) {
-                const bLen = size * 0.3;
-                const py   = -size * pct;
+                const bLen = f.size * 0.3;
+                const py   = -f.size * pct;
                 ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo( bLen * 0.6, py - bLen * 0.6); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(-bLen * 0.6, py - bLen * 0.6); ctx.stroke();
             });
@@ -77,27 +100,29 @@ require_once __DIR__ . '/../includes/header.php';
         ctx.restore();
     }
 
-    function seed() {
-        const w = canvas.offsetWidth;
-        const h = canvas.offsetHeight;
-        canvas.width  = w;
-        canvas.height = h;
-        ctx.clearRect(0, 0, w, h);
-
-        const count = Math.floor((w * h) / 1200);
-        for (let i = 0; i < count; i++) {
-            // bias x toward the right
-            const x     = Math.pow(Math.random(), 0.5) * w;
-            const y     = Math.random() * h;
-            const size  = 5 + Math.random() * 11;
-            const rot   = Math.random() * Math.PI / 3;
-            const alpha = 0.08 + Math.random() * 0.22;
-            drawFlake(x, y, size, rot, alpha);
-        }
+    function init() {
+        resize();
+        flakes = Array.from({ length: COUNT }, function() { return randomFlake(true); });
     }
 
-    seed();
-    window.addEventListener('resize', seed);
+    function tick() {
+        ctx.clearRect(0, 0, W, H);
+        flakes.forEach(function(f) {
+            drawFlake(f);
+            f.sway += f.swaySpd;
+            f.x    += Math.sin(f.sway) * 0.7 + f.drift;
+            f.y    += f.speed;
+            f.rot  += f.rotSpd;
+            if (f.y > H + 20) Object.assign(f, randomFlake(false));
+            if (f.x > W + 20) f.x = -20;
+            if (f.x < -20)    f.x = W + 20;
+        });
+        requestAnimationFrame(tick);
+    }
+
+    window.addEventListener('resize', resize);
+    init();
+    tick();
 })();
 </script>
 
