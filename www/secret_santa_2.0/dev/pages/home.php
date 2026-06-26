@@ -54,36 +54,46 @@ require_once __DIR__ . '/../includes/header.php';
 (function () {
     const canvas = document.getElementById('bannerSnow');
     const ctx    = canvas.getContext('2d');
-    const flakes = ['❄', '❅', '❆'];
-    let dots = [];
+
+    function drawFlake(x, y, size, rot, opacity) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rot);
+        ctx.strokeStyle = 'rgba(255,255,255,' + opacity + ')';
+        ctx.lineWidth   = Math.max(0.8, size * 0.08);
+        ctx.lineCap     = 'round';
+        for (let i = 0; i < 6; i++) {
+            ctx.save();
+            ctx.rotate((Math.PI / 3) * i);
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -size); ctx.stroke();
+            [0.55, 0.78].forEach(function(pct) {
+                const bLen = size * 0.3;
+                const py   = -size * pct;
+                ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo( bLen * 0.6, py - bLen * 0.6); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(-bLen * 0.6, py - bLen * 0.6); ctx.stroke();
+            });
+            ctx.restore();
+        }
+        ctx.restore();
+    }
 
     function seed() {
         const w = canvas.offsetWidth;
         const h = canvas.offsetHeight;
         canvas.width  = w;
         canvas.height = h;
-        dots = [];
-        const count = Math.floor((w * h) / 1400);
-        for (let i = 0; i < count; i++) {
-            // Bias x toward the right: square root of a uniform random
-            // pushes most values into the upper half of the range
-            const xRand = Math.pow(Math.random(), 0.5);
-            dots.push({
-                x:    xRand * w,
-                y:    Math.random() * h,
-                glyph: flakes[Math.floor(Math.random() * flakes.length)],
-                size: 9 + Math.random() * 13,
-                alpha: 0.06 + Math.random() * 0.13
-            });
-        }
         ctx.clearRect(0, 0, w, h);
-        dots.forEach(d => {
-            ctx.globalAlpha = d.alpha;
-            ctx.font = d.size + 'px serif';
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText(d.glyph, d.x, d.y);
-        });
-        ctx.globalAlpha = 1;
+
+        const count = Math.floor((w * h) / 1200);
+        for (let i = 0; i < count; i++) {
+            // bias x toward the right
+            const x     = Math.pow(Math.random(), 0.5) * w;
+            const y     = Math.random() * h;
+            const size  = 5 + Math.random() * 11;
+            const rot   = Math.random() * Math.PI / 3;
+            const alpha = 0.08 + Math.random() * 0.22;
+            drawFlake(x, y, size, rot, alpha);
+        }
     }
 
     seed();
