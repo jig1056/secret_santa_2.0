@@ -91,6 +91,14 @@ function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string
     $safeSub   = htmlspecialchars($subtitle, ENT_QUOTES, 'UTF-8');  // CSS handles uppercase
     $safeYear  = htmlspecialchars($year,     ENT_QUOTES, 'UTF-8');
     $safeBody  = $bodyIsHtml ? $bodyText : nl2br(htmlspecialchars($bodyText, ENT_QUOTES, 'UTF-8'));
+    // Wrap any bare URLs in the body with a styled anchor so clients don't default to blue
+    if (!$bodyIsHtml) {
+        $safeBody = preg_replace(
+            '~(https?://[^\s<]+)~',
+            '<a href="$1" style="color:#B5271C;word-break:break-all;">$1</a>',
+            $safeBody
+        );
+    }
     $safeName  = htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8');
 
     // Optional supertitle: "✦  Match Notification  ✦"
