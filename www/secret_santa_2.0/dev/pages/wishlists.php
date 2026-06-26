@@ -160,16 +160,16 @@ if ($selectedUserId) {
             $rows = '';
             foreach ($emailGifts as $i => $g) {
                 $purchased = $g['PURCHASED_BY']
-                    ? '<span style="color:#1e8449;font-weight:bold;">&#10003; Purchased by ' . h($g['PURCHASED_BY_NAME']) . '</span>'
-                    : '<span style="color:#999;">Available</span>';
+                    ? '<span style="color:#1e8449;font-weight:bold;">Yes</span>'
+                    : '<span style="color:#999;">No</span>';
                 $link = $g['URL']
-                    ? '<a href="' . h($g['URL']) . '" style="color:#c0392b;">View Online</a>'
+                    ? '<a href="' . h($g['URL']) . '" style="color:#B5271C;">View Online</a>'
                     : '&mdash;';
-                $bg   = ($i % 2 === 0) ? '#f9f9f9' : '#ffffff';
+                $bg = '#FDF8F0'; // match email body background
                 $rows .= "
-                <tr style=\"background:{$bg};\">
+                <tr style=\"background-color:{$bg};\">
                     <td style=\"padding:10px 12px;font-weight:600;\">" . h($g['NAME']) . "</td>
-                    <td style=\"padding:10px 12px;color:#555;\">" . ($g['DESCRIPTION'] ? h($g['DESCRIPTION']) : '&mdash;') . "</td>
+                    <td style=\"padding:10px 12px;color:#5A4030;\">" . ($g['DESCRIPTION'] ? h($g['DESCRIPTION']) : '&mdash;') . "</td>
                     <td style=\"padding:10px 12px;\">{$link}</td>
                     <td style=\"padding:10px 12px;\">{$purchased}</td>
                 </tr>";
@@ -177,14 +177,14 @@ if ($selectedUserId) {
 
             // Build inner body HTML (passed to wrapHtmlEmail as pre-built HTML)
             $innerBody =
-                '<p style="margin:0 0 20px;color:#444;">' . nl2br(htmlspecialchars($headerText, ENT_QUOTES, 'UTF-8')) . '</p>' .
+                '<p style="margin:0 0 20px;color:#5A4030;text-align:center;">' . nl2br(htmlspecialchars($headerText, ENT_QUOTES, 'UTF-8')) . '</p>' .
                 '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:0.95rem;">' .
                     '<thead>' .
-                        '<tr style="background:#922b21;color:#ffffff;">' .
+                        '<tr style="background-color:#B5271C;color:#ffffff;">' .
                             '<th style="padding:10px 12px;text-align:left;">Gift</th>' .
                             '<th style="padding:10px 12px;text-align:left;">Details</th>' .
                             '<th style="padding:10px 12px;text-align:left;">Link</th>' .
-                            '<th style="padding:10px 12px;text-align:left;">Status</th>' .
+                            '<th style="padding:10px 12px;text-align:left;">Purchased</th>' .
                         '</tr>' .
                     '</thead>' .
                     '<tbody>' . $rows . '</tbody>' .

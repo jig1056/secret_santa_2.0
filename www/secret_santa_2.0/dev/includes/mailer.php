@@ -100,7 +100,7 @@ function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string
 
     // Optional greeting: "Hello, Mark!"
     $greetingHtml = $safeName
-        ? '<p class="greeting" style="margin:0 0 8px 0;font-size:13px;color:#C9922A;font-family:Arial,sans-serif;letter-spacing:1.5px;text-transform:uppercase;">Hello, ' . $safeName . '!</p>'
+        ? '<p class="greeting" style="margin:0 0 8px 0;font-size:13px;color:#C9922A;font-family:Arial,sans-serif;letter-spacing:1.5px;text-transform:uppercase;">Hello ' . $safeName . '!</p>'
         : '';
 
     return '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
