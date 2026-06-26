@@ -150,7 +150,7 @@ function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string
         ' . $greetingHtml . '
         <p class="body-heading" style="margin:0 0 20px 0;font-size:27px;color:#2C1A0E;font-family:Georgia,serif;font-weight:normal;line-height:1.35;">' . $safeTitle . '</p>
         <table border="0" cellpadding="0" cellspacing="0" width="100%">
-          <tr><td class="body-text" style="border-top:1px solid #E8D8C0;padding-top:20px;font-size:16px;color:#5A4030;font-family:Arial,sans-serif;line-height:1.75;text-align:left;">
+          <tr><td class="body-text" style="border-top:1px solid #E8D8C0;padding-top:20px;font-size:16px;color:#5A4030;font-family:Arial,sans-serif;line-height:1.75;text-align:center;">
             ' . $safeBody . '
           </td></tr>
         </table>
@@ -160,7 +160,7 @@ function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string
     <!-- Footer -->
     <tr>
       <td class="foot-td" align="center" bgcolor="#2C1A0E" style="background-color:#2C1A0E;padding:22px 40px;border-radius:0 0 8px 8px;">
-        <p style="margin:0;font-size:13px;color:#C9922A;font-family:Arial,sans-serif;letter-spacing:1px;">Sent from ' . $safeApp . ' &bull; ' . $safeYear . '</p>
+        <p style="margin:0;font-size:13px;color:#C9922A;font-family:Arial,sans-serif;letter-spacing:1px;">Merry Christmas and a Happy New Year &#127876;</p>
       </td>
     </tr>
 
