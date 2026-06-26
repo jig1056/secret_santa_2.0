@@ -113,11 +113,11 @@ function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string
 <body style="margin:0;padding:0;background-color:#F0E8DA;">
 <table border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#F0E8DA">
   <tr><td align="center" style="padding:30px 10px;">
-  <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;border-top:4px solid #C9922A;">
+  <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;border-top:4px solid #C9922A;border-radius:8px;">
 
     <!-- Header -->
     <tr>
-      <td align="center" bgcolor="#B5271C" style="background-color:#B5271C;padding:34px 40px 28px;">
+      <td align="center" bgcolor="#B5271C" style="background-color:#B5271C;padding:34px 40px 28px;border-radius:8px 8px 0 0;">
         ' . $supertitleHtml . '
         <p style="margin:0;font-size:30px;color:#ffffff;font-family:Georgia,\'Times New Roman\',serif;font-weight:normal;">&#127873; ' . $safeApp . '</p>
       </td>
@@ -145,7 +145,7 @@ function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string
 
     <!-- Footer -->
     <tr>
-      <td align="center" bgcolor="#2C1A0E" style="background-color:#2C1A0E;padding:22px 40px;">
+      <td align="center" bgcolor="#2C1A0E" style="background-color:#2C1A0E;padding:22px 40px;border-radius:0 0 8px 8px;">
         <p style="margin:0;font-size:12px;color:#C9922A;font-family:Arial,sans-serif;letter-spacing:1px;">Sent from ' . $safeApp . ' &bull; ' . $safeYear . '</p>
       </td>
     </tr>
