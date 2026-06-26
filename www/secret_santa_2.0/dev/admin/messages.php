@@ -251,12 +251,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     if ($channel === 'EMAIL' || $channel === 'BOTH') {
                         $subject  = getConfig('MAIL_SUBJECT', 'Secret Santa') . ' - ' . $xmasYear;
+
+                        // HTML-escape the plain body, then inject {WEB_SITE_URL} as a gold anchor
+                        $emailBody = nl2br(htmlspecialchars($plainBody, ENT_QUOTES, 'UTF-8'));
+                        $escapedUrl = htmlspecialchars(APP_URL, ENT_QUOTES, 'UTF-8');
+                        $emailBody = str_replace(
+                            $escapedUrl,
+                            '<a href="' . $escapedUrl . '" style="color:#C9922A;font-weight:bold;text-decoration:none;">' . $escapedUrl . '</a>',
+                            $emailBody
+                        );
+
                         $htmlBody = wrapHtmlEmail(
                             "It's Secret Santa Time!",
                             $template['MESSAGE_NAME'],
-                            $plainBody,
+                            $emailBody,
                             $xmasYear,
-                            false,
+                            true,   // body is already HTML
                             $recipient['FIRST_NAME']
                         );
                         $mailResult = sendMailBulk($bulkMailer, $recipient['EMAIL'], $toName, $subject, $htmlBody, true);
