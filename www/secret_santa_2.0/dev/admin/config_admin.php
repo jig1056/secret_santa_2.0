@@ -29,7 +29,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$value, $desc ?: null, $configKey]);
         $msg     = 'Configuration updated successfully.';
         $msgType = 'success';
-        // form closes on success ($editing stays null)
+        // Reload the record so the form stays open after save
+        $stmt    = $pdo->prepare("SELECT * FROM SS_CONFIG WHERE CONFIG_KEY = ?");
+        $stmt->execute([$configKey]);
+        $editing = $stmt->fetch() ?: null;
 
     // -- ADD new key --
     } elseif ($action === 'add') {
