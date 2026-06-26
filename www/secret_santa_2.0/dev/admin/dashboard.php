@@ -66,6 +66,10 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="stat-main"><span class="stat-icon">👥</span><span class="stat-value"><?= $totalUsers ?></span></div>
         <div class="stat-label">Participants</div>
     </div>
+    <div class="stat-card <?= $matchesDone ? 'stat-card-green' : 'stat-card-gold' ?>">
+        <div class="stat-main"><span class="stat-icon"><?= $matchesDone ? '✅' : '⏳' ?></span><span class="stat-value"><?= $matchesDone ? $totalMatches : '—' ?></span></div>
+        <div class="stat-label"><?= $matchesDone ? 'Matches Made' : 'Matches Pending' ?></div>
+    </div>
     <div class="stat-card">
         <div class="stat-main"><span class="stat-icon">🎁</span><span class="stat-value"><?= $totalGifts ?></span></div>
         <div class="stat-label">Total Gifts Added</div>
@@ -73,10 +77,6 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="stat-card">
         <div class="stat-main"><span class="stat-icon">📋</span><span class="stat-value"><?= $avgGifts ?></span></div>
         <div class="stat-label">Avg Gifts / User</div>
-    </div>
-    <div class="stat-card <?= $matchesDone ? 'stat-card-green' : 'stat-card-gold' ?>">
-        <div class="stat-main"><span class="stat-icon"><?= $matchesDone ? '✅' : '⏳' ?></span><span class="stat-value"><?= $matchesDone ? $totalMatches : '—' ?></span></div>
-        <div class="stat-label"><?= $matchesDone ? 'Matches Made' : 'Matches Pending' ?></div>
     </div>
 </div>
 
