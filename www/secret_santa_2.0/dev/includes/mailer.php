@@ -217,7 +217,7 @@ function sendPasswordReset(array $user, PDO $pdo): bool|string {
     $htmlBody = nl2br(htmlspecialchars($plainBody, ENT_QUOTES, 'UTF-8'));
     $htmlBody = preg_replace(
         '~(https?://[^\s<]+)~',
-        '<a href="$1" style="color:#c0392b;word-break:break-all;">$1</a>',
+        '<a href="$1" style="color:#B5271C;word-break:break-all;">$1</a>',
         $htmlBody
     );
 
