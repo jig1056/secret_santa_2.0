@@ -40,8 +40,9 @@ require_once __DIR__ . '/../includes/header.php';
 <h1 class="page-title">🎄 Welcome, <?= h($_SESSION['FIRST_NAME']) ?>!</h1>
 
 <!-- Season banner -->
-<div class="card banner-card">
-    <div class="banner-inner">
+<div class="card banner-card" style="position:relative;overflow:hidden;">
+    <canvas id="bannerSnow" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></canvas>
+    <div class="banner-inner" style="position:relative;z-index:1;">
         <div class="banner-icon">🎅🏾</div>
         <div>
             <div class="banner-title">Secret Santa <?= h($xmasYear) ?></div>
@@ -49,6 +50,43 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
     </div>
 </div>
+<script>
+(function () {
+    const canvas = document.getElementById('bannerSnow');
+    const ctx    = canvas.getContext('2d');
+    const flakes = ['❄', '❅', '❆'];
+    let dots = [];
+
+    function seed() {
+        const w = canvas.offsetWidth;
+        const h = canvas.offsetHeight;
+        canvas.width  = w;
+        canvas.height = h;
+        dots = [];
+        const count = Math.floor((w * h) / 2800);
+        for (let i = 0; i < count; i++) {
+            dots.push({
+                x:    Math.random() * w,
+                y:    Math.random() * h,
+                glyph: flakes[Math.floor(Math.random() * flakes.length)],
+                size: 9 + Math.random() * 10,
+                alpha: 0.06 + Math.random() * 0.10
+            });
+        }
+        ctx.clearRect(0, 0, w, h);
+        dots.forEach(d => {
+            ctx.globalAlpha = d.alpha;
+            ctx.font = d.size + 'px serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(d.glyph, d.x, d.y);
+        });
+        ctx.globalAlpha = 1;
+    }
+
+    seed();
+    window.addEventListener('resize', seed);
+})();
+</script>
 
 <div class="home-grid">
 
