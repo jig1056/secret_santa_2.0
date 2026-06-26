@@ -58,7 +58,7 @@ $avgGifts = $totalUsers > 0 ? round($totalGifts / $totalUsers, 1) : 0;
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<h1 class="page-title">📊 Dashboard — <?= h($xmasYear) ?></h1>
+<h1 class="page-title">📊 Dashboard</h1>
 
 <!-- Summary stat cards -->
 <div class="stat-grid">
