@@ -115,7 +115,9 @@ require_once __DIR__ . '/../includes/header.php';
                 ?>
                 <tr data-name="<?= strtolower(h($user['FIRST_NAME'] . ' ' . $user['LAST_NAME'])) ?>">
                     <td>
-                        <strong><?= h($user['FIRST_NAME']) ?> <?= h($user['LAST_NAME']) ?></strong>
+                        <a href="<?= APP_URL ?>/admin/users.php?edit=<?= urlencode($user['USER_ID']) ?>" class="user-name-link">
+                            <?= h($user['FIRST_NAME']) ?> <?= h($user['LAST_NAME']) ?>
+                        </a>
                         <div class="user-id-small"><?= h($user['USER_ID']) ?></div>
                     </td>
                     <td class="gift-count <?= $user['GIFT_COUNT'] == 0 ? 'count-zero' : '' ?>">
@@ -172,6 +174,8 @@ require_once __DIR__ . '/../includes/header.php';
 .badge-admin    { background: #922b21; color: #fff; }
 .badge-standard { background: #e8e8e8; color: #444; }
 .user-id-small  { font-size: 0.75rem; color: #999; margin-top: 0.1rem; }
+.user-name-link { font-weight: 600; color: #c0392b; text-decoration: none; }
+.user-name-link:hover { text-decoration: underline; }
 
 th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
 th.sortable:hover { background: #e8e8e8; }
