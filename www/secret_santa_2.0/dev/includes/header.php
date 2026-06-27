@@ -28,6 +28,8 @@ if (hasRole('secret_santa') || hasRole('admin')) {
     <link rel="icon" type="image/png" sizes="16x16" href="<?= APP_URL ?>/assets/images/favicon-16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="<?= APP_URL ?>/assets/images/apple-touch-icon.png">
     <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css">
+    <meta name="app-url"         content="<?= APP_URL ?>">
+    <meta name="session-timeout" content="<?= SESSION_TIMEOUT ?>">
 </head>
 <body>
 
