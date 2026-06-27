@@ -48,9 +48,6 @@ Desktop.ini
 .npm/
 *.yarn-error.log
 
-
-sqls/*
-sql/*
 sql/backups/
 sql/secret_santa_create_database.sql
 

@@ -34,7 +34,8 @@ secret_santa_2.0/
 ├── manconfig/
 │   └── infisical.php          # Infisical secret fetcher (shared config — lives outside web root)
 ├── sql/
-│   ├── secret_santa_create_database.sql   # Full schema + seed data (gitignored)
+│   ├── demo_data/
+│   │   └── create_and_load_demo_database.sql  # ← Start here: full schema + demo data
 │   ├── migrate_v2.5.sql                   # v2.0 → v2.5 migration
 │   └── *.sql                              # Incremental migrations (run in order)
 ├── www/secret_santa_2.0/dev/
@@ -128,25 +129,27 @@ For production, deploy a matching file with `APP_ENV=prd`, `APP_URL`, and the pr
 
 ### 4. Set up the database
 
-Run the full schema script against your MySQL server:
+For a fresh install, load the demo data file — it creates all tables and populates them with realistic sample users, gifts, matches, and messages so you can explore the app immediately:
 
 ```bash
-mysql -u root -p HLDEV < sql/secret_santa_create_database.sql
+mysql -u root -p YOUR_DATABASE < sql/demo_data/create_and_load_demo_database.sql
 ```
 
-If you're upgrading from v2.0, run the migrations in order instead:
+All demo accounts use the password **`changeme`**. Log in as `alice@example.com` for admin access.
 
-```bash
-mysql -u root -p HLDEV < sql/migrate_v2.5.sql
-mysql -u root -p HLDEV < sql/migrate_role_id_to_varchar.sql
-mysql -u root -p HLDEV < sql/migrate_config_id_to_varchar.sql
-mysql -u root -p HLDEV < sql/migrate_message_id_to_varchar.sql
-mysql -u root -p HLDEV < sql/migrate_message_id_continue.sql
-mysql -u root -p HLDEV < sql/add_user_prefs_table.sql
-mysql -u root -p HLDEV < sql/add_xmas_year_to_message_log.sql
-mysql -u root -p HLDEV < sql/add_is_internal_to_messages.sql
-mysql -u root -p HLDEV < sql/seed_role_descriptions.sql
-```
+| User | Email | Role |
+|---|---|---|
+| Alice Anderson | alice@example.com | Admin + Secret Santa |
+| Bob Baker | bob@example.com | Secret Santa |
+| Carol Chen | carol@example.com | Secret Santa |
+| David Davis | david@example.com | Secret Santa |
+| Emma Evans | emma@example.com | Secret Santa |
+| Frank Foster | frank@example.com | Secret Santa |
+| Grace Kim | grace@example.com | Wishlist Only (kid) |
+| Henry Kim | henry@example.com | Wishlist Only (kid) |
+| Isabel Garcia | isabel@example.com | Wishlist Gifter (parent) |
+
+> The `sql/` folder also contains incremental migration scripts (`migrate_v2.5.sql`, etc.) for upgrading an existing installation from an earlier version.
 
 ### 5. Configure nginx (or Apache)
 
@@ -174,20 +177,7 @@ server {
 
 ### 6. First login
 
-Create your first admin user directly in the database:
-
-```sql
--- Replace values as needed; password hash below is "changeme" via bcrypt
-INSERT INTO SS_USERS (USER_ID, FIRST_NAME, LAST_NAME, EMAIL, PASSWORD_HASH, USER_TYPE, STATUS)
-VALUES ('Admin_0001', 'Your', 'Name', 'you@example.com',
-        '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uSWkbHpSG',
-        'ADMIN', 'ACTIVE');
-
-INSERT INTO SS_USER_ROLES (USER_ID, ROLE_ID)
-SELECT 'Admin_0001', ROLE_ID FROM SS_ROLES WHERE ROLE_KEY IN ('admin', 'secret_santa');
-```
-
-Then log in and change your password immediately via Profile.
+Log in as `alice@example.com` with password `changeme` — she has full admin access. Go to **Profile** and update her email and password to your own before doing anything else.
 
 ---
 
