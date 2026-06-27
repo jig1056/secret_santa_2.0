@@ -36,8 +36,6 @@ secret_santa_2.0/
 ├── sql/
 │   ├── demo_data/
 │   │   └── create_and_load_demo_database.sql  # ← Start here: full schema + demo data
-│   ├── migrate_v2.5.sql                   # v2.0 → v2.5 migration
-│   └── *.sql                              # Incremental migrations (run in order)
 ├── www/secret_santa_2.0/dev/
 │   ├── index.php              # Login page
 │   ├── forgot_password.php
@@ -149,7 +147,6 @@ All demo accounts use the password **`changeme`**. Log in as `alice@example.com`
 | Henry Kim | henry@example.com | Wishlist Only (kid) |
 | Isabel Garcia | isabel@example.com | Wishlist Gifter (parent) |
 
-> The `sql/` folder also contains incremental migration scripts (`migrate_v2.5.sql`, etc.) for upgrading an existing installation from an earlier version.
 
 ### 5. Configure nginx (or Apache)
 
