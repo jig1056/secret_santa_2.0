@@ -20,6 +20,7 @@ $tables = [
     'SS_PASSWORD_RESETS',
     'SS_REMEMBER_TOKENS',
     'SS_ROLES',
+    'SS_USER_PREFS',
     'SS_USER_ROLES',
     'SS_USERS',
     'SS_WISHLIST_ACCESS',

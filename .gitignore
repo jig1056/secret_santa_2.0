@@ -50,6 +50,7 @@ Desktop.ini
 
 
 sqls/*
+sql/*
 sql/backups/
 sql/secret_santa_create_database.sql
 
