@@ -65,14 +65,14 @@ $secretPrefix = strtoupper($appEnv === 'prd' ? 'HLPRD' : 'HLDEV');
 
 $dbConfigs = [
     'dev' => [
-        'host'   => $envSettings['DB_HOST'] ?? 'prod2.home',
+        'host'   => $envSettings['DB_HOST'] ?? '',
         'port'   => $envSettings['DB_PORT'] ?? '3307',
         'dbname' => $envSettings['DB_NAME'] ?? 'HLDEV',
         'user'   => $secrets[$secretPrefix . '_MYSQL_DB_USER'] ?? '',
         'pass'   => $secrets[$secretPrefix . '_MYSQL_DB_PWD']  ?? '',
     ],
     'prd' => [
-        'host'   => $envSettings['DB_HOST'] ?? 'prod2.home',
+        'host'   => $envSettings['DB_HOST'] ?? '',
         'port'   => $envSettings['DB_PORT'] ?? '3307',
         'dbname' => $envSettings['DB_NAME'] ?? 'HLPRD',
         'user'   => $secrets[$secretPrefix . '_MYSQL_DB_USER'] ?? '',

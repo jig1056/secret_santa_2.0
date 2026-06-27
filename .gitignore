@@ -54,3 +54,12 @@ sql/backups/
 sql/secret_santa_create_database.sql
 
 misc_docs/*
+test_config.php
+genpwd.php
+
+www/secret_santa_2.0/dev/secret_santa_env.conf
+.rsync-config.json
+CONTEXT.md
+www/secret_santa_2.0/dev/test_config.php
+www/secret_santa_2.0/dev/genpwd.php
+nginx/site-confs/secretsanta-dev.conf
