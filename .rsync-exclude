@@ -10,3 +10,4 @@ CONTEXT.md
 misc_docs
 sqls/* 
 sql/*
+.rsync-exclude
