@@ -17,7 +17,6 @@ $editing  = null;
 $addMode  = isset($_GET['add']);
 
 // Normalize a URL: prepend https:// if no protocol given, then validate.
-// Returns the normalized URL on success, or empty string if blank, or false if invalid.
 function normalizeUrl(string $url): string|false {
     if ($url === '') return '';
     if (!preg_match('#^https?://#i', $url)) {
@@ -56,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ->execute([$userId, $xmasYear, $name, $desc ?: null, $url ?: null]);
             $msg = 'Gift added to your list!';
             $msgType = 'success';
-            $addMode = false; // close form on success
+            $addMode = false;
         }
 
     // -- UPDATE --
@@ -84,12 +83,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ->execute([$name, $desc ?: null, $url ?: null, $giftId, $userId, $xmasYear]);
             $msg = 'Gift updated!';
             $msgType = 'success';
-            // Form closes on success (editing stays null)
         }
     }
 }
 
-// Load edit target from GET — but not after a successful POST
+// Load edit target from GET
 if (!$editing && isset($_GET['edit']) && $msgType !== 'success') {
     $stmt = $pdo->prepare("SELECT * FROM SS_GIFTS WHERE GIFT_ID = ? AND USER_ID = ? AND YEAR = ?");
     $stmt->execute([(int)$_GET['edit'], $userId, $xmasYear]);
@@ -107,18 +105,23 @@ require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="page-header">
-    <h1 class="page-title">🎁 My Wish List</h1>
-    <a href="?add=1" class="btn btn-primary">➕ Add Gift</a>
+    <div>
+        <span class="section-label">✦ Your Wish List</span>
+        <h1 class="page-title" style="margin-bottom:0;">🎁 My Wish List</h1>
+    </div>
+    <?php if (!$editing): ?>
+    <button class="btn btn-primary" onclick="toggleAddForm()">+ Add Gift</button>
+    <?php endif; ?>
 </div>
 
 <?php if ($msg): ?>
 <div class="alert alert-<?= $msgType === 'success' ? 'success' : 'error' ?>"><?= h($msg) ?></div>
 <?php endif; ?>
 
-<!-- ADD Form -->
-<?php if ($addMode && !$editing): ?>
-<div class="card">
-    <div class="card-title">➕ Add a Gift</div>
+<!-- ADD Form (toggle) -->
+<?php if (!$editing): ?>
+<div class="card card-accent-red" id="addFormPanel" style="<?= $addMode ? '' : 'display:none;' ?>">
+    <div class="card-title"><span style="color:var(--red);">+</span> Add a Gift</div>
     <form method="POST" action="">
         <input type="hidden" name="action" value="add">
         <div class="form-group">
@@ -140,8 +143,8 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Add Gift</button>
-            <a href="<?= APP_URL ?>/pages/gift_list.php" class="btn btn-secondary">Cancel</a>
-            <a href="<?= APP_URL ?>/pages/gift_list.php" class="btn btn-secondary">↩ Return to List</a>
+            <button type="button" class="btn btn-secondary" onclick="toggleAddForm()">Cancel</button>
+            <a href="<?= APP_URL ?>/pages/gift_list.php" class="btn btn-ghost-neutral">↩ Return to List</a>
         </div>
     </form>
 </div>
@@ -149,7 +152,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- EDIT Form -->
 <?php if ($editing): ?>
-<div class="card">
+<div class="card card-accent-red">
     <div class="card-title">✏️ Edit Gift</div>
     <form method="POST" action="">
         <input type="hidden" name="action"  value="update">
@@ -176,7 +179,7 @@ require_once __DIR__ . '/../includes/header.php';
                     onclick="if(confirm('Remove this gift from your list?')) document.getElementById('delGift<?= $editing['GIFT_ID'] ?>').submit()">
                 Delete
             </button>
-            <a href="<?= APP_URL ?>/pages/gift_list.php" class="btn btn-secondary">↩ Return to List</a>
+            <a href="<?= APP_URL ?>/pages/gift_list.php" class="btn btn-ghost-neutral">↩ Return to List</a>
         </div>
     </form>
     <form id="delGift<?= $editing['GIFT_ID'] ?>" method="POST" action="" style="display:none;">
@@ -186,15 +189,20 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 <?php endif; ?>
 
-<?php if (!$editing && !$addMode): ?>
-<!-- Gift List -->
-<div class="card">
-    <div class="card-header-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-        <div class="card-title" style="margin-bottom:0;">🎄 Your Wish List (<?= count($gifts) ?> gift<?= count($gifts) !== 1 ? 's' : '' ?>)</div>
+<?php if (!$editing): ?>
+<!-- Gift List card -->
+<div class="card card-accent-red">
+    <div class="card-header-row">
+        <div class="card-title" style="margin-bottom:0;">
+            🎄 Your Wish List
+            <span style="font-size:0.85rem;font-weight:400;color:var(--muted);font-family:'Lato',sans-serif;margin-left:0.4rem;">
+                (<?= count($gifts) ?> gift<?= count($gifts) !== 1 ? 's' : '' ?>)
+            </span>
+        </div>
         <?php if (!empty($gifts)): ?>
         <div class="view-toggle">
-            <button id="btnList" class="toggle-btn <?= $viewPref === 'list' ? 'active' : '' ?>" onclick="setView('list')" title="List view">☰ List</button>
-            <button id="btnGrid" class="toggle-btn <?= $viewPref === 'grid' ? 'active' : '' ?>" onclick="setView('grid')" title="Grid view">⊞ Grid</button>
+            <button id="btnList" class="toggle-btn <?= $viewPref === 'list' ? 'active' : '' ?>" onclick="setView('list')">☰ List</button>
+            <button id="btnGrid" class="toggle-btn <?= $viewPref !== 'list' ? 'active' : '' ?>"  onclick="setView('grid')">⊞ Grid</button>
         </div>
         <?php endif; ?>
     </div>
@@ -202,32 +210,24 @@ require_once __DIR__ . '/../includes/header.php';
     <?php if (empty($gifts)): ?>
     <div class="empty-state">
         <div class="empty-icon">🎁</div>
-        <p>Your list is empty! Click <strong>➕ Add Gift</strong> to get started.</p>
+        <p>Your list is empty! Click <strong>+ Add Gift</strong> to get started.</p>
     </div>
     <?php else: ?>
 
     <!-- TABLE VIEW -->
-    <div id="viewList" class="table-wrap" <?= $viewPref === 'grid' ? 'style="display:none;"' : '' ?>>
+    <div id="viewList" class="table-wrap" <?= $viewPref !== 'list' ? 'style="display:none;"' : '' ?>>
         <table>
             <thead>
-                <tr>
-                    <th>Gift</th>
-                    <th>Description</th>
-                    <th>Link</th>
-                </tr>
+                <tr><th>Gift</th><th>Description</th><th>Link</th></tr>
             </thead>
             <tbody>
                 <?php foreach ($gifts as $gift): ?>
-                <tr class="<?= $editing && $editing['GIFT_ID'] == $gift['GIFT_ID'] ? 'row-active' : '' ?>">
-                    <td>
-                        <a href="?edit=<?= $gift['GIFT_ID'] ?>" class="gift-link">
-                            <?= h($gift['NAME']) ?>
-                        </a>
-                    </td>
+                <tr>
+                    <td><a href="?edit=<?= $gift['GIFT_ID'] ?>" class="link-edit"><?= h($gift['NAME']) ?></a></td>
                     <td><?= $gift['DESCRIPTION'] ? h($gift['DESCRIPTION']) : '<span class="muted">—</span>' ?></td>
                     <td>
                         <?php if ($gift['URL']): ?>
-                        <a href="<?= h($gift['URL']) ?>" target="_blank" rel="noopener" class="view-link">View Online ↗</a>
+                        <a href="<?= h($gift['URL']) ?>" target="_blank" rel="noopener" class="link-online" style="display:inline;">View Online ↗</a>
                         <?php else: ?>
                         <span class="muted">—</span>
                         <?php endif; ?>
@@ -239,21 +239,19 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 
     <!-- GRID VIEW -->
-    <div id="viewGrid" class="wl-gift-grid" <?= $viewPref === 'list' ? 'style="display:none;"' : '' ?>>
+    <div id="viewGrid" class="gift-grid" <?= $viewPref === 'list' ? 'style="display:none;"' : '' ?>>
         <?php foreach ($gifts as $gift): ?>
-        <div class="wl-gift-card">
-            <div class="wl-gift-icon">
-                <img src="<?= APP_URL ?>/assets/images/img_gift01.png" alt="gift" />
-            </div>
-            <div class="wl-gift-body">
-                <div class="wl-gift-name">
-                    <a href="?edit=<?= $gift['GIFT_ID'] ?>" class="gift-link"><?= h($gift['NAME']) ?></a>
+        <div class="gift-item">
+            <span class="gift-item-icon">🎁</span>
+            <div class="gift-item-body">
+                <div class="gift-item-name">
+                    <a href="?edit=<?= $gift['GIFT_ID'] ?>" class="link-edit"><?= h($gift['NAME']) ?></a>
                 </div>
                 <?php if ($gift['DESCRIPTION']): ?>
-                <div class="wl-gift-desc"><?= h($gift['DESCRIPTION']) ?></div>
+                <div class="gift-item-desc"><?= h($gift['DESCRIPTION']) ?></div>
                 <?php endif; ?>
                 <?php if ($gift['URL']): ?>
-                <a href="<?= h($gift['URL']) ?>" target="_blank" rel="noopener" class="view-link" style="font-size:0.88rem;">View Online ↗</a>
+                <a href="<?= h($gift['URL']) ?>" target="_blank" rel="noopener" class="link-online">View Online ↗</a>
                 <?php endif; ?>
             </div>
         </div>
@@ -262,68 +260,13 @@ require_once __DIR__ . '/../includes/header.php';
 
     <?php endif; ?>
 </div>
-<?php endif; // end !$editing && !$addMode ?>
-
-<style>
-.page-header  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
-.page-header .page-title { margin-bottom: 0; }
-
-.required { color: #c0392b; }
-.optional { color: #999; font-weight: 400; font-size: 0.85rem; }
-.muted    { color: #aaa; }
-
-.form-actions { display: flex; gap: 0.75rem; align-items: center; margin-top: 0.5rem; flex-wrap: wrap; }
-
-.empty-state { text-align: center; padding: 2rem 1rem; color: #777; }
-.empty-icon  { font-size: 3rem; margin-bottom: 0.75rem; }
-
-.gift-link  { font-weight: 600; color: #c0392b; text-decoration: none; }
-.gift-link:hover { text-decoration: underline; }
-
-.view-link  { color: #1e8449; font-weight: 600; text-decoration: none; }
-.view-link:hover { text-decoration: underline; }
-
-.row-active td { background: #fff8f0; }
-
-.btn-danger { background: #c0392b; color: #fff; }
-.btn-danger:hover { opacity: 0.85; }
-
-/* ---- View toggle ---- */
-.view-toggle { display:flex; gap:4px; }
-.toggle-btn {
-    background:transparent; border:1px solid #ddd; border-radius:6px;
-    padding:0.3rem 0.7rem; font-size:0.85rem; cursor:pointer; color:#555;
-    transition:background 0.15s, color 0.15s;
-}
-.toggle-btn:hover { background:#f5f5f5; }
-.toggle-btn.active { background:#c0392b; color:#fff; border-color:#c0392b; }
-
-/* ---- Grid view ---- */
-.wl-gift-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:1rem; }
-.wl-gift-card {
-    background:#fff; border-radius:8px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.08);
-    padding:1.1rem 1.25rem;
-    display:flex; gap:1rem; align-items:flex-start;
-    border-left:4px solid #c0392b;
-}
-.wl-gift-icon { flex-shrink:0; }
-.wl-gift-icon img { width:48px; height:48px; object-fit:contain; }
-.wl-gift-body { flex:1; }
-.wl-gift-name { margin-bottom:0.3rem; }
-.wl-gift-desc { font-size:0.9rem; color:#555; margin-bottom:0.4rem; line-height:1.5; }
-
-@media (max-width: 600px) {
-    table, thead, tbody, th, td, tr { display: block; }
-    thead { display: none; }
-    tr { border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 0.75rem; padding: 0.75rem; }
-    td { border: none; padding: 0.25rem 0; }
-    .wl-gift-grid { grid-template-columns: 1fr; }
-    .toggle-btn { font-size: 0.75rem; padding: 0.2rem 0.45rem; }
-}
-</style>
+<?php endif; ?>
 
 <script>
+function toggleAddForm() {
+    var panel = document.getElementById('addFormPanel');
+    if (panel) panel.style.display = panel.style.display === 'none' ? '' : 'none';
+}
 function setView(v) {
     document.getElementById('viewList').style.display = v === 'list' ? '' : 'none';
     document.getElementById('viewGrid').style.display = v === 'grid' ? '' : 'none';

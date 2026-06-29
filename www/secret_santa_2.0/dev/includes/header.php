@@ -16,6 +16,14 @@ if (hasRole('secret_santa') || hasRole('admin')) {
     $matchesDone = matchesGenerated();
     $userMatch   = $matchesDone ? getMatchForUser($currentUser) : null;
 }
+
+// Active page detection
+$currentScript = basename($_SERVER['SCRIPT_NAME']);
+
+function navActive(string $script): string {
+    global $currentScript;
+    return $currentScript === $script ? ' active' : '';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -33,122 +41,76 @@ if (hasRole('secret_santa') || hasRole('admin')) {
 </head>
 <body>
 
-<nav class="navbar" style="position:relative;overflow:hidden;">
-    <canvas id="navSnow" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
-    <div class="nav-brand" style="position:relative;z-index:1;">
+<!-- Snowfall overlay — CSS animated, fixed over full page -->
+<div class="snowfall" aria-hidden="true">
+<?php
+$snowChars = ['❄','❅','❆','✦'];
+for ($i = 0; $i < 28; $i++) {
+    $char  = $snowChars[$i % 4];
+    $left  = ($i * 3 + 7) % 100;
+    $dur   = 10 + ($i % 13);
+    $delay = -(($i * 7) % 21);
+    echo "    <span style=\"left:{$left}%;--dur:{$dur}s;--delay:{$delay}s;\">{$char}</span>\n";
+}
+?>
+</div>
+
+<header class="site-header">
+    <div class="nav-ribbon"></div>
+
+    <nav class="navbar">
+        <!-- Brand -->
         <a href="<?= APP_URL ?>/pages/home.php" class="nav-brand-link">
-            <span class="santa-emoji">🎅🏾</span> <?= h(APP_NAME) ?> <?= h($xmasYear) ?>
+            <span class="santa-emoji">🎅🏾</span>
+            <span class="nav-brand-text"><?= h(APP_NAME) ?> <?= h($xmasYear) ?></span>
         </a>
-    </div>
 
-    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" style="position:relative;z-index:1;">&#9776;</button>
+        <!-- Hamburger (mobile) -->
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">&#9776;</button>
 
-    <ul class="nav-links" id="navLinks" style="position:relative;z-index:1;">
-        <li><a href="<?= APP_URL ?>/pages/home.php">Home</a></li>
+        <div class="nav-collapse" id="navCollapse">
+            <!-- Main page links -->
+            <ul class="nav-main">
+                <li><a href="<?= APP_URL ?>/pages/home.php" class="nav-link<?= navActive('home.php') ?>">Home</a></li>
 
-        <?php if (hasRole('secret_santa') || hasRole('admin') || hasRole('wishlist_only')): ?>
-        <li><a href="<?= APP_URL ?>/pages/gift_list.php">My Wish List</a></li>
-        <?php endif; ?>
+                <?php if (hasRole('secret_santa') || hasRole('admin') || hasRole('wishlist_only')): ?>
+                <li><a href="<?= APP_URL ?>/pages/gift_list.php" class="nav-link<?= navActive('gift_list.php') ?>">My Wish List</a></li>
+                <?php endif; ?>
 
-        <?php if ($userMatch && (hasRole('secret_santa') || hasRole('admin'))): ?>
-        <li>
-            <a href="<?= APP_URL ?>/pages/giftee_list.php">
-                <?= h($userMatch['FIRST_NAME']) ?>'s Wish List
-            </a>
-        </li>
-        <?php endif; ?>
+                <?php if ($userMatch && (hasRole('secret_santa') || hasRole('admin'))): ?>
+                <li>
+                    <a href="<?= APP_URL ?>/pages/giftee_list.php" class="nav-link<?= navActive('giftee_list.php') ?>">
+                        <?= h($userMatch['FIRST_NAME']) ?>'s Wish List
+                    </a>
+                </li>
+                <?php endif; ?>
 
-        <?php if (hasRole('wishlist_gifter')): ?>
-        <li><a href="<?= APP_URL ?>/pages/wishlists.php">Kid's Christmas List</a></li>
-        <?php endif; ?>
+                <?php if (hasRole('wishlist_gifter')): ?>
+                <li><a href="<?= APP_URL ?>/pages/wishlists.php" class="nav-link<?= navActive('wishlists.php') ?>">Kid's Christmas List</a></li>
+                <?php endif; ?>
+            </ul>
 
-        <?php if (isAdmin()): ?>
-        <li class="nav-divider"></li>
-        <li><a href="<?= APP_URL ?>/admin/users.php">Users</a></li>
-        <li><a href="<?= APP_URL ?>/admin/messages.php">Messages</a></li>
-        <li><a href="<?= APP_URL ?>/admin/generate.php">Generate Matches</a></li>
-        <li><a href="<?= APP_URL ?>/admin/dashboard.php">Dashboard</a></li>
-        <li><a href="<?= APP_URL ?>/admin/config_admin.php">Config</a></li>
-        <?php endif; ?>
+            <!-- Right side: admin links + user section -->
+            <ul class="nav-end">
+                <?php if (isAdmin()): ?>
+                <li><a href="<?= APP_URL ?>/admin/users.php"        class="nav-link nav-link-sm<?= navActive('users.php') ?>">Users</a></li>
+                <li><a href="<?= APP_URL ?>/admin/messages.php"     class="nav-link nav-link-sm<?= navActive('messages.php') ?>">Messages</a></li>
+                <li><a href="<?= APP_URL ?>/admin/generate.php"     class="nav-link nav-link-sm<?= navActive('generate.php') ?>">Generate Matches</a></li>
+                <li><a href="<?= APP_URL ?>/admin/dashboard.php"    class="nav-link nav-link-sm<?= navActive('dashboard.php') ?>">Dashboard</a></li>
+                <li><a href="<?= APP_URL ?>/admin/config_admin.php" class="nav-link nav-link-sm<?= navActive('config_admin.php') ?>">Config</a></li>
+                <li class="nav-divider"></li>
+                <?php endif; ?>
 
-        <li class="nav-divider"></li>
-        <li><a href="<?= APP_URL ?>/pages/profile.php">👤 <?= h($_SESSION['FIRST_NAME']) ?></a></li>
-        <li><a href="<?= APP_URL ?>/logout.php">Logout</a></li>
-    </ul>
-</nav>
-<script>
-(function () {
-    const canvas = document.getElementById('navSnow');
-    const ctx    = canvas.getContext('2d');
-    const COUNT  = 30;
-    let W, H, flakes;
-
-    function resize() {
-        W = canvas.width  = canvas.offsetWidth;
-        H = canvas.height = canvas.offsetHeight;
-    }
-
-    function randomFlake(scatter) {
-        const size = Math.random() * 8 + 4;
-        return {
-            x:       Math.random() * W,
-            y:       scatter ? Math.random() * H : -20,
-            size:    size,
-            speed:   Math.random() * 0.4 + 0.15,
-            drift:   Math.random() * 0.4 - 0.2,
-            sway:    Math.random() * Math.PI * 2,
-            swaySpd: Math.random() * 0.008 + 0.003,
-            rot:     Math.random() * Math.PI / 6,
-            rotSpd:  (Math.random() - 0.5) * 0.004,
-            opacity: Math.random() * 0.3 + 0.15,
-        };
-    }
-
-    function drawFlake(f) {
-        ctx.save();
-        ctx.translate(f.x, f.y);
-        ctx.rotate(f.rot);
-        ctx.strokeStyle = 'rgba(255,255,255,' + f.opacity + ')';
-        ctx.lineWidth   = Math.max(0.7, f.size * 0.08);
-        ctx.lineCap     = 'round';
-        for (let i = 0; i < 6; i++) {
-            ctx.save();
-            ctx.rotate((Math.PI / 3) * i);
-            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -f.size); ctx.stroke();
-            [0.55, 0.78].forEach(function(pct) {
-                const bLen = f.size * 0.3, py = -f.size * pct;
-                ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo( bLen * 0.6, py - bLen * 0.6); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(-bLen * 0.6, py - bLen * 0.6); ctx.stroke();
-            });
-            ctx.restore();
-        }
-        ctx.restore();
-    }
-
-    function init() {
-        resize();
-        flakes = Array.from({ length: COUNT }, function() { return randomFlake(true); });
-    }
-
-    function tick() {
-        ctx.clearRect(0, 0, W, H);
-        flakes.forEach(function(f) {
-            drawFlake(f);
-            f.sway += f.swaySpd;
-            f.x    += Math.sin(f.sway) * 0.7 + f.drift;
-            f.y    += f.speed;
-            f.rot  += f.rotSpd;
-            if (f.y > H + 20) Object.assign(f, randomFlake(false));
-            if (f.x > W + 20) f.x = -20;
-            if (f.x < -20)    f.x = W + 20;
-        });
-        requestAnimationFrame(tick);
-    }
-
-    window.addEventListener('resize', resize);
-    init();
-    tick();
-})();
-</script>
+                <li>
+                    <a href="<?= APP_URL ?>/pages/profile.php" class="nav-avatar-wrap">
+                        <span class="nav-avatar-circle"><?= strtoupper(substr($_SESSION['FIRST_NAME'] ?? '?', 0, 1)) ?></span>
+                        <span class="nav-avatar-name"><?= h($_SESSION['FIRST_NAME'] ?? '') ?></span>
+                    </a>
+                </li>
+                <li><a href="<?= APP_URL ?>/logout.php" class="nav-link nav-link-sm">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+</header>
 
 <main class="container">
