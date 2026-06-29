@@ -369,7 +369,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <div class="page-header">
     <h1 class="page-title">✉️ Message Center</h1>
-    <a href="?add=1" class="btn btn-primary">➕ New Template</a>
+    <a href="?add=1" class="btn btn-primary"><span style="color:var(--gold);">+</span> New Template</a>
 </div>
 
 <?php if ($msg): ?>
@@ -507,7 +507,7 @@ $editingAllowedRoles = $templateRolesMap[$editing['MESSAGE_ID']] ?? [];
 $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['ROLE_ID'] === 'all_roles'));
 ?>
 <div class="card send-card" id="sendPanel" style="display:none;">
-    <div class="card-title">📤 Send This Message — <em><?= h($editing['MESSAGE_NAME']) ?></em></div>
+    <div class="card-title">📤 <em><?= h($editing['MESSAGE_NAME']) ?></em></div>
 
     <?php if (!empty($editingAllowedRoles)): ?>
     <div class="allowed-roles-notice">

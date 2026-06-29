@@ -191,7 +191,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <?php if (!$editing): ?>
 <!-- Gift List card -->
-<div class="card card-accent-red">
+<div class="card card-accent-red" id="giftListCard">
     <div class="card-header-row">
         <div class="card-title" style="margin-bottom:0;">
             🎄 Your Wish List
@@ -223,7 +223,7 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php foreach ($gifts as $gift): ?>
                 <tr>
-                    <td><a href="?edit=<?= $gift['GIFT_ID'] ?>" class="link-edit"><?= h($gift['NAME']) ?></a></td>
+                    <td><a href="?edit=<?= $gift['GIFT_ID'] ?>" class="link-edit">🎁 <?= h($gift['NAME']) ?></a></td>
                     <td><?= $gift['DESCRIPTION'] ? h($gift['DESCRIPTION']) : '<span class="muted">—</span>' ?></td>
                     <td>
                         <?php if ($gift['URL']): ?>
@@ -265,7 +265,11 @@ require_once __DIR__ . '/../includes/header.php';
 <script>
 function toggleAddForm() {
     var panel = document.getElementById('addFormPanel');
-    if (panel) panel.style.display = panel.style.display === 'none' ? '' : 'none';
+    var list  = document.getElementById('giftListCard');
+    if (!panel) return;
+    var opening = panel.style.display === 'none';
+    panel.style.display = opening ? '' : 'none';
+    if (list) list.style.display = opening ? 'none' : '';
 }
 function setView(v) {
     document.getElementById('viewList').style.display = v === 'list' ? '' : 'none';

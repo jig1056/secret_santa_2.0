@@ -8,7 +8,7 @@
 
 <footer class="site-footer">
     <p>
-        &copy; <?= date('Y') ?> <?= h(APP_NAME) ?> &mdash; Happy Holidays! 🎄
+        Happy Holidays! 🎄
         &nbsp;&bull;&nbsp;
         <a href="<?= APP_URL ?>/pages/changelog.php">v<?= h(getConfig('APP_VERSION', '2.0')) ?></a>
     </p>

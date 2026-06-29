@@ -101,17 +101,14 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <?php if (hasRole('wishlist_gifter')): ?>
-<!-- Kids Christmas Lists — full-width banner card -->
-<div class="kids-banner-card">
-    <div class="kids-banner-left">
-        <span class="kids-banner-icon">🦌</span>
-        <div>
-            <div class="kids-banner-label">✦ Kid's Christmas Lists</div>
-            <div class="kids-banner-title">Kids' Christmas Lists</div>
-            <div class="kids-banner-desc">View and manage the Christmas lists of your loved ones — mark items as you purchase them.</div>
-        </div>
+<!-- Kids Christmas Lists — dash-card with gold accent -->
+<div class="dash-card dash-card-gold" style="margin-top:1rem;">
+    <div class="dash-card-label">✦ Kid's Christmas Lists</div>
+    <div class="dash-card-title">🦌 Kids' Christmas Lists</div>
+    <p class="dash-card-desc">View and manage the Christmas lists of your loved ones — mark items as you purchase them.</p>
+    <div style="margin-top:auto;padding-top:1rem;">
+        <a href="<?= APP_URL ?>/pages/wishlists.php" class="btn btn-primary">View Kids' Lists →</a>
     </div>
-    <a href="<?= APP_URL ?>/pages/wishlists.php" class="btn btn-primary">View Kids' Lists →</a>
 </div>
 <?php endif; ?>
 
