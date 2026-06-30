@@ -172,11 +172,11 @@ if ($selectedUserId) {
                     : '<span style="color:#999;">No</span>';
                 $link = $g['URL']
                     ? '<a href="' . h($g['URL']) . '" style="color:#B5271C;">View</a>'
-                    : '&mdash;';
+                    : '';
                 $rows .= "
                 <tr style=\"background-color:#FDF8F0;border-bottom:1px solid #E8D8C0;\">
                     <td style=\"padding:10px 12px;font-weight:600;text-align:left;\">" . h($g['NAME']) . "</td>
-                    <td style=\"padding:10px 12px;color:#5A4030;text-align:left;\">" . ($g['DESCRIPTION'] ? h($g['DESCRIPTION']) : '&mdash;') . "</td>
+                    <td style=\"padding:10px 12px;color:#5A4030;text-align:left;\">" . ($g['DESCRIPTION'] ? h($g['DESCRIPTION']) : '') . "</td>
                     <td style=\"padding:10px 12px;text-align:left;\">{$link}</td>
                     <td style=\"padding:10px 12px;text-align:left;\">{$purchased}</td>
                 </tr>";
@@ -493,11 +493,8 @@ require_once __DIR__ . '/../includes/header.php';
             <?php if ($total > 0): ?>
             <div class="child-card-meta">
                 <?= $total ?> gift<?= $total !== 1 ? 's' : '' ?>
-                &bull;
-                <?php if ($remaining > 0): ?>
-                    <span class="child-card-needed"><?= $remaining ?> still needed</span>
-                <?php else: ?>
-                    <span class="child-card-done">All purchased ✓</span>
+                <?php if ($remaining === 0): ?>
+                    &bull; <span class="child-card-done">All purchased ✓</span>
                 <?php endif; ?>
             </div>
             <div class="progress-bar">
