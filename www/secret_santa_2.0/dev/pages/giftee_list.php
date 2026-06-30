@@ -73,12 +73,10 @@ require_once __DIR__ . '/../includes/header.php';
                 <?php foreach ($gifts as $gift): ?>
                 <tr>
                     <td>🎁 <span style="font-weight:700;color:var(--text);"><?= h($gift['NAME']) ?></span></td>
-                    <td><?= $gift['DESCRIPTION'] ? h($gift['DESCRIPTION']) : '<span class="muted">—</span>' ?></td>
+                    <td><?= $gift['DESCRIPTION'] ? h($gift['DESCRIPTION']) : '' ?></td>
                     <td>
                         <?php if ($gift['URL']): ?>
                         <a href="<?= h($gift['URL']) ?>" target="_blank" rel="noopener" class="link-online" style="display:inline;">View Online ↗</a>
-                        <?php else: ?>
-                        <span class="muted">—</span>
                         <?php endif; ?>
                     </td>
                 </tr>

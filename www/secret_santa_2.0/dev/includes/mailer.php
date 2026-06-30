@@ -135,7 +135,7 @@ function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string
 <body style="margin:0;padding:0;background-color:#F0E8DA;">
 <table border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#F0E8DA">
   <tr><td align="center" style="padding:20px 10px;">
-  <table class="inner-table" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;border-top:4px solid #C9922A;border-radius:8px;">
+  <table class="inner-table" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:690px;border-top:4px solid #C9922A;border-radius:8px;">
 
     <!-- Header -->
     <tr>
@@ -167,7 +167,7 @@ function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string
 
     <!-- Footer -->
     <tr>
-      <td class="foot-td" align="center" bgcolor="#2C1A0E" style="background-color:#2C1A0E;padding:22px 40px;border-radius:0 0 8px 8px;">
+      <td class="foot-td" align="center" bgcolor="#4A1010" style="background-color:#4A1010;padding:22px 40px;border-radius:0 0 8px 8px;border-top:4px solid #C9922A;">
         <p style="margin:0;font-size:13px;color:#C9922A;font-family:Arial,sans-serif;letter-spacing:1px;">Merry Christmas and a Happy New Year &#127876;</p>
       </td>
     </tr>
