@@ -167,7 +167,7 @@ function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string
 
     <!-- Footer -->
     <tr>
-      <td class="foot-td" align="center" bgcolor="#2C1A0E" style="background-color:#2C1A0E;padding:22px 40px;border-radius:0 0 8px 8px;">
+      <td class="foot-td" align="center" bgcolor="#4A1010" style="background-color:#4A1010;padding:22px 40px;border-radius:0 0 8px 8px;">
         <p style="margin:0;font-size:13px;color:#C9922A;font-family:Arial,sans-serif;letter-spacing:1px;">Merry Christmas and a Happy New Year &#127876;</p>
       </td>
     </tr>
