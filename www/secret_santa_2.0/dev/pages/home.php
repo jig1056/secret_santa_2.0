@@ -94,8 +94,8 @@ require_once __DIR__ . '/../includes/header.php';
 <?php if (hasRole('wishlist_gifter')): ?>
 <!-- Kids Christmas Lists — dash-card with gold accent -->
 <div class="dash-card dash-card-gold" style="margin-top:1rem;">
-    <div class="dash-card-label">✦ Kid's Christmas Lists</div>
-    <div class="dash-card-title">🦌 Kids' Christmas Lists</div>
+    <div class="dash-card-label">✦ Kid's Christmas List</div>
+    <div class="dash-card-title">🦌 Kid's Christmas List</div>
     <p class="dash-card-desc">View and manage the Christmas lists of your loved ones — mark items as you purchase them.</p>
     <div style="margin-top:auto;padding-top:1rem;">
         <a href="<?= APP_URL ?>/pages/wishlists.php" class="btn btn-primary">View Kids' Lists</a>
