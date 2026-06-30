@@ -295,7 +295,7 @@ require_once __DIR__ . '/../includes/header.php';
     <h1 class="page-title">👥 Users</h1>
     <div style="display:flex;gap:0.5rem;">
         <a href="?report=1" class="btn btn-secondary">📋 User Report</a>
-        <a href="?add=1" class="btn btn-primary"><span style="color:var(--gold);">+</span> Add New User</a>
+        <a href="?add=1" class="btn btn-primary">+ Add New User</a>
     </div>
 </div>
 

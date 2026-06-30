@@ -70,13 +70,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // -- ADD template --
     if ($action === 'add') {
-        $messageId       = trim(strtolower($_POST['message_id']   ?? ''));
+        $messageIdRaw    = trim(strtolower($_POST['message_id']   ?? ''));
+        $messageId       = strtoupper($messageIdRaw);
         $name            = trim($_POST['message_name'] ?? '');
         $body            = trim($_POST['message_body'] ?? '');
         $selectedRoleIds = (array)($_POST['allowed_roles'] ?? []);
 
-        // Validate MESSAGE_ID format: lowercase letters, digits, underscores only
-        $idValid = $messageId && preg_match('/^[a-z0-9_]{1,50}$/', $messageId);
+        // Validate MESSAGE_ID format: lowercase letters, digits, underscores only (saved as uppercase)
+        $idValid = $messageIdRaw && preg_match('/^[a-z0-9_]{1,50}$/', $messageIdRaw);
 
         // Check uniqueness
         $idTaken = false;
@@ -87,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!$idValid) {
-            $msg     = 'Message ID is required and may only contain lowercase letters, digits, and underscores (max 50 chars).';
+            $msg     = 'Message ID is required and may only contain letters, digits, and underscores (max 50 chars).';
             $msgType = 'error';
             $addMode = true;
         } elseif ($idTaken) {
@@ -369,7 +370,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <div class="page-header">
     <h1 class="page-title">✉️ Message Center</h1>
-    <a href="?add=1" class="btn btn-primary"><span style="color:var(--gold);">+</span> New Template</a>
+    <a href="?add=1" class="btn btn-primary">+ New Template</a>
 </div>
 
 <?php if ($msg): ?>
@@ -390,7 +391,7 @@ require_once __DIR__ . '/../includes/header.php';
                    pattern="[a-z0-9_]+" title="Lowercase letters, digits, and underscores only"
                    placeholder="e.g. ss_welcome_message"
                    value="<?= h($_POST['message_id'] ?? '') ?>">
-            <div class="field-hint">Lowercase letters, digits, and underscores only. <strong>Cannot be changed after saving.</strong></div>
+            <div class="field-hint">Letters, digits, and underscores only. Saved as uppercase. <strong>Cannot be changed after saving.</strong></div>
         </div>
         <div class="form-group">
             <label for="message_name">Template Name <span class="required">*</span></label>
@@ -911,7 +912,7 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 }
 
 /* Table */
-.name-link   { font-weight:600; color:#c0392b; text-decoration:none; }
+.name-link   { font-family:'Playfair Display',serif; font-weight:600; color:var(--red); text-decoration:none; font-size:15px; }
 .name-link:hover { text-decoration:underline; }
 .date-col    { font-size:0.82rem; color:#999; white-space:nowrap; }
 .empty-state { color:#999; padding:1rem 0; }

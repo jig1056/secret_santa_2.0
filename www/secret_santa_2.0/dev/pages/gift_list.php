@@ -223,7 +223,7 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php foreach ($gifts as $gift): ?>
                 <tr>
-                    <td><a href="?edit=<?= $gift['GIFT_ID'] ?>" class="link-edit">🎁 <?= h($gift['NAME']) ?></a></td>
+                    <td>🎁 <a href="?edit=<?= $gift['GIFT_ID'] ?>" class="link-edit"><?= h($gift['NAME']) ?></a></td>
                     <td><?= $gift['DESCRIPTION'] ? h($gift['DESCRIPTION']) : '<span class="muted">—</span>' ?></td>
                     <td>
                         <?php if ($gift['URL']): ?>

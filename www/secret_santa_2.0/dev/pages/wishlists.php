@@ -15,6 +15,7 @@ $xmasYear     = getConfig('XMAS_YEAR', date('Y'));
 $msg          = '';
 $msgType      = '';
 $addMode      = false;
+$editingGift  = null;
 
 // Fetch all wishlist-only users this gifter can see
 $stmt = $pdo->prepare("
@@ -106,6 +107,38 @@ if ($selectedUserId) {
                 $msgType = 'success';
             }
 
+        } elseif ($action === 'update_gift') {
+            $giftId = (int)($_POST['gift_id'] ?? 0);
+            $name   = trim($_POST['name']        ?? '');
+            $desc   = trim($_POST['description'] ?? '');
+            $rawUrl = trim($_POST['url']         ?? '');
+            $url    = normalizeUrl($rawUrl);
+
+            if ($name === '') {
+                $msg     = 'Gift name is required.';
+                $msgType = 'error';
+                $stmt = $pdo->prepare("SELECT * FROM SS_GIFTS WHERE GIFT_ID = ? AND USER_ID = ? AND YEAR = ?");
+                $stmt->execute([$giftId, $selectedUserId, $xmasYear]);
+                $editingGift = $stmt->fetch() ?: null;
+            } elseif ($url === false) {
+                $msg     = 'The URL doesn\'t look valid. Try something like nike.com or https://nike.com.';
+                $msgType = 'error';
+                $stmt = $pdo->prepare("SELECT * FROM SS_GIFTS WHERE GIFT_ID = ? AND USER_ID = ? AND YEAR = ?");
+                $stmt->execute([$giftId, $selectedUserId, $xmasYear]);
+                $editingGift = $stmt->fetch() ?: null;
+            } else {
+                $pdo->prepare("UPDATE SS_GIFTS SET NAME = ?, DESCRIPTION = ?, URL = ?, UPDATED_AT = NOW() WHERE GIFT_ID = ? AND USER_ID = ? AND YEAR = ?")
+                    ->execute([$name, $desc ?: null, $url ?: null, $giftId, $selectedUserId, $xmasYear]);
+                $msg     = 'Gift updated!';
+                $msgType = 'success';
+            }
+
+        } elseif ($action === 'delete_gift') {
+            $giftId = (int)($_POST['gift_id'] ?? 0);
+            $pdo->prepare("DELETE FROM SS_GIFTS WHERE GIFT_ID = ? AND USER_ID = ? AND YEAR = ?")->execute([$giftId, $selectedUserId, $xmasYear]);
+            $msg     = 'Gift removed from the list.';
+            $msgType = 'success';
+
         } elseif ($action === 'email_list') {
             require_once __DIR__ . '/../includes/mailer.php';
 
@@ -184,6 +217,13 @@ if ($selectedUserId) {
     ");
     $stmt->execute([$selectedUserId, $xmasYear]);
     $gifts = $stmt->fetchAll();
+
+    // Load edit target from GET
+    if (!$editingGift && isset($_GET['edit']) && $msgType !== 'success') {
+        $stmt = $pdo->prepare("SELECT * FROM SS_GIFTS WHERE GIFT_ID = ? AND USER_ID = ? AND YEAR = ?");
+        $stmt->execute([(int)$_GET['edit'], $selectedUserId, $xmasYear]);
+        $editingGift = $stmt->fetch() ?: null;
+    }
 }
 
 if (isset($_GET['add'])) {
@@ -225,19 +265,19 @@ require_once __DIR__ . '/../includes/header.php';
     <form method="POST" action="?user=<?= h($selectedUserId) ?>">
         <input type="hidden" name="action" value="add_gift">
         <div class="form-group">
-            <label for="name">Gift Name <span class="required">*</span></label>
-            <input type="text" id="name" name="name" required maxlength="200"
+            <label for="add_name">Gift Name <span class="required">*</span></label>
+            <input type="text" id="add_name" name="name" required maxlength="200"
                    placeholder="e.g. LEGO Star Wars Set"
                    value="<?= h($_POST['name'] ?? '') ?>">
         </div>
         <div class="form-group">
-            <label for="description">Description <span class="optional">(optional)</span></label>
-            <textarea id="description" name="description" maxlength="1000"
+            <label for="add_description">Description <span class="optional">(optional)</span></label>
+            <textarea id="add_description" name="description" maxlength="1000"
                       placeholder="Size, color, any other details..."><?= h($_POST['description'] ?? '') ?></textarea>
         </div>
         <div class="form-group">
-            <label for="url">Link / URL <span class="optional">(optional)</span></label>
-            <input type="text" id="url" name="url" maxlength="500"
+            <label for="add_url">Link / URL <span class="optional">(optional)</span></label>
+            <input type="text" id="add_url" name="url" maxlength="500"
                    placeholder="e.g. nike.com or https://www.amazon.com/..."
                    value="<?= h($_POST['url'] ?? '') ?>">
         </div>
@@ -249,8 +289,46 @@ require_once __DIR__ . '/../includes/header.php';
     </form>
 </div>
 
+<!-- Edit Gift Form -->
+<?php if ($editingGift): ?>
+<div class="card card-accent-gold">
+    <div class="card-title">✏️ Edit Gift</div>
+    <form method="POST" action="?user=<?= h($selectedUserId) ?>">
+        <input type="hidden" name="action"  value="update_gift">
+        <input type="hidden" name="gift_id" value="<?= $editingGift['GIFT_ID'] ?>">
+        <div class="form-group">
+            <label for="edit_name">Gift Name <span class="required">*</span></label>
+            <input type="text" id="edit_name" name="name" required maxlength="200"
+                   value="<?= h($editingGift['NAME']) ?>">
+        </div>
+        <div class="form-group">
+            <label for="edit_description">Description <span class="optional">(optional)</span></label>
+            <textarea id="edit_description" name="description" maxlength="1000"><?= h($editingGift['DESCRIPTION'] ?? '') ?></textarea>
+        </div>
+        <div class="form-group">
+            <label for="edit_url">Link / URL <span class="optional">(optional)</span></label>
+            <input type="text" id="edit_url" name="url" maxlength="500"
+                   placeholder="e.g. nike.com or https://www.amazon.com/..."
+                   value="<?= h($editingGift['URL'] ?? '') ?>">
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="?user=<?= h($selectedUserId) ?>" class="btn btn-secondary">Cancel</a>
+            <button type="button" class="btn btn-danger"
+                    onclick="if(confirm('Remove this gift from the list?')) document.getElementById('delGift<?= $editingGift['GIFT_ID'] ?>').submit()">
+                Delete
+            </button>
+        </div>
+    </form>
+    <form id="delGift<?= $editingGift['GIFT_ID'] ?>" method="POST" action="?user=<?= h($selectedUserId) ?>" style="display:none;">
+        <input type="hidden" name="action"  value="delete_gift">
+        <input type="hidden" name="gift_id" value="<?= $editingGift['GIFT_ID'] ?>">
+    </form>
+</div>
+<?php endif; ?>
+
 <!-- Gift List card -->
-<div class="card card-accent-gold" style="position:relative;">
+<div class="card card-accent-gold" id="giftListCard" style="position:relative;<?= $editingGift ? 'display:none;' : '' ?>">
     <div class="card-header-row">
         <div class="card-title" style="margin-bottom:0;">
             🎄 <?= h($wishlistUser['FIRST_NAME']) ?>'s Gifts
@@ -285,7 +363,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <?php $isPurchased = !empty($gift['PURCHASED_BY']); ?>
                 <?php $isMine      = $gift['PURCHASED_BY'] === $gifterUserId; ?>
                 <tr>
-                    <td style="font-weight:700;color:var(--text);"><?= h($gift['NAME']) ?></td>
+                    <td>🎁 <a href="?user=<?= h($selectedUserId) ?>&edit=<?= $gift['GIFT_ID'] ?>" class="link-edit"><?= h($gift['NAME']) ?></a></td>
                     <td><?= $gift['DESCRIPTION'] ? h($gift['DESCRIPTION']) : '<span class="muted">—</span>' ?></td>
                     <td>
                         <?php if ($gift['URL']): ?>
@@ -434,7 +512,11 @@ require_once __DIR__ . '/../includes/header.php';
 <script>
 function toggleAddForm() {
     var panel = document.getElementById('addFormPanel');
-    if (panel) panel.style.display = panel.style.display === 'none' ? '' : 'none';
+    var list  = document.getElementById('giftListCard');
+    if (!panel) return;
+    var opening = panel.style.display === 'none';
+    panel.style.display = opening ? '' : 'none';
+    if (list) list.style.display = opening ? 'none' : '';
 }
 function setView(v) {
     var list = document.getElementById('viewList');

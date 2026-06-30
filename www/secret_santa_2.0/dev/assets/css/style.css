@@ -116,7 +116,7 @@ body {
     white-space: nowrap;
 }
 .santa-emoji {
-    font-size: 1.5rem;
+    font-size: 54px;
     line-height: 1;
     display: inline-block;
     animation: santabob 2.8s ease-in-out infinite;
@@ -140,6 +140,7 @@ body {
     align-items: center;
     list-style: none;
     gap: 0.1rem;
+    margin-left: auto;
 }
 
 /* Right group — admin links + user section */
@@ -148,7 +149,7 @@ body {
     align-items: center;
     list-style: none;
     gap: 0.1rem;
-    margin-left: auto;
+    margin-left: 0.5rem;
 }
 
 /* Individual nav links */

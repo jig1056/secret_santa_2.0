@@ -105,7 +105,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <div class="page-header">
     <h1 class="page-title">🔧 Configuration</h1>
-    <a href="?add=1" class="btn btn-primary" id="addBtn">➕ Add New Key</a>
+    <a href="?add=1" class="btn btn-primary" id="addBtn">+ Add New Key</a>
 </div>
 
 <?php if ($msg): ?>
@@ -156,7 +156,7 @@ require_once __DIR__ . '/../includes/header.php';
 <!-- Add Form (shown when ?add=1 or add error) -->
 <?php if ($addMode && !$editing): ?>
 <div class="card" id="configForm">
-    <div class="card-title">➕ Add New Config Key</div>
+    <div class="card-title">+ Add New Config Key</div>
     <form method="POST" action="">
         <input type="hidden" name="action" value="add">
 
