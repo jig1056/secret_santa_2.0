@@ -135,7 +135,7 @@ function wrapHtmlEmail(string $title, string $subtitle, string $bodyText, string
 <body style="margin:0;padding:0;background-color:#F0E8DA;">
 <table border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#F0E8DA">
   <tr><td align="center" style="padding:20px 10px;">
-  <table class="inner-table" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;border-top:4px solid #C9922A;border-radius:8px;">
+  <table class="inner-table" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:690px;border-top:4px solid #C9922A;border-radius:8px;">
 
     <!-- Header -->
     <tr>

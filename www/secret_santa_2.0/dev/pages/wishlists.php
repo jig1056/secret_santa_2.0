@@ -174,7 +174,7 @@ if ($selectedUserId) {
                     ? '<a href="' . h($g['URL']) . '" style="color:#B5271C;">View</a>'
                     : '&mdash;';
                 $rows .= "
-                <tr style=\"background-color:#FDF8F0;\">
+                <tr style=\"background-color:#FDF8F0;border-bottom:1px solid #E8D8C0;\">
                     <td style=\"padding:10px 12px;font-weight:600;text-align:left;\">" . h($g['NAME']) . "</td>
                     <td style=\"padding:10px 12px;color:#5A4030;text-align:left;\">" . ($g['DESCRIPTION'] ? h($g['DESCRIPTION']) : '&mdash;') . "</td>
                     <td style=\"padding:10px 12px;text-align:left;\">{$link}</td>
