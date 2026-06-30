@@ -178,7 +178,7 @@ if ($selectedUserId) {
                     <td style=\"padding:10px 12px;font-weight:600;text-align:left;\">" . h($g['NAME']) . "</td>
                     <td style=\"padding:10px 12px;color:#5A4030;text-align:left;\">" . ($g['DESCRIPTION'] ? h($g['DESCRIPTION']) : '') . "</td>
                     <td style=\"padding:10px 12px;text-align:left;\">{$link}</td>
-                    <td style=\"padding:10px 12px;text-align:left;\">{$purchased}</td>
+                    <td style=\"padding:10px 12px;text-align:center;\">{$purchased}</td>
                 </tr>";
             }
 
@@ -189,7 +189,7 @@ if ($selectedUserId) {
                         '<th style="padding:10px 12px;text-align:left;">Gift</th>' .
                         '<th style="padding:10px 12px;text-align:left;">Details</th>' .
                         '<th style="padding:10px 12px;text-align:left;">Link</th>' .
-                        '<th style="padding:10px 12px;text-align:left;">Purchased</th>' .
+                        '<th style="padding:10px 12px;text-align:center;">Purchased</th>' .
                     '</tr></thead>' .
                     '<tbody>' . $rows . '</tbody>' .
                 '</table>' .
@@ -368,12 +368,10 @@ require_once __DIR__ . '/../includes/header.php';
                 <?php $isMine      = $gift['PURCHASED_BY'] === $gifterUserId; ?>
                 <tr>
                     <td>🎁 <a href="?user=<?= h($selectedUserId) ?>&edit=<?= $gift['GIFT_ID'] ?>" class="link-edit"><?= h($gift['NAME']) ?></a></td>
-                    <td><?= $gift['DESCRIPTION'] ? h($gift['DESCRIPTION']) : '<span class="muted">—</span>' ?></td>
+                    <td><?= $gift['DESCRIPTION'] ? h($gift['DESCRIPTION']) : '' ?></td>
                     <td>
                         <?php if ($gift['URL']): ?>
                         <a href="<?= h($gift['URL']) ?>" target="_blank" rel="noopener" class="link-online" style="display:inline;">View Online ↗</a>
-                        <?php else: ?>
-                        <span class="muted">—</span>
                         <?php endif; ?>
                     </td>
                     <td>
