@@ -515,7 +515,6 @@ require_once __DIR__ . '/../includes/header.php';
             <div class="child-card-meta" style="color:var(--muted);">No gifts added yet</div>
             <?php endif; ?>
         </div>
-        <span class="child-card-arrow">→</span>
     </a>
     <?php endforeach; ?>
 </div>
