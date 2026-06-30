@@ -46,7 +46,6 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- Hero banner -->
 <div class="hero-card">
-    <span class="hero-santa">🎅🏾</span>
     <div class="hero-body">
         <div class="hero-label">✦ SECRET SANTA <?= h($xmasYear) ?> ✦</div>
         <div class="hero-title"><?= h($bannerMsg) ?></div>
