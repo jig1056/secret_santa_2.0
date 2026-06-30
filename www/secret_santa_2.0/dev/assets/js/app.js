@@ -31,9 +31,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Auto-dismiss alerts: success after 4s, errors after 30s
+    // Auto-dismiss alerts: success after 4s, warnings after 15s, errors after 30s
     document.querySelectorAll('.alert').forEach(function (el) {
-        var delay = el.classList.contains('alert-error') ? 30000 : 4000;
+        var delay = el.classList.contains('alert-error') ? 30000 : el.classList.contains('alert-warning') ? 15000 : 4000;
         setTimeout(function () {
             el.style.transition = 'opacity 0.5s';
             el.style.opacity = '0';
