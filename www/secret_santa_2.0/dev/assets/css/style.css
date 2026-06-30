@@ -89,7 +89,7 @@ body {
    Navbar
    ============================================================ */
 .navbar {
-    background: #B5271C;
+    background: var(--red);
     height: 58px;
     display: flex;
     align-items: center;
