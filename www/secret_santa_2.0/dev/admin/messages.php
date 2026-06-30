@@ -70,14 +70,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // -- ADD template --
     if ($action === 'add') {
-        $messageIdRaw    = trim(strtolower($_POST['message_id']   ?? ''));
-        $messageId       = strtoupper($messageIdRaw);
+        $messageId       = strtoupper(trim(preg_replace('/[^A-Z0-9_]/i', '', $_POST['message_id'] ?? '')));
         $name            = trim($_POST['message_name'] ?? '');
         $body            = trim($_POST['message_body'] ?? '');
         $selectedRoleIds = (array)($_POST['allowed_roles'] ?? []);
 
-        // Validate MESSAGE_ID format: lowercase letters, digits, underscores only (saved as uppercase)
-        $idValid = $messageIdRaw && preg_match('/^[a-z0-9_]{1,50}$/', $messageIdRaw);
+        // Validate MESSAGE_ID format: uppercase letters, digits, underscores only
+        $idValid = $messageId && preg_match('/^[A-Z0-9_]{1,50}$/', $messageId);
 
         // Check uniqueness
         $idTaken = false;
@@ -88,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!$idValid) {
-            $msg     = 'Message ID is required and may only contain letters, digits, and underscores (max 50 chars).';
+            $msg     = 'Message ID is required and may only contain uppercase letters, digits, and underscores (max 50 chars).';
             $msgType = 'error';
             $addMode = true;
         } elseif ($idTaken) {
@@ -393,10 +392,10 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="form-group">
             <label for="message_id">Message ID <span class="required">*</span></label>
             <input type="text" id="message_id" name="message_id" required maxlength="50"
-                   pattern="[a-z0-9_]+" title="Lowercase letters, digits, and underscores only"
-                   placeholder="e.g. ss_welcome_message"
-                   value="<?= h($_POST['message_id'] ?? '') ?>">
-            <div class="field-hint">Letters, digits, and underscores only. Saved as uppercase. <strong>Cannot be changed after saving.</strong></div>
+                   pattern="[A-Z0-9_]+" title="Uppercase letters, digits, and underscores only"
+                   placeholder="e.g. SS_WELCOME_MESSAGE"
+                   value="<?= h(strtoupper($_POST['message_id'] ?? '')) ?>">
+            <div class="field-hint">Uppercase letters, digits, and underscores only. <strong>Cannot be changed after saving.</strong></div>
         </div>
         <div class="form-group">
             <label for="message_name">Template Name <span class="required">*</span></label>
@@ -962,16 +961,16 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
     nameInput.addEventListener('input', function () {
         if (userEditedId) return;
         idInput.value = this.value
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '_')
+            .toUpperCase()
+            .replace(/[^A-Z0-9]+/g, '_')
             .replace(/^_+|_+$/g, '')
             .substring(0, 50);
     });
 
     idInput.addEventListener('input', function () {
-        // Enforce format in real-time
+        // Enforce format in real-time — uppercase only
         const pos = this.selectionStart;
-        this.value = this.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+        this.value = this.value.toUpperCase().replace(/[^A-Z0-9_]/g, '');
         this.setSelectionRange(pos, pos);
         userEditedId = this.value.length > 0;
     });
