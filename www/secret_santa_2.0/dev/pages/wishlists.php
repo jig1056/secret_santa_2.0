@@ -250,7 +250,6 @@ require_once __DIR__ . '/../includes/header.php';
 
 <div class="page-header">
     <div>
-        <a href="<?= APP_URL ?>/pages/wishlists.php" class="back-link">← Kid's Christmas List</a>
         <span class="section-label" style="margin-top:0.25rem;">✦ <?= h($wishlistUser['FIRST_NAME']) ?>'s List</span>
         <h1 class="page-title" style="margin-bottom:0;">🎄 <?= h($wishlistUser['FIRST_NAME']) ?>'s Christmas List</h1>
     </div>
@@ -519,6 +518,10 @@ require_once __DIR__ . '/../includes/header.php';
     <?php endforeach; ?>
 </div>
 <?php endif; ?>
+
+<div style="margin-top:1.5rem;">
+    <a href="<?= APP_URL ?>/pages/wishlists.php" class="back-link">← Kid's Christmas List</a>
+</div>
 
 <?php endif; ?>
 
