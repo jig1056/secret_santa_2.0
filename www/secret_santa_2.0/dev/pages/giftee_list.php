@@ -77,8 +77,6 @@ require_once __DIR__ . '/../includes/header.php';
                     <td>
                         <?php if ($gift['URL']): ?>
                         <a href="<?= h($gift['URL']) ?>" target="_blank" rel="noopener" class="link-online" style="display:inline;">View Online ↗</a>
-                        <?php else: ?>
-                        <span class="muted">—</span>
                         <?php endif; ?>
                     </td>
                 </tr>
