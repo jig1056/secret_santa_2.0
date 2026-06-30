@@ -239,6 +239,8 @@ body {
         flex-direction: column;
         align-items: stretch;
         width: 100%;
+        flex-basis: 100%;
+        order: 3;
         padding-top: 0.5rem;
     }
     .nav-collapse.open { display: flex; }
