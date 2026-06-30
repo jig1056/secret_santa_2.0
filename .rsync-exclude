@@ -12,3 +12,4 @@ sqls/*
 sql/*
 .rsync-exclude
 .rsync-config.json
+deploy

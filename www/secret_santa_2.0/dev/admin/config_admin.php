@@ -54,9 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $pdo->prepare("INSERT INTO SS_CONFIG (CONFIG_KEY, CONFIG_VALUE, CONFIG_DESCRIPTION) VALUES (?, ?, ?)")
                     ->execute([$key, $value, $desc ?: null]);
-                $msg     = "Config key \"{$key}\" added.";
-                $msgType = 'success';
-                $addMode = false; // close the form on success
+                header('Location: ?edit=' . urlencode($key) . '&saved=1');
+                exit;
             }
         }
 
@@ -86,8 +85,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Load edit target from GET — but not after a successful POST
-if (!$editing && isset($_GET['edit']) && $msgType !== 'success') {
+// Flash message from redirect after create
+if (isset($_GET['saved']) && !$msg) {
+    $msg     = 'Config key created successfully.';
+    $msgType = 'success';
+}
+
+// Load edit target from GET
+if (!$editing && isset($_GET['edit'])) {
     $stmt = $pdo->prepare("SELECT * FROM SS_CONFIG WHERE CONFIG_KEY = ?");
     $stmt->execute([$_GET['edit']]);
     $editing = $stmt->fetch() ?: null;
@@ -105,7 +110,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <div class="page-header">
     <h1 class="page-title">🔧 Configuration</h1>
-    <a href="?add=1" class="btn btn-primary" id="addBtn">➕ Add New Key</a>
+    <a href="?add=1" class="btn btn-primary" id="addBtn">+ Add New Key</a>
 </div>
 
 <?php if ($msg): ?>
@@ -156,7 +161,7 @@ require_once __DIR__ . '/../includes/header.php';
 <!-- Add Form (shown when ?add=1 or add error) -->
 <?php if ($addMode && !$editing): ?>
 <div class="card" id="configForm">
-    <div class="card-title">➕ Add New Config Key</div>
+    <div class="card-title">+ Add New Config Key</div>
     <form method="POST" action="">
         <input type="hidden" name="action" value="add">
 

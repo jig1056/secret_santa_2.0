@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+# =============================================================
+# deploy — git commit/push + rsync to server
+#
+# Usage:
+#   deploy -u "Commit subject"
+#   deploy -u "Commit subject" "Commit body"
+#   deploy          (rsync only, no git commit)
+#
+# Flags:
+#   -u  Commit and push before deploying (requires a subject)
+# =============================================================
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG="$SCRIPT_DIR/.rsync-config.json"
+
+# ── Read rsync config ────────────────────────────────────────
+if [[ ! -f "$CONFIG" ]]; then
+    echo "❌  .rsync-config.json not found in $SCRIPT_DIR"
+    exit 1
+fi
+
+# Parse JSON with python (avoids requiring jq)
+REMOTE_USER=$(python3 -c "import json,sys; d=json.load(open('$CONFIG')); print(d['user'])")
+REMOTE_HOST=$(python3 -c "import json,sys; d=json.load(open('$CONFIG')); print(d['host'])")
+REMOTE_PATH=$(python3 -c "import json,sys; d=json.load(open('$CONFIG')); print(d['remote_path'])")
+
+# ── Parse flags ──────────────────────────────────────────────
+DO_GIT=false
+COMMIT_SUBJECT=""
+COMMIT_BODY=""
+
+if [[ "${1:-}" == "-u" ]]; then
+    DO_GIT=true
+    COMMIT_SUBJECT="${2:-}"
+    COMMIT_BODY="${3:-}"
+
+    if [[ -z "$COMMIT_SUBJECT" ]]; then
+        echo "❌  -u requires a commit subject: deploy -u \"Subject\" [\"Body\"]"
+        exit 1
+    fi
+fi
+
+# ── Git: stage, commit, push ─────────────────────────────────
+if [[ "$DO_GIT" == true ]]; then
+    cd "$SCRIPT_DIR"
+
+    echo "📦  Staging all changes..."
+    git add -A
+
+    # Check if there's anything to commit
+    if git diff --cached --quiet; then
+        echo "ℹ️   Nothing to commit — working tree clean."
+    else
+        if [[ -n "$COMMIT_BODY" ]]; then
+            git commit -m "$COMMIT_SUBJECT" -m "$COMMIT_BODY"
+        else
+            git commit -m "$COMMIT_SUBJECT"
+        fi
+        echo "✅  Committed: $COMMIT_SUBJECT"
+    fi
+
+    echo "🚀  Pushing to remote..."
+    git push
+    echo "✅  Push complete."
+fi
+
+# ── rsync to server ──────────────────────────────────────────
+SRC="$SCRIPT_DIR/"
+DEST="$REMOTE_USER@$REMOTE_HOST:$REMOTE_PATH"
+EXCLUDE_FILE="$SCRIPT_DIR/.rsync-exclude"
+
+echo ""
+echo "🔄  Syncing to $DEST ..."
+
+RSYNC_ARGS=(-avz --delete)
+if [[ -f "$EXCLUDE_FILE" ]]; then
+    RSYNC_ARGS+=(--exclude-from="$EXCLUDE_FILE")
+fi
+
+rsync "${RSYNC_ARGS[@]}" "$SRC" "$DEST"
+
+echo ""
+echo "✅  Deploy complete."

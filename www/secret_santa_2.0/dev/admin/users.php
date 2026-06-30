@@ -104,9 +104,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE')
                 ")->execute([$userId, $firstName, $lastName, $sex, $email, $hash, $phone ?: null, $userType]);
                 saveUserRoles($userId, $selectedRoleIds, $pdo);
-                $msg     = "User {$firstName} {$lastName} added (ID: {$userId}).";
-                $msgType = 'success';
-                $addMode = false;
+                header('Location: ?edit=' . urlencode($userId) . '&saved=1');
+                exit;
             }
         }
 
@@ -200,8 +199,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Flash message from redirect after create
+if (isset($_GET['saved']) && !$msg) {
+    $msg     = 'User created successfully.';
+    $msgType = 'success';
+}
+
 // Load edit target from GET
-if (!$editing && isset($_GET['edit']) && $msgType !== 'success') {
+if (!$editing && isset($_GET['edit'])) {
     $stmt = $pdo->prepare("SELECT * FROM SS_USERS WHERE USER_ID = ?");
     $stmt->execute([$_GET['edit']]);
     $editing = $stmt->fetch() ?: null;
@@ -295,7 +300,7 @@ require_once __DIR__ . '/../includes/header.php';
     <h1 class="page-title">👥 Users</h1>
     <div style="display:flex;gap:0.5rem;">
         <a href="?report=1" class="btn btn-secondary">📋 User Report</a>
-        <a href="?add=1" class="btn btn-primary">➕ Add New User</a>
+        <a href="?add=1" class="btn btn-primary">+ Add New User</a>
     </div>
 </div>
 
@@ -489,7 +494,8 @@ if ($addMode && !$editing):
 
         <!-- Roles -->
         <div class="form-group">
-            <label>Roles <span class="required">*</span></label>
+            <label>Roles <span class="optional">(optional)</span></label>
+            <div class="field-hint" style="margin-bottom:0.5rem;">⚠️ Without a role, this user won't be able to log in or access any features.</div>
             <div class="role-grid" id="roleGrid_add"></div>
             <button type="button" class="btn btn-sm btn-add-role" id="addRoleBtn_add"
                     onclick="addRoleRow('add')">+ Add Role</button>

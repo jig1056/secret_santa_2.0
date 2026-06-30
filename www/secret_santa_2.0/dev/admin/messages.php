@@ -70,13 +70,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // -- ADD template --
     if ($action === 'add') {
-        $messageId       = trim(strtolower($_POST['message_id']   ?? ''));
+        $messageId       = strtoupper(trim(preg_replace('/[^A-Z0-9_]/i', '', $_POST['message_id'] ?? '')));
         $name            = trim($_POST['message_name'] ?? '');
         $body            = trim($_POST['message_body'] ?? '');
         $selectedRoleIds = (array)($_POST['allowed_roles'] ?? []);
 
-        // Validate MESSAGE_ID format: lowercase letters, digits, underscores only
-        $idValid = $messageId && preg_match('/^[a-z0-9_]{1,50}$/', $messageId);
+        // Validate MESSAGE_ID format: uppercase letters, digits, underscores only
+        $idValid = $messageId && preg_match('/^[A-Z0-9_]{1,50}$/', $messageId);
 
         // Check uniqueness
         $idTaken = false;
@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!$idValid) {
-            $msg     = 'Message ID is required and may only contain lowercase letters, digits, and underscores (max 50 chars).';
+            $msg     = 'Message ID is required and may only contain uppercase letters, digits, and underscores (max 50 chars).';
             $msgType = 'error';
             $addMode = true;
         } elseif ($idTaken) {
@@ -98,18 +98,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msg     = 'Message name and body are required.';
             $msgType = 'error';
             $addMode = true;
-        } elseif (empty($selectedRoleIds)) {
-            $msg     = 'Please select at least one allowed role.';
-            $msgType = 'error';
-            $addMode = true;
         } else {
             $isInternal = isset($_POST['is_internal']) ? 1 : 0;
             $pdo->prepare("INSERT INTO SS_MESSAGES (MESSAGE_ID, MESSAGE_NAME, MESSAGE_BODY, IS_INTERNAL) VALUES (?, ?, ?, ?)")
                 ->execute([$messageId, $name, $body, $isInternal]);
             saveMessageRoles($messageId, $selectedRoleIds, $pdo);
-            $msg     = "Message template \"{$name}\" created.";
-            $msgType = 'success';
-            $addMode = false;
+            $warnParam = empty($selectedRoleIds) ? '&warn=no_roles' : '';
+            header('Location: ?edit=' . urlencode($messageId) . '&saved=1' . $warnParam);
+            exit;
         }
 
     // -- UPDATE template --
@@ -125,19 +121,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare("SELECT * FROM SS_MESSAGES WHERE MESSAGE_ID = ?");
             $stmt->execute([$messageId]);
             $editing = $stmt->fetch() ?: null;
-        } elseif (empty($selectedRoleIds)) {
-            $msg     = 'Please select at least one allowed role.';
-            $msgType = 'error';
-            $stmt = $pdo->prepare("SELECT * FROM SS_MESSAGES WHERE MESSAGE_ID = ?");
-            $stmt->execute([$messageId]);
-            $editing = $stmt->fetch() ?: null;
         } else {
             $isInternal = isset($_POST['is_internal']) ? 1 : 0;
             $pdo->prepare("UPDATE SS_MESSAGES SET MESSAGE_NAME=?,MESSAGE_BODY=?,IS_INTERNAL=?,UPDATED_AT=NOW() WHERE MESSAGE_ID=?")
                 ->execute([$name, $body, $isInternal, $messageId]);
             saveMessageRoles($messageId, $selectedRoleIds, $pdo);
-            $msg     = 'Message template updated.';
-            $msgType = 'success';
+            $msg     = empty($selectedRoleIds)
+                ? '⚠️ Template saved, but no eligible roles are assigned — this message cannot be sent to anyone until roles are added.'
+                : 'Message template updated.';
+            $msgType = empty($selectedRoleIds) ? 'warning' : 'success';
             // Reload so the edit form stays open after save
             $stmt = $pdo->prepare("SELECT * FROM SS_MESSAGES WHERE MESSAGE_ID = ?");
             $stmt->execute([$messageId]);
@@ -306,8 +298,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Flash message from redirect after create
+if (isset($_GET['saved']) && !$msg) {
+    if (isset($_GET['warn']) && $_GET['warn'] === 'no_roles') {
+        $msg     = '⚠️ Template created, but no eligible roles are assigned — this message cannot be sent to anyone until roles are added.';
+        $msgType = 'warning';
+    } else {
+        $msg     = 'Message template created successfully.';
+        $msgType = 'success';
+    }
+}
+
 // Load edit target from GET
-if (!$editing && isset($_GET['edit']) && $msgType !== 'success') {
+if (!$editing && isset($_GET['edit'])) {
     $stmt = $pdo->prepare("SELECT * FROM SS_MESSAGES WHERE MESSAGE_ID = ?");
     $stmt->execute([$_GET['edit']]);
     $editing = $stmt->fetch() ?: null;
@@ -369,11 +372,11 @@ require_once __DIR__ . '/../includes/header.php';
 
 <div class="page-header">
     <h1 class="page-title">✉️ Message Center</h1>
-    <a href="?add=1" class="btn btn-primary">➕ New Template</a>
+    <a href="?add=1" class="btn btn-primary">+ New Template</a>
 </div>
 
 <?php if ($msg): ?>
-<div class="alert alert-<?= $msgType === 'success' ? 'success' : 'error' ?>"><?= h($msg) ?></div>
+<div class="alert alert-<?= in_array($msgType, ['success','warning','info']) ? $msgType : 'error' ?>"><?= h($msg) ?></div>
 <?php endif; ?>
 
 <!-- ============================================================ -->
@@ -387,10 +390,10 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="form-group">
             <label for="message_id">Message ID <span class="required">*</span></label>
             <input type="text" id="message_id" name="message_id" required maxlength="50"
-                   pattern="[a-z0-9_]+" title="Lowercase letters, digits, and underscores only"
-                   placeholder="e.g. ss_welcome_message"
-                   value="<?= h($_POST['message_id'] ?? '') ?>">
-            <div class="field-hint">Lowercase letters, digits, and underscores only. <strong>Cannot be changed after saving.</strong></div>
+                   pattern="[A-Z0-9_]+" title="Uppercase letters, digits, and underscores only"
+                   placeholder="e.g. SS_WELCOME_MESSAGE"
+                   value="<?= h(strtoupper($_POST['message_id'] ?? '')) ?>">
+            <div class="field-hint">Uppercase letters, digits, and underscores only. <strong>Cannot be changed after saving.</strong></div>
         </div>
         <div class="form-group">
             <label for="message_name">Template Name <span class="required">*</span></label>
@@ -405,8 +408,8 @@ require_once __DIR__ . '/../includes/header.php';
             <div class="field-hint">Placeholders: <code>{FIRST_NAME}</code> <code>{LAST_NAME}</code> <code>{YEAR}</code> <code>{GIFT_DEADLINE}</code> <code>{SANTA_MATCH_DATE}</code> <code>{PASSWORD_RESET_LINK}</code> <code>{RESET_TOKEN_EXPIRY_MINS}</code> <code>{WEB_SITE_URL}</code></div>
         </div>
         <div class="form-group">
-            <label>Eligible Roles <span class="required">*</span></label>
-            <div class="field-hint" style="margin-bottom:0.5rem;">This message can only be sent to users who have one of these roles.</div>
+            <label>Eligible Roles <span class="optional">(optional)</span></label>
+            <div class="field-hint" style="margin-bottom:0.5rem;">This message can only be sent to users who have one of these roles. <strong>Without roles, the template cannot be sent to anyone.</strong></div>
             <div class="role-grid" id="roleGrid_add"></div>
             <button type="button" class="btn btn-sm btn-add-role" id="addRoleBtn_add"
                     onclick="addAllowedRoleRow('add')">+ Add Role</button>
@@ -461,8 +464,8 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="field-hint">Placeholders: <code>{FIRST_NAME}</code> <code>{LAST_NAME}</code> <code>{YEAR}</code> <code>{GIFT_DEADLINE}</code> <code>{SANTA_MATCH_DATE}</code> <code>{PASSWORD_RESET_LINK}</code> <code>{RESET_TOKEN_EXPIRY_MINS}</code> <code>{WEB_SITE_URL}</code></div>
         </div>
         <div class="form-group">
-            <label>Eligible Roles <span class="required">*</span></label>
-            <div class="field-hint" style="margin-bottom:0.5rem;">This message can only be sent to users who have one of these roles.</div>
+            <label>Eligible Roles <span class="optional">(optional)</span></label>
+            <div class="field-hint" style="margin-bottom:0.5rem;">This message can only be sent to users who have one of these roles. <strong>Without roles, the template cannot be sent to anyone.</strong></div>
             <div class="role-grid" id="roleGrid_edit"></div>
             <button type="button" class="btn btn-sm btn-add-role" id="addRoleBtn_edit"
                     onclick="addAllowedRoleRow('edit')">+ Add Role</button>
@@ -507,7 +510,7 @@ $editingAllowedRoles = $templateRolesMap[$editing['MESSAGE_ID']] ?? [];
 $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['ROLE_ID'] === 'all_roles'));
 ?>
 <div class="card send-card" id="sendPanel" style="display:none;">
-    <div class="card-title">📤 Send This Message — <em><?= h($editing['MESSAGE_NAME']) ?></em></div>
+    <div class="card-title">📤 <em><?= h($editing['MESSAGE_NAME']) ?></em></div>
 
     <?php if (!empty($editingAllowedRoles)): ?>
     <div class="allowed-roles-notice">
@@ -911,7 +914,7 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
 }
 
 /* Table */
-.name-link   { font-weight:600; color:#c0392b; text-decoration:none; }
+.name-link   { font-family:'Playfair Display',serif; font-weight:600; color:var(--red); text-decoration:none; font-size:15px; }
 .name-link:hover { text-decoration:underline; }
 .date-col    { font-size:0.82rem; color:#999; white-space:nowrap; }
 .empty-state { color:#999; padding:1rem 0; }
@@ -956,16 +959,16 @@ $editingHasAllRoles  = !empty(array_filter($editingAllowedRoles, fn($r) => $r['R
     nameInput.addEventListener('input', function () {
         if (userEditedId) return;
         idInput.value = this.value
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '_')
+            .toUpperCase()
+            .replace(/[^A-Z0-9]+/g, '_')
             .replace(/^_+|_+$/g, '')
             .substring(0, 50);
     });
 
     idInput.addEventListener('input', function () {
-        // Enforce format in real-time
+        // Enforce format in real-time — uppercase only
         const pos = this.selectionStart;
-        this.value = this.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+        this.value = this.value.toUpperCase().replace(/[^A-Z0-9_]/g, '');
         this.setSelectionRange(pos, pos);
         userEditedId = this.value.length > 0;
     });
