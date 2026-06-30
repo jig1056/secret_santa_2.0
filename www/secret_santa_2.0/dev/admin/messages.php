@@ -98,16 +98,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msg     = 'Message name and body are required.';
             $msgType = 'error';
             $addMode = true;
-        } elseif (empty($selectedRoleIds)) {
-            $msg     = 'Please select at least one allowed role.';
-            $msgType = 'error';
-            $addMode = true;
         } else {
             $isInternal = isset($_POST['is_internal']) ? 1 : 0;
             $pdo->prepare("INSERT INTO SS_MESSAGES (MESSAGE_ID, MESSAGE_NAME, MESSAGE_BODY, IS_INTERNAL) VALUES (?, ?, ?, ?)")
                 ->execute([$messageId, $name, $body, $isInternal]);
             saveMessageRoles($messageId, $selectedRoleIds, $pdo);
-            header('Location: ?edit=' . urlencode($messageId) . '&saved=1');
+            $warnParam = empty($selectedRoleIds) ? '&warn=no_roles' : '';
+            header('Location: ?edit=' . urlencode($messageId) . '&saved=1' . $warnParam);
             exit;
         }
 
@@ -124,19 +121,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare("SELECT * FROM SS_MESSAGES WHERE MESSAGE_ID = ?");
             $stmt->execute([$messageId]);
             $editing = $stmt->fetch() ?: null;
-        } elseif (empty($selectedRoleIds)) {
-            $msg     = 'Please select at least one allowed role.';
-            $msgType = 'error';
-            $stmt = $pdo->prepare("SELECT * FROM SS_MESSAGES WHERE MESSAGE_ID = ?");
-            $stmt->execute([$messageId]);
-            $editing = $stmt->fetch() ?: null;
         } else {
             $isInternal = isset($_POST['is_internal']) ? 1 : 0;
             $pdo->prepare("UPDATE SS_MESSAGES SET MESSAGE_NAME=?,MESSAGE_BODY=?,IS_INTERNAL=?,UPDATED_AT=NOW() WHERE MESSAGE_ID=?")
                 ->execute([$name, $body, $isInternal, $messageId]);
             saveMessageRoles($messageId, $selectedRoleIds, $pdo);
-            $msg     = 'Message template updated.';
-            $msgType = 'success';
+            $msg     = empty($selectedRoleIds)
+                ? '⚠️ Template saved, but no eligible roles are assigned — this message cannot be sent to anyone until roles are added.'
+                : 'Message template updated.';
+            $msgType = empty($selectedRoleIds) ? 'warning' : 'success';
             // Reload so the edit form stays open after save
             $stmt = $pdo->prepare("SELECT * FROM SS_MESSAGES WHERE MESSAGE_ID = ?");
             $stmt->execute([$messageId]);
@@ -307,8 +300,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Flash message from redirect after create
 if (isset($_GET['saved']) && !$msg) {
-    $msg     = 'Message template created successfully.';
-    $msgType = 'success';
+    if (isset($_GET['warn']) && $_GET['warn'] === 'no_roles') {
+        $msg     = '⚠️ Template created, but no eligible roles are assigned — this message cannot be sent to anyone until roles are added.';
+        $msgType = 'warning';
+    } else {
+        $msg     = 'Message template created successfully.';
+        $msgType = 'success';
+    }
 }
 
 // Load edit target from GET
@@ -378,7 +376,7 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <?php if ($msg): ?>
-<div class="alert alert-<?= $msgType === 'success' ? 'success' : 'error' ?>"><?= h($msg) ?></div>
+<div class="alert alert-<?= in_array($msgType, ['success','warning','info']) ? $msgType : 'error' ?>"><?= h($msg) ?></div>
 <?php endif; ?>
 
 <!-- ============================================================ -->
@@ -410,8 +408,8 @@ require_once __DIR__ . '/../includes/header.php';
             <div class="field-hint">Placeholders: <code>{FIRST_NAME}</code> <code>{LAST_NAME}</code> <code>{YEAR}</code> <code>{GIFT_DEADLINE}</code> <code>{SANTA_MATCH_DATE}</code> <code>{PASSWORD_RESET_LINK}</code> <code>{RESET_TOKEN_EXPIRY_MINS}</code> <code>{WEB_SITE_URL}</code></div>
         </div>
         <div class="form-group">
-            <label>Eligible Roles <span class="required">*</span></label>
-            <div class="field-hint" style="margin-bottom:0.5rem;">This message can only be sent to users who have one of these roles.</div>
+            <label>Eligible Roles <span class="optional">(optional)</span></label>
+            <div class="field-hint" style="margin-bottom:0.5rem;">This message can only be sent to users who have one of these roles. <strong>Without roles, the template cannot be sent to anyone.</strong></div>
             <div class="role-grid" id="roleGrid_add"></div>
             <button type="button" class="btn btn-sm btn-add-role" id="addRoleBtn_add"
                     onclick="addAllowedRoleRow('add')">+ Add Role</button>
@@ -466,8 +464,8 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="field-hint">Placeholders: <code>{FIRST_NAME}</code> <code>{LAST_NAME}</code> <code>{YEAR}</code> <code>{GIFT_DEADLINE}</code> <code>{SANTA_MATCH_DATE}</code> <code>{PASSWORD_RESET_LINK}</code> <code>{RESET_TOKEN_EXPIRY_MINS}</code> <code>{WEB_SITE_URL}</code></div>
         </div>
         <div class="form-group">
-            <label>Eligible Roles <span class="required">*</span></label>
-            <div class="field-hint" style="margin-bottom:0.5rem;">This message can only be sent to users who have one of these roles.</div>
+            <label>Eligible Roles <span class="optional">(optional)</span></label>
+            <div class="field-hint" style="margin-bottom:0.5rem;">This message can only be sent to users who have one of these roles. <strong>Without roles, the template cannot be sent to anyone.</strong></div>
             <div class="role-grid" id="roleGrid_edit"></div>
             <button type="button" class="btn btn-sm btn-add-role" id="addRoleBtn_edit"
                     onclick="addAllowedRoleRow('edit')">+ Add Role</button>

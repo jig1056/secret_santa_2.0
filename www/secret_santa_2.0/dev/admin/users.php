@@ -494,7 +494,8 @@ if ($addMode && !$editing):
 
         <!-- Roles -->
         <div class="form-group">
-            <label>Roles <span class="required">*</span></label>
+            <label>Roles <span class="optional">(optional)</span></label>
+            <div class="field-hint" style="margin-bottom:0.5rem;">⚠️ Without a role, this user won't be able to log in or access any features.</div>
             <div class="role-grid" id="roleGrid_add"></div>
             <button type="button" class="btn btn-sm btn-add-role" id="addRoleBtn_add"
                     onclick="addRoleRow('add')">+ Add Role</button>
