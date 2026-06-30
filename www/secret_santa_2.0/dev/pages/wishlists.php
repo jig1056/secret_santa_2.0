@@ -175,10 +175,10 @@ if ($selectedUserId) {
                     : '&mdash;';
                 $rows .= "
                 <tr style=\"background-color:#FDF8F0;\">
-                    <td style=\"padding:10px 12px;font-weight:600;\">" . h($g['NAME']) . "</td>
-                    <td style=\"padding:10px 12px;color:#5A4030;\">" . ($g['DESCRIPTION'] ? h($g['DESCRIPTION']) : '&mdash;') . "</td>
-                    <td style=\"padding:10px 12px;\">{$link}</td>
-                    <td style=\"padding:10px 12px;\">{$purchased}</td>
+                    <td style=\"padding:10px 12px;font-weight:600;text-align:left;\">" . h($g['NAME']) . "</td>
+                    <td style=\"padding:10px 12px;color:#5A4030;text-align:left;\">" . ($g['DESCRIPTION'] ? h($g['DESCRIPTION']) : '&mdash;') . "</td>
+                    <td style=\"padding:10px 12px;text-align:left;\">{$link}</td>
+                    <td style=\"padding:10px 12px;text-align:left;\">{$purchased}</td>
                 </tr>";
             }
 
