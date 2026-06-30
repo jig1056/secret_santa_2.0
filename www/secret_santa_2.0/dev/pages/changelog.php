@@ -16,7 +16,53 @@ require_once __DIR__ . '/../includes/header.php';
 
     <div class="cl-version">
         <div class="cl-version-header">
-            <span class="cl-badge">v2.7</span>
+            <span class="cl-badge">v2.8</span>
+            <span class="cl-version-title">UI Refinements &amp; Email Polish</span>
+            <span class="cl-version-date">June 2026</span>
+        </div>
+        <ul class="cl-items">
+            <li>
+                <strong>Email Footer Gold Trim</strong> — The email footer now has a 4px gold border at the top, matching the gold trim on the site footer and email header container.
+            </li>
+            <li>
+                <strong>Email Footer Color</strong> — The email footer background was updated to match the site's dark red footer color for visual consistency.
+            </li>
+            <li>
+                <strong>Wider Wishlist Email</strong> — The kids' Christmas list email is now 15% wider (690px) for easier reading.
+            </li>
+            <li>
+                <strong>Wishlist Email: Left-Justified Gifts</strong> — Gift cells in the Christmas list email are now left-aligned instead of centered.
+            </li>
+            <li>
+                <strong>Wishlist Email: Row Separators</strong> — Added a subtle divider line between each gift row in the Christmas list email.
+            </li>
+            <li>
+                <strong>Wishlist Email: Purchased Column Centered</strong> — The Purchased column header and Yes/No values are now centered in the email table.
+            </li>
+            <li>
+                <strong>Site Footer Gold Trim</strong> — The site footer now has a matching 4px gold border at the top, consistent with the email design.
+            </li>
+            <li>
+                <strong>No Empty Dashes</strong> — Removed em-dash placeholders from empty Description and Link fields across My Wish List, Giftee's Wish List, and Kids' Christmas List pages. Empty fields now show nothing.
+            </li>
+            <li>
+                <strong>Kids' List: Removed "Still Needed" Count</strong> — The "X still needed" label has been removed from the kids' Christmas list cards. The "All purchased ✓" indicator still appears when complete.
+            </li>
+            <li>
+                <strong>Mobile Nav: Menu Below Brand</strong> — On mobile, the hamburger menu now always expands below the Secret Santa brand row rather than appearing to the side.
+            </li>
+            <li>
+                <strong>Mobile Messages: Send Button Repositioned</strong> — On the mobile Messages page, the Send button now appears inline next to the message subject instead of below the role badges.
+            </li>
+            <li>
+                <strong>Home Page: Hero Banner Removed</strong> — The red budget banner has been removed from the home page for a cleaner layout.
+            </li>
+        </ul>
+    </div>
+
+    <div class="cl-version cl-version-older">
+        <div class="cl-version-header">
+            <span class="cl-badge cl-badge-old">v2.7</span>
             <span class="cl-version-title">Database Cleanup &amp; Message Center Upgrades</span>
             <span class="cl-version-date">June 2026</span>
         </div>
