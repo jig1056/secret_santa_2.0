@@ -104,9 +104,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE')
                 ")->execute([$userId, $firstName, $lastName, $sex, $email, $hash, $phone ?: null, $userType]);
                 saveUserRoles($userId, $selectedRoleIds, $pdo);
-                $msg     = "User {$firstName} {$lastName} added (ID: {$userId}).";
-                $msgType = 'success';
-                $addMode = false;
+                header('Location: ?edit=' . urlencode($userId) . '&saved=1');
+                exit;
             }
         }
 
@@ -200,8 +199,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Flash message from redirect after create
+if (isset($_GET['saved']) && !$msg) {
+    $msg     = 'User created successfully.';
+    $msgType = 'success';
+}
+
 // Load edit target from GET
-if (!$editing && isset($_GET['edit']) && $msgType !== 'success') {
+if (!$editing && isset($_GET['edit'])) {
     $stmt = $pdo->prepare("SELECT * FROM SS_USERS WHERE USER_ID = ?");
     $stmt->execute([$_GET['edit']]);
     $editing = $stmt->fetch() ?: null;

@@ -108,9 +108,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->prepare("INSERT INTO SS_MESSAGES (MESSAGE_ID, MESSAGE_NAME, MESSAGE_BODY, IS_INTERNAL) VALUES (?, ?, ?, ?)")
                 ->execute([$messageId, $name, $body, $isInternal]);
             saveMessageRoles($messageId, $selectedRoleIds, $pdo);
-            $msg     = "Message template \"{$name}\" created.";
-            $msgType = 'success';
-            $addMode = false;
+            header('Location: ?edit=' . urlencode($messageId) . '&saved=1');
+            exit;
         }
 
     // -- UPDATE template --
@@ -307,8 +306,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Flash message from redirect after create
+if (isset($_GET['saved']) && !$msg) {
+    $msg     = 'Message template created successfully.';
+    $msgType = 'success';
+}
+
 // Load edit target from GET
-if (!$editing && isset($_GET['edit']) && $msgType !== 'success') {
+if (!$editing && isset($_GET['edit'])) {
     $stmt = $pdo->prepare("SELECT * FROM SS_MESSAGES WHERE MESSAGE_ID = ?");
     $stmt->execute([$_GET['edit']]);
     $editing = $stmt->fetch() ?: null;

@@ -54,9 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $pdo->prepare("INSERT INTO SS_CONFIG (CONFIG_KEY, CONFIG_VALUE, CONFIG_DESCRIPTION) VALUES (?, ?, ?)")
                     ->execute([$key, $value, $desc ?: null]);
-                $msg     = "Config key \"{$key}\" added.";
-                $msgType = 'success';
-                $addMode = false; // close the form on success
+                header('Location: ?edit=' . urlencode($key) . '&saved=1');
+                exit;
             }
         }
 
@@ -86,8 +85,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Load edit target from GET — but not after a successful POST
-if (!$editing && isset($_GET['edit']) && $msgType !== 'success') {
+// Flash message from redirect after create
+if (isset($_GET['saved']) && !$msg) {
+    $msg     = 'Config key created successfully.';
+    $msgType = 'success';
+}
+
+// Load edit target from GET
+if (!$editing && isset($_GET['edit'])) {
     $stmt = $pdo->prepare("SELECT * FROM SS_CONFIG WHERE CONFIG_KEY = ?");
     $stmt->execute([$_GET['edit']]);
     $editing = $stmt->fetch() ?: null;

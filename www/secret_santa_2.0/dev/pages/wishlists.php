@@ -131,6 +131,10 @@ if ($selectedUserId) {
                     ->execute([$name, $desc ?: null, $url ?: null, $giftId, $selectedUserId, $xmasYear]);
                 $msg     = 'Gift updated!';
                 $msgType = 'success';
+                // Keep edit form open after save
+                $stmt = $pdo->prepare("SELECT * FROM SS_GIFTS WHERE GIFT_ID = ? AND USER_ID = ? AND YEAR = ?");
+                $stmt->execute([$giftId, $selectedUserId, $xmasYear]);
+                $editingGift = $stmt->fetch() ?: null;
             }
 
         } elseif ($action === 'delete_gift') {
@@ -406,7 +410,10 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="gift-item <?= $isPurchased ? 'purchased' : '' ?>">
             <span class="gift-item-icon">🎁</span>
             <div class="gift-item-body">
-                <div class="gift-item-name <?= $isPurchased ? 'name-purchased' : '' ?>"><?= h($gift['NAME']) ?></div>
+                <div class="gift-item-name <?= $isPurchased ? 'name-purchased' : '' ?>">
+                    <a href="?user=<?= h($selectedUserId) ?>&edit=<?= $gift['GIFT_ID'] ?>"
+                       style="color:inherit;text-decoration:none;font-family:inherit;font-weight:inherit;"><?= h($gift['NAME']) ?></a>
+                </div>
                 <?php if ($gift['DESCRIPTION']): ?>
                 <div class="gift-item-desc"><?= h($gift['DESCRIPTION']) ?></div>
                 <?php endif; ?>

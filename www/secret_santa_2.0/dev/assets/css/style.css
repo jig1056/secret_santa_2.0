@@ -119,11 +119,6 @@ body {
     font-size: 54px;
     line-height: 1;
     display: inline-block;
-    animation: santabob 2.8s ease-in-out infinite;
-}
-@keyframes santabob {
-    0%, 100% { transform: translateY(0); }
-    50%       { transform: translateY(-3px); }
 }
 
 /* Collapsible wrapper (desktop: flex row, mobile: dropdown) */
@@ -255,7 +250,8 @@ body {
         align-items: stretch;
         gap: 0.05rem;
     }
-    .nav-end { margin-left: 0; padding-top: 0.25rem; }
+    .nav-main { margin-left: 0; }
+    .nav-end   { margin-left: 0; padding-top: 0.25rem; }
 
     .nav-link { font-size: 0.95rem; width: 100%; }
     .nav-link-sm { font-size: 0.95rem; }
