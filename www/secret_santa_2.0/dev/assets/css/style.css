@@ -591,6 +591,7 @@ h1.page-title {
     font-size: 0.82rem;
     font-family: 'Lato', sans-serif;
     margin-top: auto;
+    border-top: 4px solid var(--gold);
 }
 .site-footer a { color: var(--gold); text-decoration: none; }
 .site-footer a:hover { text-decoration: underline; }
