@@ -45,13 +45,17 @@ if ($selectedUserId) {
         redirect('/pages/wishlists.php');
     }
 
-    // Load wishlist user
+    // Load wishlist user and CAN_EDIT flag
     $stmt = $pdo->prepare("SELECT USER_ID, FIRST_NAME, LAST_NAME, SEX, EMAIL FROM SS_USERS WHERE USER_ID = ? AND STATUS = 'ACTIVE'");
     $stmt->execute([$selectedUserId]);
     $wishlistUser = $stmt->fetch();
     if (!$wishlistUser) {
         redirect('/pages/wishlists.php');
     }
+
+    $canEditStmt = $pdo->prepare("SELECT CAN_EDIT FROM SS_WISHLIST_ACCESS WHERE GIFTER_USER_ID = ? AND WISHLIST_USER_ID = ?");
+    $canEditStmt->execute([$gifterUserId, $selectedUserId]);
+    $canEditWishlist = ($canEditStmt->fetchColumn() === 'Y');
 
     function normalizeUrl(string $url): string|false {
         if ($url === '') return '';
@@ -246,12 +250,13 @@ require_once __DIR__ . '/../includes/header.php';
 
 <div class="page-header">
     <div>
-        <a href="<?= APP_URL ?>/pages/wishlists.php" class="back-link">← Kid's Christmas List</a>
         <span class="section-label" style="margin-top:0.25rem;">✦ <?= h($wishlistUser['FIRST_NAME']) ?>'s List</span>
         <h1 class="page-title" style="margin-bottom:0;">🎄 <?= h($wishlistUser['FIRST_NAME']) ?>'s Christmas List</h1>
     </div>
     <div class="page-header-actions">
+        <?php if ($canEditWishlist): ?>
         <button class="btn btn-primary" onclick="toggleAddForm()">+ Add Gift</button>
+        <?php endif; ?>
         <form id="emailListForm" method="POST" action="?user=<?= h($selectedUserId) ?>" style="display:inline;">
             <input type="hidden" name="action" value="email_list">
             <button type="button" class="btn btn-ghost-neutral" onclick="submitEmailList()">📧 Email This List</button>
@@ -264,6 +269,7 @@ require_once __DIR__ . '/../includes/header.php';
 <?php endif; ?>
 
 <!-- Add Gift Form (toggle) -->
+<?php if ($canEditWishlist): ?>
 <div class="card card-accent-gold" id="addFormPanel" style="<?= $addMode ? '' : 'display:none;' ?>">
     <div class="card-title"><span style="color:var(--gold);">+</span> Add a Gift for <?= h($wishlistUser['FIRST_NAME']) ?></div>
     <form method="POST" action="?user=<?= h($selectedUserId) ?>">
@@ -292,9 +298,10 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
     </form>
 </div>
+<?php endif; ?>
 
 <!-- Edit Gift Form -->
-<?php if ($editingGift): ?>
+<?php if ($editingGift && $canEditWishlist): ?>
 <div class="card card-accent-gold">
     <div class="card-title">✏️ Edit Gift</div>
     <form method="POST" action="?user=<?= h($selectedUserId) ?>">
@@ -367,7 +374,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <?php $isPurchased = !empty($gift['PURCHASED_BY']); ?>
                 <?php $isMine      = $gift['PURCHASED_BY'] === $gifterUserId; ?>
                 <tr>
-                    <td>🎁 <a href="?user=<?= h($selectedUserId) ?>&edit=<?= $gift['GIFT_ID'] ?>" class="link-edit"><?= h($gift['NAME']) ?></a></td>
+                    <td>🎁 <?php if ($canEditWishlist): ?><a href="?user=<?= h($selectedUserId) ?>&edit=<?= $gift['GIFT_ID'] ?>" class="link-edit"><?= h($gift['NAME']) ?></a><?php else: ?><?= h($gift['NAME']) ?><?php endif; ?></td>
                     <td><?= $gift['DESCRIPTION'] ? h($gift['DESCRIPTION']) : '' ?></td>
                     <td>
                         <?php if ($gift['URL']): ?>
@@ -409,8 +416,12 @@ require_once __DIR__ . '/../includes/header.php';
             <span class="gift-item-icon">🎁</span>
             <div class="gift-item-body">
                 <div class="gift-item-name <?= $isPurchased ? 'name-purchased' : '' ?>">
+                    <?php if ($canEditWishlist): ?>
                     <a href="?user=<?= h($selectedUserId) ?>&edit=<?= $gift['GIFT_ID'] ?>"
                        style="color:inherit;text-decoration:none;font-family:inherit;font-weight:inherit;"><?= h($gift['NAME']) ?></a>
+                    <?php else: ?>
+                    <?= h($gift['NAME']) ?>
+                    <?php endif; ?>
                 </div>
                 <?php if ($gift['DESCRIPTION']): ?>
                 <div class="gift-item-desc"><?= h($gift['DESCRIPTION']) ?></div>
@@ -503,11 +514,14 @@ require_once __DIR__ . '/../includes/header.php';
             <div class="child-card-meta" style="color:var(--muted);">No gifts added yet</div>
             <?php endif; ?>
         </div>
-        <span class="child-card-arrow">→</span>
     </a>
     <?php endforeach; ?>
 </div>
 <?php endif; ?>
+
+<div style="margin-top:1.5rem;">
+    <a href="<?= APP_URL ?>/pages/wishlists.php" class="back-link">← Kid's Christmas List</a>
+</div>
 
 <?php endif; ?>
 

@@ -50,6 +50,7 @@ Desktop.ini
 
 sql/backups/
 sql/secret_santa_create_database.sql
+sql/build_support
 
 misc_docs/*
 test_config.php

@@ -60,11 +60,11 @@ function deriveUserType(array $selectedRoleIds, array $allRoles): string {
 }
 
 // Helper: save wishlist access for a gifter
-function saveWishlistAccess(string $gifterUserId, array $wishlistUserIds, PDO $pdo): void {
+function saveWishlistAccess(string $gifterUserId, array $wishlistUserIds, array $canEditIds, PDO $pdo): void {
     $pdo->prepare("DELETE FROM SS_WISHLIST_ACCESS WHERE GIFTER_USER_ID = ?")->execute([$gifterUserId]);
-    $ins = $pdo->prepare("INSERT IGNORE INTO SS_WISHLIST_ACCESS (GIFTER_USER_ID, WISHLIST_USER_ID) VALUES (?, ?)");
+    $ins = $pdo->prepare("INSERT IGNORE INTO SS_WISHLIST_ACCESS (GIFTER_USER_ID, WISHLIST_USER_ID, CAN_EDIT) VALUES (?, ?, ?)");
     foreach ($wishlistUserIds as $wuid) {
-        if ($wuid) $ins->execute([$gifterUserId, $wuid]);
+        if ($wuid) $ins->execute([$gifterUserId, $wuid, in_array($wuid, $canEditIds) ? 'Y' : 'N']);
     }
 }
 
@@ -120,6 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $selectedRoleIds = (array)($_POST['roles'] ?? []);
         $newPass         = trim($_POST['password']   ?? '');
         $wishlistAccess  = (array)($_POST['wishlist_access'] ?? []);
+        $wishlistCanEdit = (array)($_POST['wishlist_can_edit'] ?? []);
 
         if (!$firstName || !$lastName || !$email) {
             $msg     = 'First name, last name and email are required.';
@@ -157,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
                 if ($hasGifterRole) {
-                    saveWishlistAccess($userId, $wishlistAccess, $pdo);
+                    saveWishlistAccess($userId, $wishlistAccess, $wishlistCanEdit, $pdo);
                 } else {
                     // Role removed — clean up access
                     $pdo->prepare("DELETE FROM SS_WISHLIST_ACCESS WHERE GIFTER_USER_ID = ?")->execute([$userId]);
@@ -234,11 +235,15 @@ $wishlistOnlyUsers = $pdo->query("
 ")->fetchAll();
 
 // Current wishlist access for user being edited
-$editingWishlistAccess = [];
+$editingWishlistAccess  = [];
+$editingWishlistCanEdit = [];
 if ($editing) {
-    $stmt = $pdo->prepare("SELECT WISHLIST_USER_ID FROM SS_WISHLIST_ACCESS WHERE GIFTER_USER_ID = ?");
+    $stmt = $pdo->prepare("SELECT WISHLIST_USER_ID, CAN_EDIT FROM SS_WISHLIST_ACCESS WHERE GIFTER_USER_ID = ?");
     $stmt->execute([$editing['USER_ID']]);
-    $editingWishlistAccess = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($stmt->fetchAll() as $row) {
+        $editingWishlistAccess[] = $row['WISHLIST_USER_ID'];
+        if ($row['CAN_EDIT'] === 'Y') $editingWishlistCanEdit[] = $row['WISHLIST_USER_ID'];
+    }
 }
 
 // Check if editing user has gifter role
@@ -432,7 +437,7 @@ if ($editing):
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     initRoleGrid('edit', <?= json_encode($editingRoleIds) ?>);
-    initWishlistGrid(<?= json_encode($editingWishlistAccess) ?>);
+    initWishlistGrid(<?= json_encode($editingWishlistAccess) ?>, <?= json_encode($editingWishlistCanEdit) ?>);
 });
 </script>
 <?php endif; ?>
@@ -858,18 +863,22 @@ function toggleWishlistAccess() {
 
 // ══ WISHLIST ACCESS GRID ══════════════════════════════════════
 
-function initWishlistGrid(preselected) {
-    if (!preselected || preselected.length === 0) return; // start empty; user clicks + Add Giftee
-    preselected.forEach(uid => addWishlistRow(uid));
+function initWishlistGrid(preselected, canEditIds) {
+    if (!preselected || preselected.length === 0) return;
+    canEditIds = canEditIds || [];
+    preselected.forEach(uid => addWishlistRow(uid, canEditIds.includes(uid)));
 }
 
-function addWishlistRow(selectedValue) {
+function addWishlistRow(selectedValue, canEdit) {
     selectedValue = selectedValue || '';
+    canEdit = canEdit || false;
     const grid = document.getElementById('wishlistGrid');
     if (!grid) return;
 
     const row = document.createElement('div');
     row.className = 'role-grid-row';
+    row.style.alignItems = 'center';
+    row.style.gap = '0.6rem';
 
     const sel = document.createElement('select');
     sel.name = 'wishlist_access[]';
@@ -885,9 +894,23 @@ function addWishlistRow(selectedValue) {
         sel.appendChild(opt);
     });
     sel.addEventListener('change', function () {
+        chk.value = sel.value;
         refreshWishlistDropdowns();
         updateWishlistBtn();
     });
+
+    // Editable checkbox
+    const chkLabel = document.createElement('label');
+    chkLabel.style.cssText = 'display:flex;align-items:center;gap:0.3rem;font-size:0.88rem;color:var(--text-mid);white-space:nowrap;cursor:pointer;';
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.name = 'wishlist_can_edit[]';
+    chk.value = String(selectedValue);
+    chk.checked = canEdit;
+    // Keep checkbox value in sync with the select
+    sel.addEventListener('change', function () { chk.value = sel.value; });
+    chkLabel.appendChild(chk);
+    chkLabel.appendChild(document.createTextNode(' Editable'));
 
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button'; removeBtn.className = 'remove-role-btn';
@@ -898,7 +921,9 @@ function addWishlistRow(selectedValue) {
         updateWishlistBtn();
     });
 
-    row.appendChild(sel); row.appendChild(removeBtn);
+    row.appendChild(sel);
+    row.appendChild(chkLabel);
+    row.appendChild(removeBtn);
     grid.appendChild(row);
     refreshWishlistDropdowns();
     updateWishlistBtn();
